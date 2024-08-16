@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="./hw_nozzle_geom.xacro"/>
+  <xacro:property name="tube_length" value="0.0445" />
+  <xacro:property name="tube_wall_width" value="0.0066" />
+  <xacro:property name="tube_box_width" value="0.02" />
+  <xacro:property name="tube_outer_diameter" value="0.032" />
+  <xacro:property name="tube_middle_diameter" value="${tube_outer_diameter - tube_wall_width}" />
+  <xacro:macro name="hw_tube_geom" params="num theta"> 
+    <link name="hw_tube_geom${num}">
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <box size="${tube_wall_width} ${tube_box_width} ${tube_length}"/>
+        </geometry>
+        <material name="white">
+          <color rgba="1.0 1.0 1.0 0.5"/>
+        </material>
+      </visual>
+      <collision>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <box size="${tube_wall_width} ${tube_box_width} ${tube_length}"/>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="ur_4_ee_to_tube_geom${num}" type="fixed">
+      <parent link="ur_4_ee"/>
+      <child link="hw_tube_geom${num}"/>
+      <origin rpy="0 0 ${theta}" xyz="${tube_middle_diameter/2*cos(theta)} ${tube_middle_diameter/2*sin(theta)} ${tube_length/2 + nozzle_length}"/>
+    </joint>
+  </xacro:macro>
+</robot>

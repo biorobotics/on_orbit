@@ -1,0 +1,41 @@
+joint_names: [
+    "carriage_2",
+    "shoulder_pan_joint_2",
+    "shoulder_lift_joint_2",
+    "elbow_joint_2",
+    "wrist_1_joint_2",
+    "wrist_2_joint_2",
+    "wrist_3_joint_2",
+
+    "carriage_1",
+    "shoulder_pan_joint_1",
+    "shoulder_lift_joint_1",
+    "elbow_joint_1",
+    "wrist_1_joint_1",
+    "wrist_2_joint_1",
+    "wrist_3_joint_1",
+
+    "carriage_4",
+    "shoulder_pan_joint_4",
+    "shoulder_lift_joint_4",
+    "elbow_joint_4",
+    "wrist_1_joint_4",
+    "wrist_2_joint_4",
+    "wrist_3_joint_4",
+
+    "carriage_3",
+    "shoulder_pan_joint_3",
+    "shoulder_lift_joint_3",
+    "elbow_joint_3",
+    "wrist_1_joint_3",
+    "wrist_2_joint_3",
+    "wrist_3_joint_3",
+    
+
+    ]
+
+max_torques: [1000, 330, 330, 150, 56, 56, 56, 
+    1000, 330, 330, 150, 56, 56, 56, 
+    1000, 330, 330, 150, 56, 56, 56,
+    1000, 330, 330, 150, 56, 56, 56,
+    ]

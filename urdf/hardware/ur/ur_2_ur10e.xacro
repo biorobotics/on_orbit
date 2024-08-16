@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="ur10e_robot">
+  <xacro:include filename="$(find on_orbit)/urdf/hardware/ur/ur10e_macro.xacro"/>
+  <xacro:ur10e_robot prefix="ur_2_" calibration_file="$(find on_orbit)/config/holo_params/ur_2_calibration.yaml"/>
+
+</robot>

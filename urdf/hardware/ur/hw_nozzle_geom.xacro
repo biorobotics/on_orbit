@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:property name="nozzle_length" value="0.0675" />
+  <xacro:property name="nozzle_geom_length" value="0.07671" />
+  <xacro:property name="nozzle_wall_width" value="0.003" />
+  <xacro:property name="nozzle_box_width" value="0.04" />
+  <xacro:property name="throat_outer_diameter" value="0.028" />
+  <xacro:property name="throat_middle_diameter" value="${throat_outer_diameter - nozzle_wall_width}" />
+  <xacro:property name="entry_outer_diameter" value="0.09768" />
+  <xacro:property name="entry_middle_diameter" value="${entry_outer_diameter - nozzle_wall_width}" />
+  <xacro:property name="dist_from_centerline" value="${(throat_middle_diameter + entry_middle_diameter)/4}" />
+  <xacro:property name="slope_angle" value="0.49514949" />
+  <xacro:macro name="hw_nozzle_geom" params="num theta"> 
+    <link name="hw_nozzle_geom${num}">
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <box size="${nozzle_wall_width} ${nozzle_box_width} ${nozzle_geom_length}"/>
+        </geometry>
+        <material name="translucent_white">
+          <color rgba="1.0 1.0 1.0 0.5"/>
+        </material>
+      </visual>
+      <collision>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <box size="${nozzle_wall_width} ${nozzle_box_width} ${nozzle_geom_length}"/>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="ur_4_ee_to_hw_nozzle_geom${num}" type="fixed">
+      <parent link="ur_4_ee"/>
+      <child link="hw_nozzle_geom${num}"/>
+      <origin rpy="0 ${-slope_angle} ${theta}" xyz="${dist_from_centerline*cos(theta)} ${dist_from_centerline*sin(theta)} ${nozzle_geom_length/2*cos(slope_angle) + nozzle_wall_width*sin(slope_angle)}"/>
+    </joint>
+  </xacro:macro>
+</robot>

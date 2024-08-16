@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="ur10e_robot">
+  <xacro:include filename="$(find on_orbit)/urdf/hardware/ur/ur10e_macro.xacro"/>
+  <xacro:ur10e_robot prefix="ur_3_" calibration_file="$(find on_orbit)/config/holo_params/ur_3_calibration.yaml"/>
+  <xacro:property name="dist_tool_to_ft_sensor" value="0.0315" />
+
+  <!--White Peg-->
+  <!-- Will need to be updated after the print-->
+  <xacro:property name="peg_rad" value="0.01505"/>
+  <xacro:property name="peg_mass" value="0.14597807959"/>
+  <xacro:property name="peg_com" value="0.02715593628"/>
+
+  <!-- Will need to be updated after the print-->
+  <xacro:property name="ur_3_ee_length" value="0.209"/>
+
+
+
+  <link name="ur_3_ee">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 ${-ur_3_ee_length/2}"/>
+      <geometry>
+	      <cylinder length="${ur_3_ee_length}" radius="${peg_rad}"/>
+      </geometry>
+      <material name="white">
+        <color rgba="1.0 1.0 1.0 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 ${-ur_3_ee_length/2}"/>
+      <geometry>
+	      <cylinder length="${ur_3_ee_length}" radius="${peg_rad}"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="${peg_mass}"/>
+      <origin rpy="0 0 0" xyz="0 0 ${dist_tool_to_ft_sensor + peg_com}"/>
+      <inertia ixx="0" ixy="0.0" ixz="0.0" iyy="0" iyz="0.0" izz="0"/>
+    </inertial>
+  </link>
+
+  <link name="peg_center"/>
+  <joint name="ur_3_ee_to_peg_center" type="fixed">
+    <parent link="ur_3_ee"/>
+    <child link="peg_center"/>
+    <origin rpy="0 0 0" xyz="0 0 ${-ur_3_ee_length/2}"/>
+  </joint>
+
+  <joint name="ur_3_tool0_to_ee" type="fixed">
+    <parent link="ur_3_tool0"/>
+    <child link="ur_3_ee"/>
+    <origin rpy="0 0 0" xyz="0 0 ${ur_3_ee_length}"/>
+  </joint>
+
+  <!-- UR16 has the FT sensor--> 
+  <link name="ft_sensor"/>
+  <joint name="ur_3_tool0_to_ft_sensor" type="fixed">
+    <parent link="ur_3_tool0"/>
+    <child link="ft_sensor"/>
+    <origin rpy="0 0 -0.53996123733" xyz="0 0 ${dist_tool_to_ft_sensor}"/>
+  </joint>
+</robot>

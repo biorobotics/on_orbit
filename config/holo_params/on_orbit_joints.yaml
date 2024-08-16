@@ -1,0 +1,24 @@
+joint_names: [
+
+    "carriage_4",
+    "shoulder_pan_joint_4",
+    "shoulder_lift_joint_4",
+    "elbow_joint_4",
+    "wrist_1_joint_4",
+    "wrist_2_joint_4",
+    "wrist_3_joint_4",
+
+    "carriage_3",
+    "shoulder_pan_joint_3",
+    "shoulder_lift_joint_3",
+    "elbow_joint_3",
+    "wrist_1_joint_3",
+    "wrist_2_joint_3",
+    "wrist_3_joint_3",
+    
+    ]
+
+max_torques: [
+    1000, 330, 330, 150, 56, 56, 56,
+    1000, 330, 330, 150, 56, 56, 56,
+    ]
