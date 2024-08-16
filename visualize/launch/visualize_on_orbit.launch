@@ -1,7 +1,7 @@
 <launch>
 
   <arg name="model" />
-  <arg name="rvizconfig" default="$(find on_orbit)/rviz/urdf.rviz" />
+  <arg name="rvizconfig" default="$(find on_orbit)/rviz/on_orbit.rviz" />
   <arg name="config_file" default="$(find on_orbit)/config/holo_params/on_orbit_joints.yaml" />
 
   <param name="robot_description" command="xacro $(find on_orbit)/urdf/hardware/on_orbit.xacro" />
