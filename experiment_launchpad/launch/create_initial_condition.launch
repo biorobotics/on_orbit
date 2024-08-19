@@ -1,0 +1,17 @@
+<launch>
+  <node name="controf_node" pkg="peg_in_hole" type="create_initial_condition.py" output="screen"/>
+  <arg name="rvizconfig" default="$(find peg_in_hole)/rviz/contact_recovery.rviz" />
+  <node name="peg_in_nozzle_rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" />
+
+  <param name="hw_robot_description" textfile="$(find peg_in_hole)/urdf/ur16e_and_ur5e.urdf" />
+  <node name="hw_robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
+    <remap from="joint_states" to="/peg_in_hole/hw_joint_state" />
+    <remap from="robot_description" to="hw_robot_description" />
+  </node>
+
+  <param name="sw_robot_description" textfile="$(find peg_in_hole)/urdf/robot_cv_detached.urdf" />
+  <node name="sw_robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
+    <remap from="joint_states" to="/peg_in_hole/sw_joint_state" />
+    <remap from="robot_description" to="sw_robot_description" />
+  </node>
+</launch>

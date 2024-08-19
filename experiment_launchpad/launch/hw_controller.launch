@@ -1,0 +1,25 @@
+<launch>
+  <rosparam file="$(find peg_in_hole)/config/cw.yaml"/>
+  <rosparam file="$(find peg_in_hole)/config/limits.yaml"/>
+  <rosparam file="$(find peg_in_hole)/config/cone_slope.yaml"/>
+  <rosparam file="$(find peg_in_hole)/config/experiment.yaml"/>
+  <node name="control_node" pkg="peg_in_hole" type="hw_controller_node.py" output="screen"/>
+  <arg name="sw_rvizconfig" default="$(find peg_in_hole)/rviz/top_view.rviz" />
+  <node name="sw_rviz" pkg="rviz" type="rviz" args="-d $(arg sw_rvizconfig)" required="true" />
+
+  <arg name="hw_rvizconfig" default="$(find peg_in_hole)/rviz/hw_peg_in_nozzle.rviz" />
+  <node name="hw_rviz" pkg="rviz" type="rviz" args="-d $(arg hw_rvizconfig)" required="true" />
+
+  <param name="hw_robot_description" textfile="$(find peg_in_hole)/urdf/ur16e_and_ur5e.urdf" />
+  <node name="hw_robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
+    <remap from="joint_states" to="/peg_in_hole/hw_joint_state" />
+    <remap from="robot_description" to="hw_robot_description" />
+  </node>
+
+  <param name="sw_robot_description" textfile="$(find peg_in_hole)/urdf/robot_cv_detached.urdf" />
+  <!--<param name="sw_robot_description" textfile="$(find peg_in_hole)/urdf/mirrored_robot_cv_detached.urdf" />-->
+  <node name="sw_robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
+    <remap from="joint_states" to="/peg_in_hole/sw_joint_state" />
+    <remap from="robot_description" to="sw_robot_description" />
+  </node>
+</launch>

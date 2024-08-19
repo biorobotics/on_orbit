@@ -1,0 +1,16 @@
+<launch>
+  <rosparam file="$(find peg_in_hole)/config/cw.yaml"/>
+  <rosparam file="$(find peg_in_hole)/config/limits.yaml"/>
+  <rosparam file="$(find peg_in_hole)/config/cone_slope.yaml"/>
+  <rosparam file="$(find peg_in_hole)/config/experiment.yaml"/>
+  <node name="simulator_node" pkg="peg_in_hole" type="simulator_node.py" output="screen"/>
+  <!--<arg name="sw_rvizconfig" default="$(find peg_in_hole)/rviz/nozzle_initially_identity_view_rotated_90.rviz" />-->
+  <arg name="sw_rvizconfig" default="$(find peg_in_hole)/rviz/nozzle_initially_identity_view_rotated_90_zoomed_in.rviz" />
+  <node name="sw_rviz" pkg="rviz" type="rviz" args="-d $(arg sw_rvizconfig)" required="true" />
+
+  <param name="sw_robot_description" textfile="$(find peg_in_hole)/urdf/robot_cv_detached.urdf" />
+  <node name="sw_robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
+    <remap from="joint_states" to="/peg_in_hole/sw_joint_state" />
+    <remap from="robot_description" to="sw_robot_description" />
+  </node>
+</launch>
