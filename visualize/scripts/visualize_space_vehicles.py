@@ -26,8 +26,10 @@ cv_jidx = pin_model.getJointId('world_to_client')
 cv_qidx = pin_model.idx_qs[cv_jidx]
 cv_vidx = pin_model.idx_vs[cv_jidx]
 
+# Determine the number of rotary joints, used to determine the size of the arrays to be published
 num_rotary = pin_model.nv - 12
 
+# Joint angles from NG, initial state of the MRV arm
 joint_angles = np.array([-0.7047788387305209, -1.6486664575555459, -0.0007934622405855179, 2.1705127935725677, 3.1399998540089658, 0.5218470737159768, -2.4354950340230865])
 # joint_angles = np.zeros(num_rotary)
 
@@ -38,9 +40,13 @@ for jidx in range(mrv_jidx + 1, mrv_jidx + 1 + num_rotary):
   joints_msg.velocity.append(0)
   joints_msg.effort.append(0)
 
+# Initial pose of the MRV and Client
 base_pos = np.array([4.38570453e-06, 5.27465730e-06, -7.71069928e+00])
 # base_pos = np.array([0.3182, -0.28137, -8.6957])
 base_quat = np.array([0., 0., 0., 1.])
+
+client_pos = np.zeros(3)
+client_quat = np.array([0., 0., 0., 1.])
 
 sw_base_link_tf_msg = TransformStamped()
 sw_base_link_tf_msg.header.frame_id = 'world'
@@ -53,8 +59,7 @@ sw_base_link_tf_msg.transform.rotation.y = base_quat[1]
 sw_base_link_tf_msg.transform.rotation.z = base_quat[2]
 sw_base_link_tf_msg.transform.rotation.w = base_quat[3]
 
-client_pos = np.zeros(3)
-client_quat = np.array([0., 0., 0., 1.])
+
 
 sw_client_tf_msg = TransformStamped()
 sw_client_tf_msg.header.frame_id = 'world'
