@@ -7,6 +7,7 @@ from geometry_msgs.msg import TransformStamped, WrenchStamped, Pose
 from ur_state_machine.srv import JointMove, PositionServo, PositionMove, PositionMoveRequest
 from ur_state_machine.msg import JointMoveParams, PositionServoParams, Move
 from vention_control.srv import PositionMove as VentionPositionMove
+from std_srvs.srv import Trigger
 from sensor_msgs.msg import JointState
 from scipy.spatial.transform import Rotation as R
 import tf2_ros as tf
@@ -21,7 +22,7 @@ class InsertionDemo:
         rospy.init_node('gravity_demo_emulator', anonymous=True)
         rospack = rospkg.RosPack()
         rospath = rospack.get_path('on_orbit')
-        self.rate = rospy.Rate(50)
+        self.rate = rospy.Rate(100)
         
         self.mrv_arm_name = 'UR3'
         self.client_arm_name = 'UR4'
@@ -152,13 +153,16 @@ class InsertionDemo:
         mrv_carriage_srv = rospy.ServiceProxy(mrv_carriage_srv_name, VentionPositionMove)
         mrv_arm_srv = rospy.ServiceProxy(mrv_arm_srv_name, JointMove)
         mrv_arm_target = JointMoveParams()
-        mrv_arm_target.joint_angles = [-3.843987528477804, -0.8381941479495545, -2.391078472137451, -3.0148450336852015, -2.2746804396258753, 0.04980294406414032]
+        # mrv_arm_target.joint_angles = [-3.843987528477804, -0.8381941479495545, -2.391078472137451, -3.0148450336852015, -2.2746804396258753, 0.04980294406414032]
+        mrv_arm_target.joint_angles = [-3.6132238546954554, -1.449615129535534, -2.2138543128967285, -2.505747457543844, -2.078312698994772, -0.5055072943316858]
+
         try:
-            resp1 = mrv_carriage_srv([2.23]) 
+            resp1 = mrv_carriage_srv([2.01]) 
             resp2 = mrv_arm_srv(mrv_arm_target)
             print(f"Response: {resp1}, {resp2}")
         except rospy.ServiceException as e:
             print(f"Service call failed: {e}")
+            rospy.signal_shutdown('Failed to initialize MRV')
 
         # Move Client HIL to initial position
         client_carriage_srv_name = f'/{self.client_carriage_name}/position_move'
@@ -168,13 +172,15 @@ class InsertionDemo:
         client_carriage_srv = rospy.ServiceProxy(client_carriage_srv_name, VentionPositionMove)
         client_arm_srv = rospy.ServiceProxy(client_arm_srv_name, JointMove)
         client_arm_target = JointMoveParams()
-        client_arm_target.joint_angles = [3.2340543270111084, -1.013890103702881, 1.2362335363971155, -0.23575575769458013, -4.647035304700033, -0.023717228566304982]
+        # client_arm_target.joint_angles = [3.2340543270111084, -1.013890103702881, 1.2362335363971155, -0.23575575769458013, -4.647035304700033, -0.023717228566304982]
+        client_arm_target.joint_angles = [3.244448184967041, -1.167282060985901, 1.7743399778949183, -0.6228822034648438, -4.635807816182272, 0.05253524333238602]
         try:
-            resp1 = client_carriage_srv([1.17])
+            resp1 = client_carriage_srv([1.24])
             resp2 = client_arm_srv(client_arm_target)
             print(f"Response: {resp1}, {resp2}")
         except rospy.ServiceException as e:
             print(f"Service call failed: {e}")
+            rospy.signal_shutdown('Failed to initialize MRV')
 
     def to_ur_base_frame(self, g_WN, is_mrv=True):
         '''Update the transform from world frame to MRV arm base frame so commands can be sent to the arm in its base frame'''
@@ -276,31 +282,6 @@ class InsertionDemo:
             if idx == len(traj):
                 break
             self.rate.sleep()
-            
-        
-        # print(f'Client target pose: {g_TB}')
-        # cont = input('Press Enter to continue...')
-        # # Call the client arm service to move to the target pose
-        # client_arm_srv_name = f'/{self.client_arm_name}/move'
-        # rospy.wait_for_service(client_arm_srv_name)
-        # client_arm_srv = rospy.ServiceProxy(client_arm_srv_name, PositionMove)
-        # client_arm_target = Move()
-        # client_arm_target_pose = Pose()
-        # client_arm_target_pose.position.x, client_arm_target_pose.position.y, client_arm_target_pose.position.z = g_TB[:3, 3]
-        # r = R.from_matrix(g_TB[:3, :3])
-        # client_arm_target_pose.orientation.x, client_arm_target_pose.orientation.y, client_arm_target_pose.orientation.z, client_arm_target_pose.orientation.w = r.as_quat()
-        
-        # client_arm_target.pose = client_arm_target_pose
-        # print(f'Client target pose: {client_arm_target_pose}')
-        # print(type(client_arm_target_pose))
-        # client_arm_target.velocity = 0.1
-        # client_arm_target.acceleration = 0.5
-        # client_arm_target.blend = 0
-        # try:
-        #     resp = client_arm_srv([client_arm_target])
-        #     print(f"Response: {resp}")
-        # except rospy.ServiceException as e:
-        #     print(f"Service call failed: {e}")\
 
     def interpolate_poses(self, pose1, pose2):
         '''Interpolate between two poses'''
@@ -342,22 +323,39 @@ class InsertionDemo:
         except rospy.ServiceException as e:
             print(f"Service call to {srv_name2} failed: {e}")
 
+    def move_peg_out_of_hole(self):
+        srv_name = f'/{self.mrv_carriage_name}/position_move'
+        rospy.wait_for_service(srv_name)
+        try:
+            position_move = rospy.ServiceProxy(srv_name, VentionPositionMove)
+            response = position_move([self.mrv_hil_js.position[0] - 0.4])
+            print(f"Service call to {srv_name} succeeded")
+            print(f"Response: {response}")
+        except rospy.ServiceException as e:
+            print(f"Service call to {srv_name} failed: {e}")
+
+        try:
+            stop = rospy.ServiceProxy(f'/{self.mrv_arm_name}/stop', Trigger)
+            response = stop()
+            print(f"Service call to stop succeeded")
+            print(f"Response: {response}")
+        except rospy.ServiceException as e:
+            print(f"Service call to stop failed: {e}")
+
     def run(self):
         trj_idx = 0 # where in the pose trajectory to start from
-        self.initialize_hil()
-        self.calibrate_hil_sim_transform(trj_idx)
-        self.align_client_hil(trj_idx)
-        rospy.sleep(10)
-        print('done')
-        self.call_position_servo()
         while not rospy.is_shutdown():
-            # self.initialize_hil()
+            self.initialize_hil()
+            rospy.logwarn('HIL initialized. Calibrating HIL-Sim transform...')
+            self.calibrate_hil_sim_transform(trj_idx)
+            rospy.logwarn('Calibration complete. Aligning Client HIL...')
+            self.align_client_hil(trj_idx)
+            rospy.logwarn('Client HIL aligned. Starting trajectory...')
+            rospy.sleep(5)
+            self.call_position_servo()
+            rospy.logwarn('Servo called. Moving to start position...')
             for i in range(len(self.mrv_ee_pos_trj[trj_idx:])):
                 self.update_actual_transform()
-
-                # print('pos_difference:', self.mrv_ee_pos_trj[trj_idx + i] - self.client_ee_pos_trj[trj_idx + i])
-                # rospy.sleep(0.1)
-
                 # Update MRV HIL target transform
                 mrv_sim_pose = np.eye(4)
                 mrv_sim_pose[:3, 3] = self.mrv_ee_pos_trj[trj_idx + i]
@@ -393,7 +391,10 @@ class InsertionDemo:
                 self._tf_broadcaster.sendTransform(self.client_ur_target_transform)
 
                 self.rate.sleep()
-            rospy.signal_shutdown('End of trajectory')
+            self.move_peg_out_of_hole()
+            print('Trajectory complete. Moving peg out of hole...')
+            rospy.sleep(5)
+            
 
 if __name__ == "__main__":
     try:
