@@ -184,8 +184,8 @@ class HILRunner(object):
     self.visualize_while_simulating = True
 
     '''Rotation matrix and vector with world frame of software in bottom right, world frame of hardware in top left'''
-    self.rmat_w_hb = None
-    self.t_w_hb = None
+    self.rmat_sw_hw = None
+    self.t_sw_hw = None
 
   def ur_velocity_mode(self, ur_name, acc):
       # Put the specified arm into velocity servo mode
@@ -709,19 +709,19 @@ class HILRunner(object):
     self.ft_compensated_trj = []
 
   def get_des_peg_and_nozzle_kinematics(self, sw_peg_pos, sw_peg_rmat, sw_peg_twist, sw_nozzle_pos, sw_nozzle_rmat, sw_nozzle_twist):
-    rmat_w_hb = self.rmat_w_hb
-    t_w_hb = self.t_w_hb
-    hw_peg_pos_d = rmat_w_hb@sw_peg_pos + t_w_hb
-    hw_peg_rmat_d = rmat_w_hb@sw_peg_rmat
+    rmat_sw_hw = self.rmat_sw_hw
+    t_sw_hw = self.t_sw_hw 
+    hw_peg_pos_d = rmat_sw_hw@sw_peg_pos + t_sw_hw
+    hw_peg_rmat_d = rmat_sw_hw@sw_peg_rmat
     hw_peg_twist_d = np.zeros(6)
-    hw_peg_twist_d[:3] = rmat_w_hb@sw_peg_twist[:3]
-    hw_peg_twist_d[3:] = rmat_w_hb@sw_peg_twist[3:]
+    hw_peg_twist_d[:3] = rmat_sw_hw@sw_peg_twist[:3]
+    hw_peg_twist_d[3:] = rmat_sw_hw@sw_peg_twist[3:]
 
-    hw_nozzle_pos_d = rmat_w_hb@sw_nozzle_pos + t_w_hb
-    hw_nozzle_rmat_d = rmat_w_hb@sw_nozzle_rmat
+    hw_nozzle_pos_d = rmat_sw_hw@sw_nozzle_pos + t_sw_hw
+    hw_nozzle_rmat_d = rmat_sw_hw@sw_nozzle_rmat
     hw_nozzle_twist_d = np.zeros(6)
-    hw_nozzle_twist_d[:3] = rmat_w_hb@sw_nozzle_twist[:3]
-    hw_nozzle_twist_d[3:] = rmat_w_hb@sw_nozzle_twist[3:]
+    hw_nozzle_twist_d[:3] = rmat_sw_hw@sw_nozzle_twist[:3]
+    hw_nozzle_twist_d[3:] = rmat_sw_hw@sw_nozzle_twist[3:]
 
     return hw_peg_pos_d, \
            hw_peg_rmat_d, \
@@ -752,11 +752,10 @@ class HILRunner(object):
 
     self.calibrate_ft_bias() 
     
-    # TODO: @Ye Jin, I think this is the work you did with the transformation matrices that 
-    # will need to be updated now to work with the holodeck URDFs
+    # TODO: This is thw sw_hw transformation that is constant. It should be calculated once and stored
     # Now that the arms are in their home configuraiton, determine the position and rotation of the hardware base with respect to the world frame
-    self.rmat_w_hb = pin_data.oMf[nozzle_fid].rotation@sw_nozzle_rmat.transpose()
-    self.t_w_hb = pin_data.oMf[nozzle_fid].translation - self.rmat_w_hb@sw_nozzle_pos
+    self.rmat_sw_hw = pin_data.oMf[nozzle_fid].rotation@sw_nozzle_rmat.transpose()
+    self.t_sw_hw = pin_data.oMf[nozzle_fid].translation - self.rmat_sw_hw@sw_nozzle_pos
 
     hw_peg_pos_d, \
     hw_peg_rmat_d, \
@@ -784,6 +783,9 @@ class HILRunner(object):
 
     x = np.concatenate((q, v))
 
+    # TODO: References hb conflate the world frame with the hardware base frame. This is incorrect for our new setup. We 
+    # need to track this down wherever itt occures referencing back to the peg_in_hole code and making sure that 
+    # our HIL runner is consistent with the new setup
     pin.forwardKinematics(pin_model, pin_data, q)
     pin.updateFramePlacement(pin_model, pin_data, peg_fid)
     pin.updateFramePlacement(pin_model, pin_data, nozzle_fid)
@@ -799,6 +801,8 @@ class HILRunner(object):
       mrv_arm_barrier_pos = nozzle_pos - nozzle_rmat[:, 2]*self.ur_barrier_dist
       client_arm_barrier_pos = t_peg_hb + rmat_peg_hb[:, 2]*self.ur_barrier_dist
 
+
+    # TODO: Pretty sure that this should be a +7 instead of a +6 becuase its the full state vector
     if controller == self.mrv_arm_init_controller:
         v_cmd = controller.get_vel_cmd(x, \
                                      pos_d, \
