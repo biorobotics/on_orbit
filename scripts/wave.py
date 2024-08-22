@@ -26,6 +26,8 @@ class WaveDemo:
         self.ur = 'UR2'
         self.carriage = f'vention{self.ur[-1]}'
 
+        self.shutdown_flag = False
+
         rospy.on_shutdown(self.shutdown)
         
         
@@ -65,22 +67,25 @@ class WaveDemo:
         # rospy.sleep(4)
 
         while not rospy.is_shutdown():
-            ur_arm_target.joint_angles = [3.7816660404205322, -1.143493877058365, 1.486244026814596, -0.9283094567111512, -0.3560064474688929, 0.007391524501144886]
-            try:
-                resp = arm_srv(ur_arm_target)
-                print(f'Arm move response: {resp}')
-            except rospy.ServiceException as e:
-                print(f'Service call failed: {e}')
+                if not self.shutdown_flag:
+                    ur_arm_target.joint_angles = [3.7816660404205322, -1.143493877058365, 1.486244026814596, -0.9283094567111512, -0.3560064474688929, 0.007391524501144886]
+                    try:
+                        resp = arm_srv(ur_arm_target)
+                        print(f'Arm move response: {resp}')
+                    except rospy.ServiceException as e:
+                        print(f'Service call failed: {e}')
 
-            ur_arm_target.joint_angles = [3.6493163108825684, -1.0521329206279297, 1.4845383802997034, -0.9167767328074952, 1.3223192691802979, 0.008949661627411842]
-            try:
-                resp = arm_srv(ur_arm_target)
-                print(f'Arm move response: {resp}')
-            except rospy.ServiceException as e:
-                print(f'Service call failed: {e}')
+                if not self.shutdown_flag:
+                    ur_arm_target.joint_angles = [3.6493163108825684, -1.0521329206279297, 1.4845383802997034, -0.9167767328074952, 1.3223192691802979, 0.008949661627411842]
+                    try:
+                        resp = arm_srv(ur_arm_target)
+                        print(f'Arm move response: {resp}')
+                    except rospy.ServiceException as e:
+                        print(f'Service call failed: {e}')
 
     def shutdown(self):
         rospy.loginfo('Shutting down wave demo')
+        self.shutdown_flag = True
         ur_arm_target = JointMoveParams()
         carriage_srv_name = f'/{self.carriage}/position_move'
         arm_srv_name = f'/{self.ur}/joint_move'
