@@ -34,6 +34,11 @@ class InsertionDemo:
         self.client_hil_js = JointState()
         self.client_hil_js.position = np.zeros(7)
 
+        self.mrv_ur_state = str()
+        self.client_ur_state = str()
+        self.mrv_carriage_state = str()
+        self.client_carriage_state = str()
+
         # ROS Publishers, Subscribers, and Services
         self.mrv_arm_pub = rospy.Publisher(f'/{self.mrv_arm_name}/joint_velocity', Float32MultiArray, queue_size=1)
         self.client_arm_pub = rospy.Publisher(f'/{self.client_arm_name}/joint_velocity', Float32MultiArray, queue_size=1)
@@ -43,6 +48,10 @@ class InsertionDemo:
         self.client_arm_js_sub = rospy.Subscriber(f'/{self.client_arm_name}/joint_states', JointState, self.client_arm_js_callback)
         self.mrv_arm_js_sub = rospy.Subscriber(f'/{self.mrv_carriage_name}/joint_state', JointState, self.mrv_carriage_js_callback)
         self.client_arm_js_sub = rospy.Subscriber(f'/{self.client_carriage_name}/joint_state', JointState, self.client_carriage_js_callback)
+        self.mrv_ur_state_sub = rospy.Subscriber(f'/{self.mrv_carriage_name}/state', Float32MultiArray, self.mrv_ur_state_callback)
+        self.client_ur_state_sub = rospy.Subscriber(f'/{self.client_carriage_name}/state', Float32MultiArray, self.client_ur_state_callback)
+        self.mrv_carriage_state_sub = rospy.Subscriber(f'/{self.mrv_carriage_name}/state', Float32, self.mrv_carriage_state_callback)
+        self.client_carriage_state_sub = rospy.Subscriber(f'/{self.client_carriage_name}/state', Float32, self.client_carriage_state_callback)
 
         # TF Initialization
         self._tf_buffer = tf.Buffer()
@@ -134,6 +143,18 @@ class InsertionDemo:
         self.client_hil_js.position[0] = data.position[0]
         self.client_hil_js.velocity[0] = data.velocity[0]
 
+    def mrv_ur_state_callback(self, data):
+        self.mrv_ur_state = data.data
+
+    def client_ur_state_callback(self, data):
+        self.client_ur_state = data.data
+    
+    def mrv_carriage_state_callback(self, data):
+        self.mrv_carriage_state = data.data
+    
+    def client_carriage_state_callback(self, data):
+        self.client_carriage_state = data.data
+        
     def update_actual_transform(self):
         try:
             with self._actual_transform_lock:
@@ -263,7 +284,7 @@ class InsertionDemo:
                                             self.client_ur_actual_transform.transform.rotation.w]).as_matrix()
         traj = self.interpolate_poses(current_pose, g_TB)
         
-        cont = input('Press Enter to continue...')
+        # cont = input('Press Enter to continue...')
         self.call_position_servo()
         print('send it')
         idx = 0
@@ -285,7 +306,7 @@ class InsertionDemo:
 
     def interpolate_poses(self, pose1, pose2):
         '''Interpolate between two poses'''
-        traj = rtb.tools.trajectory.ctraj(SE3(pose1), SE3(pose2), 100)
+        traj = rtb.tools.trajectory.ctraj(SE3(pose1), SE3(pose2), 150)
         return traj
 
     def call_position_servo(self):
@@ -346,14 +367,16 @@ class InsertionDemo:
         trj_idx = 0 # where in the pose trajectory to start from
         while not rospy.is_shutdown():
             self.initialize_hil()
+            while self.mrv_ur_state != 'IDLE' or self.client_ur_state != 'IDLE' or self.mrv_carriage_state != 'READY_TO_MOVE' or self.client_carriage_state != 'READY_TO_MOVE':
+                rospy.sleep(0.1)
             rospy.logwarn('HIL initialized. Calibrating HIL-Sim transform...')
             self.calibrate_hil_sim_transform(trj_idx)
             rospy.logwarn('Calibration complete. Aligning Client HIL...')
             self.align_client_hil(trj_idx)
-            rospy.logwarn('Client HIL aligned. Starting trajectory...')
-            rospy.sleep(5)
-            self.call_position_servo()
-            rospy.logwarn('Servo called. Moving to start position...')
+            rospy.logwarn('Client HIL aligned.')
+            rospy.sleep(1)
+            # self.call_position_servo()
+            rospy.logwarn('Servo called. Starying insetion trajectory...')
             for i in range(len(self.mrv_ee_pos_trj[trj_idx:])):
                 self.update_actual_transform()
                 # Update MRV HIL target transform
