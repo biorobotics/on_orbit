@@ -1,0 +1,151 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="FREND">
+  <xacro:arg name="prefix" default=""/>
+  <xacro:include filename="./sim_tube_geom.xacro"/>
+  <xacro:include filename="./sim_nozzle_geom.xacro"/>
+  <xacro:property name="mass_scale" value="1" />
+  <xacro:property name="rval" value="0.7"/>
+  <xacro:property name="gval" value="0.7"/>
+  <xacro:property name="bval" value="0.7"/>
+
+  <link name="$(arg prefix)client">
+    <visual>
+      <origin rpy="0 0 0" xyz="-0.048 -0.048 -1.9897"/>
+      <geometry>
+        <mesh filename="package://on_orbit/urdf/simulation/meshes/cv_assembly.stl" scale="1 1 1"/>
+      </geometry>
+      <material name="transparent_gray">
+        <color rgba="${rval} ${gval} ${bval} 0.5"/>
+      </material>
+    </visual>
+    <inertial>
+      <mass value="${1050*mass_scale}"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>     
+      <inertia ixx="${1792.419738*mass_scale}" ixy="0" ixz="0"
+               iyy="${2015.632675*mass_scale}" iyz="0" izz="${630.7312375*mass_scale}"/>
+    </inertial>
+  </link>
+
+  <joint name="$(arg prefix)client_to_nozzle" type="fixed">
+    <parent link="$(arg prefix)client"/>
+    <child link="$(arg prefix)nozzle"/>
+    <origin rpy="0 0 0" xyz="0 0 -1.9897"/>
+  </joint>
+
+  <link name="$(arg prefix)nozzle">
+    <inertial>
+      <mass value="0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>        
+      <inertia ixx="0" ixy="0" ixz="0"
+               iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="$(arg prefix)nozzle_to_capture_box" type="fixed">
+    <parent link="$(arg prefix)nozzle"/>
+    <child link="$(arg prefix)capture_box"/>
+    <origin rpy="0 0 0" xyz="0 0 -0.451674428"/>
+  </joint>
+
+  <link name="$(arg prefix)capture_box">
+  <!--<visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.2 0.2 0.10"/>
+      </geometry>
+      <material name="transparent_gray">
+        <color rgba="${rval} ${gval} ${bval} 0.0"/>
+      </material>
+    </visual>-->
+    <inertial>
+      <mass value="0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>        
+      <inertia ixx="0" ixy="0" ixz="0"
+               iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+
+  <link name="$(arg prefix)cone_vertex">
+    <inertial>
+      <mass value="0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>        
+      <inertia ixx="0" ixy="0" ixz="0"
+               iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="$(arg prefix)nozzle_to_cone_vertex" type="fixed">
+    <parent link="$(arg prefix)nozzle"/>
+    <child link="$(arg prefix)cone_vertex"/>
+    <origin rpy="0 0 0" xyz="0 0 0.0748"/>
+  </joint>
+
+  <link name="$(arg prefix)hole">
+    <inertial>
+      <mass value="0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>        
+      <inertia ixx="0" ixy="0" ixz="0"
+               iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="$(arg prefix)nozzle_to_hole" type="fixed">
+    <parent link="$(arg prefix)nozzle"/>
+    <child link="$(arg prefix)hole"/>
+    <origin rpy="0 0 0" xyz="0 0 0.0675"/>
+  </joint>
+
+  <link name="$(arg prefix)goal">
+    <inertial>
+      <mass value="0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>        
+      <inertia ixx="0" ixy="0" ixz="0"
+               iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="$(arg prefix)nozzle_to_goal" type="fixed">
+    <parent link="$(arg prefix)nozzle"/>
+    <child link="$(arg prefix)goal"/>
+    <origin rpy="0 0 0" xyz="0 0 0.110"/> 
+  </joint>
+
+  <link name="$(arg prefix)hole_end">
+      <inertial>
+      <mass value="0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>        
+      <inertia ixx="0" ixy="0" ixz="0"
+               iyy="0" iyz="0" izz="0"/>
+    </inertial>
+        <collision>
+        <origin rpy="0 0 0" xyz="0 0 0.5"/>
+        <geometry>
+          <box size="1 1 1"/>
+        </geometry>
+      </collision>
+  </link>
+
+  <joint name="$(arg prefix)nozzle_to_hole_end" type="fixed">
+    <parent link="$(arg prefix)nozzle"/>
+    <child link="$(arg prefix)hole_end"/>
+    <origin rpy="0 0 0" xyz="0 0 0.112"/>
+  </joint>
+
+  <xacro:tube_geom num="0" theta="0" prefix="$(arg prefix)"/>
+  <xacro:tube_geom num="1" theta="${pi/4}" prefix="$(arg prefix)"/>
+  <xacro:tube_geom num="2" theta="${pi/2}" prefix="$(arg prefix)"/>
+  <xacro:tube_geom num="3" theta="${3*pi/4}" prefix="$(arg prefix)"/>
+  <xacro:tube_geom num="4" theta="${pi}" prefix="$(arg prefix)"/>
+  <xacro:tube_geom num="5" theta="${5*pi/4}" prefix="$(arg prefix)"/>
+  <xacro:tube_geom num="6" theta="${3*pi/2}" prefix="$(arg prefix)"/>
+  <xacro:tube_geom num="7" theta="${7*pi/4}" prefix="$(arg prefix)"/>
+
+  <xacro:nozzle_geom num="0" theta="0" prefix="$(arg prefix)"/>
+  <xacro:nozzle_geom num="1" theta="${pi/4}" prefix="$(arg prefix)"/>
+  <xacro:nozzle_geom num="2" theta="${pi/2}" prefix="$(arg prefix)"/>
+  <xacro:nozzle_geom num="3" theta="${3*pi/4}" prefix="$(arg prefix)"/>
+  <xacro:nozzle_geom num="4" theta="${pi}" prefix="$(arg prefix)"/>
+  <xacro:nozzle_geom num="5" theta="${5*pi/4}" prefix="$(arg prefix)"/>
+  <xacro:nozzle_geom num="6" theta="${3*pi/2}" prefix="$(arg prefix)"/>
+  <xacro:nozzle_geom num="7" theta="${7*pi/4}" prefix="$(arg prefix)"/>
+</robot>

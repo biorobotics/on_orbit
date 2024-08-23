@@ -1,0 +1,13 @@
+<launch>
+
+  <arg name="model" />
+  <arg name="rvizconfig" default="$(find on_orbit)/rviz/holodeck.rviz" />
+  <arg name="config_file" default="$(find on_orbit)/config/holo_params/holo_joints.yaml" />
+
+  <param name="robot_description" command="xacro $(find on_orbit)/urdf/hardware/holodeck.xacro" />
+
+  <node name="joint_state_publisher_gui" pkg="joint_state_publisher_gui" type="joint_state_publisher_gui" />
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" />
+
+</launch>

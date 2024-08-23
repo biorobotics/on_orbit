@@ -1,0 +1,451 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="FREND">
+  <xacro:arg name="prefix" default=""/>
+  <xacro:property name="mass_scale" value="1" />
+  <xacro:property name="rval" value="0.7"/>
+  <xacro:property name="gval" value="0.7"/>
+  <xacro:property name="bval" value="0.7"/>
+
+  <mujoco>
+    <compiler fusestatic="false" inertiafromgeom="false" />
+  </mujoco>
+
+    <!-- Base link is referred to as "MRV in NG's docs"-->
+  <link name="$(arg prefix)base_link">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="2.068 2.372 3.975"/>
+      </geometry>
+      <material name="transparent_gray">
+        <color rgba="${rval} ${gval} ${bval} 0.5"/>
+      </material>
+    </visual>
+    <inertial>
+      <mass value="${4469*mass_scale}"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>        
+      <inertia ixx="${7979.775268*mass_scale}" ixy="0" ixz="0"
+               iyy="${7477.102148*mass_scale}" iyz="0" izz="${3688.045229*mass_scale}"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="2.068 2.372 3.975"/>
+      </geometry>
+    </collision>
+  </link>
+
+    <!-- Joint/Link 0-->
+  <joint name="$(arg prefix)joint0" type="fixed">
+  <parent link="$(arg prefix)base_link"/>
+    <child link="$(arg prefix)link0"/>
+    <origin rpy="0 0 1.047196667" xyz="0.3182 -0.3182 1.9875"/>
+  </joint>
+
+  <link name="$(arg prefix)link0">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0.0894"/>
+      <geometry>
+        <cylinder length="0.178765" radius="0.1"/> <!-- We make link0 half the length of D1 in NG's doc.-->
+      </geometry>
+      <material name="black">
+        <color rgba="${rval} ${gval} ${bval} 1"/>
+      </material>
+    </visual>
+    <inertial>
+      <mass value="${15.8469*mass_scale}"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <inertia ixx="${0.089080800*mass_scale}" ixy="0" ixz="0"
+               iyy="${0.089080800*mass_scale}" iyz="0" izz="${0.07923450*mass_scale}"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0.0894"/>
+      <geometry>
+        <cylinder length="0.178765" radius="0.1"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- Joint/Link 1-->
+  <joint name="$(arg prefix)joint1" type="revolute">
+  <parent link="$(arg prefix)link0"/>
+    <child link="$(arg prefix)link1"/>
+    <origin rpy="0 0 0" xyz="0 0 0.178765"/>
+    <axis xyz="0 0 1"/>
+    <dynamics damping="0" friction="0"/>
+    <limit effort="150.0" lower="-2.792526803" upper="2.792526803" velocity="0.06981317008"/>
+  </joint>
+
+  <link name="$(arg prefix)link1">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0.0894"/>
+      <geometry>
+        <cylinder length="0.178765" radius="0.045"/>
+      </geometry>
+      <material name="black">
+        <color rgba="${rval} ${gval} ${bval} 1"/>
+      </material>
+    </visual>
+    <inertial>
+      <mass value="${21.4021*mass_scale}"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <inertia ixx="${0.07836099*mass_scale}" ixy="0" ixz="0"
+               iyy="${0.07836099*mass_scale}" iyz="0" izz="${0.02675263*mass_scale}"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0.0894"/>
+      <geometry>
+        <cylinder length="0.178765" radius="0.045"/>
+      </geometry>
+    </collision>
+  </link>
+
+ <!-- Joint/Link 2-->
+  <joint name="$(arg prefix)joint2" type="revolute">
+  <parent link="$(arg prefix)link1"/>
+    <child link="$(arg prefix)link2"/>
+    <origin rpy="1.5707963267948966 0 0" xyz="0 0 0.178765"/>
+    <axis xyz="0 0 1"/>
+    <dynamics damping="0" friction="0"/>
+    <limit effort="150.0" lower="-1.745329252" upper="1.745329252" velocity="0.06981317008"/>
+  </joint>
+
+    <link name="$(arg prefix)link2">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0.12954"/>
+      <geometry>
+        <cylinder length="0.15908" radius="0.045"/>
+      </geometry>
+      <material name="black">
+        <color rgba="${rval} ${gval} ${bval} 1"/>
+      </material>
+    </visual>
+    <inertial>
+      <mass value="${16.5794*mass_scale}"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <inertia ixx="${0.11988023*mass_scale}" ixy="0" ixz="0"
+               iyy="${0.11988023*mass_scale}" iyz="0" izz="${0.02072425*mass_scale}"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0.12954"/>
+      <geometry>
+        <cylinder length="0.15908" radius="0.045"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- Joint/Link 3-->
+  <joint name="$(arg prefix)joint3" type="revolute">
+  <parent link="$(arg prefix)link2"/>
+    <child link="$(arg prefix)link3"/>
+    <origin rpy="-1.5707963267948966 0 0" xyz="0 0 0.25908"/>
+    <axis xyz="0 0 1"/>
+    <dynamics damping="0" friction="0"/>
+    <limit effort="150.0" lower="-2.967059728" upper="2.565634" velocity="0.1047197551"/>
+  </joint>
+
+    <link name="$(arg prefix)link3">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0.45"/>
+      <geometry>
+        <cylinder length="0.8" radius="0.045"/>
+      </geometry>
+      <material name="black">
+        <color rgba="${rval} ${gval} ${bval} 1"/>
+      </material>
+    </visual>
+    <inertial>
+      <mass value="${18.0461*mass_scale}"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <inertia ixx="${1.43189056*mass_scale}" ixy="0" ixz="0"
+               iyy="${1.43189056*mass_scale}" iyz="0" izz="${0.0255763*mass_scale}"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0.45"/>
+      <geometry>
+        <cylinder length="0.8" radius="0.045"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- Joint/Link 4-->
+  <joint name="$(arg prefix)joint4" type="revolute">
+  <parent link="$(arg prefix)link3"/>
+    <child link="$(arg prefix)link4"/>
+    <origin rpy="1.5707963267948966 0 0" xyz="0 0 0.9"/>
+    <axis xyz="0 0 1"/>
+    <dynamics damping="0" friction="0"/>
+    <limit effort="150.0" lower="-2.967059728" upper="2.617993878" velocity="0.1047197551"/>
+  </joint>
+
+  <link name="$(arg prefix)link4">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 -0.111125"/>
+      <geometry>
+        <cylinder length="0.12225" radius="0.045"/>
+      </geometry>
+      <material name="black">
+        <color rgba="${rval} ${gval} ${bval} 1"/>
+      </material>
+    </visual>
+    <inertial>
+      <mass value="${9.7351*mass_scale}"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>    
+      <inertia ixx="${0.05850536*mass_scale}" ixy="0" ixz="0"
+               iyy="${0.05850536*mass_scale}" iyz="0" izz="${0.01216888*mass_scale}"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 -0.111125"/>
+      <geometry>
+        <cylinder length="0.12225" radius="0.045"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- Joint/Link 5-->
+  <joint name="$(arg prefix)joint5" type="revolute">
+  <parent link="$(arg prefix)link4"/>
+    <child link="$(arg prefix)link5"/>
+    <origin rpy="-1.5707963267948966 0 0" xyz="0 0 -0.22225"/>
+    <axis xyz="0 0 1"/>
+    <dynamics damping="0" friction="0"/>
+    <limit effort="150.0" lower="-4.36332313" upper="2.617993878" velocity="0.1221730476"/>
+  </joint>
+
+  <link name="$(arg prefix)link5">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0.450085"/>
+      <geometry>
+        <cylinder length="0.8017" radius="0.045"/>
+      </geometry>
+      <material name="black">
+        <color rgba="${rval} ${gval} ${bval} 1"/>
+      </material>
+    </visual>
+    <inertial>
+      <mass value="${7.7539*mass_scale}"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>      
+      <inertia ixx="${0.73100869*mass_scale}" ixy="0" ixz="0"
+               iyy="${0.73100869*mass_scale}" iyz="0" izz="${0.00969238*mass_scale}"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0.4500"/>
+      <geometry>
+        <cylinder length="0.8017" radius="0.045"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- Joint/Link 6-->
+  <joint name="$(arg prefix)joint6" type="revolute">
+  <parent link="$(arg prefix)link5"/>
+    <child link="$(arg prefix)link6"/>
+    <origin rpy="1.5707963267948966 0 0" xyz="0 0 0.90017"/>
+    <axis xyz="0 0 1"/>
+    <dynamics damping="0" friction="0"/>
+    <limit effort="150.0" lower="-1.919862177" upper="1.919862177" velocity="0.1221730476"/>
+  </joint>
+
+  <link name="$(arg prefix)link6">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <sphere radius="0.045"/>
+      </geometry>
+      <material name="black">
+        <color rgba="${rval} ${gval} ${bval} 1"/>
+      </material>
+    </visual>
+    <inertial>
+      <mass value="${5.5820*mass_scale}"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>      
+      <inertia ixx="${0.01064042*mass_scale}" ixy="0" ixz="0"
+               iyy="${0.01064042*mass_scale}" iyz="0" izz="${0.00697750*mass_scale}"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <sphere radius="0.045"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!--Joint/Link 7-->
+  <joint name="$(arg prefix)joint7" type="revolute">
+  <parent link="$(arg prefix)link6"/>
+    <child link="$(arg prefix)link7"/>
+    <origin rpy="-1.5707963267948966 0 0" xyz="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <dynamics damping="0" friction="0"/>
+    <limit effort="150.0" lower="-4.310963252" upper="1.169370599" velocity="0.12217304762"/>
+  </joint>
+
+  <link name="$(arg prefix)link7">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0.20395"/>
+      <geometry>
+        <cylinder length="0.3079" radius="0.045"/>
+      </geometry>
+      <material name="black">
+        <color rgba="${rval} ${gval} ${bval} 1"/>
+      </material>
+    </visual>
+    <inertial>
+      <mass value="${5.2186*mass_scale}"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>      
+      <inertia ixx="${0.11721416*mass_scale}" ixy="0" ixz="0"
+               iyy="${0.11721416*mass_scale}" iyz="0" izz="${0.00652325*mass_scale}"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0.20395"/>
+      <geometry>
+        <cylinder length="0.3079" radius="0.045"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- Wrist joint -->
+  <joint name="$(arg prefix)wrist_joint" type="fixed">
+  <parent link="$(arg prefix)link7"/>
+    <child link="$(arg prefix)wrist"/>
+    <origin rpy="0 0 0" xyz="0 0 0.2979"/>
+  </joint>
+
+  <link name="$(arg prefix)wrist">
+      <inertial>
+      <mass value="0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>        
+      <inertia ixx="0" ixy="0" ixz="0"
+               iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+
+  <!-- MEP offset and MEP link-->
+  <!-- MEP is attached in parallel with wrist-->
+  <joint name="$(arg prefix)mep_offset" type="fixed">
+  <parent link="$(arg prefix)link7"/>
+    <child link="$(arg prefix)ee_body"/>
+    <origin rpy="0 -0.261799167 -1.570795" xyz="0.376 -0.170 0.5009"/>
+  </joint>
+
+  <link name="$(arg prefix)ee_body">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0.759"/>
+      <geometry>
+        <box size="0.66 0.967 1.518"/>
+      </geometry>
+      <material name="black">
+        <color rgba="${rval} ${gval} ${bval} 1"/>
+      </material>
+    </visual>
+    <inertial>
+      <mass value="${411*mass_scale}"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>     
+      <inertia ixx="${347.7191863*mass_scale}" ixy="0" ixz="0"
+               iyy="${330.611688*mass_scale}" iyz="0" izz="${46.946098253*mass_scale}"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0.759"/>
+      <geometry>
+        <box size="0.66 0.967 1.518"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- EE CoM -->
+  <joint name="$(arg prefix)ee_com_joint" type="fixed">
+  <parent link="$(arg prefix)ee_body"/>
+    <child link="$(arg prefix)ee_com"/>
+    <origin rpy="0 0 0" xyz="0 0 0.4675"/>     
+  </joint>
+
+  <link name="$(arg prefix)ee_com">
+    <inertial>
+      <mass value="0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>        
+      <inertia ixx="0" ixy="0" ixz="0"
+               iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+
+  <!-- EE peg -->
+  <joint name="$(arg prefix)ee_peg_joint" type="fixed">
+  <parent link="$(arg prefix)ee_body"/>
+    <child link="$(arg prefix)ee_peg"/>
+    <origin rpy="0 0 0" xyz="0 0 1.1101"/>
+  </joint>
+
+  <link name="$(arg prefix)ee_peg">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0.36"/>
+      <geometry>
+        <cylinder length="0.72" radius="0.008"/> 
+      </geometry>
+      <material name="white">
+        <color rgba="${rval} ${gval} ${bval} 1"/>
+      </material>
+    </visual>
+    <inertial>
+      <mass value="${10*mass_scale}"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>     
+      <inertia ixx="${1.1101*mass_scale}" ixy="0" ixz="0"
+               iyy="${1.1101*mass_scale}" iyz="0" izz="${0.0125*mass_scale}"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0.36"/>
+      <geometry>
+        <cylinder length="0.72" radius="0.008"/> 
+      </geometry>
+    </collision>
+  </link>
+
+ <!-- Peg center-->
+  <joint name="$(arg prefix)peg_center_joint" type="fixed">
+  <parent link="$(arg prefix)ee_peg"/>
+    <child link="$(arg prefix)peg_center"/>
+    <origin rpy="0 0 0" xyz="0 0 0.36"/>
+  </joint>
+
+  <link name="$(arg prefix)peg_center">
+  <inertial>
+      <mass value="0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>        
+      <inertia ixx="0" ixy="0" ixz="0"
+               iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+
+  <!-- EE Tip-->
+  <joint name="$(arg prefix)ee_tip_joint" type="fixed">
+  <parent link="$(arg prefix)ee_peg"/>
+    <child link="$(arg prefix)ee_tip"/>
+    <origin rpy="0 0 0" xyz="0 0 0.72"/>
+  </joint>
+
+    <link name="$(arg prefix)ee_tip">
+    <inertial>
+      <mass value="0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>        
+      <inertia ixx="0" ixy="0" ixz="0"
+               iyy="0" iyz="0" izz="0"/>
+    </inertial>
+    
+  </link>
+
+  <!-- Cam link-->
+  <joint name="$(arg prefix)cam_joint" type="fixed">
+  <parent link="$(arg prefix)base_link"/>
+    <child link="$(arg prefix)cam_link"/>
+    <origin rpy="0 0 0" xyz="0.889 0.548 1.953"/>
+  </joint>
+
+  <link name="$(arg prefix)cam_link">
+    <inertial>
+      <mass value="0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>        
+      <inertia ixx="0" ixy="0" ixz="0"
+               iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+
+</robot>

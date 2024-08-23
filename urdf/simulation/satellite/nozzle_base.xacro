@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:property name="nozzle_base_fixture_length" value="0.0095" />
+  <xacro:property name="nozzle_base_fixture_diameter" value="0.06" />
+  <xacro:macro name="nozzle_base" params=""> 
+  <link name="nozzle_base">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <cylinder radius="${nozzle_base_fixture_diameter/2}" length="${nozzle_base_fixture_length}"/>
+      </geometry>
+      <material name="white">
+        <color rgba="1.0 1.0 1.0 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <cylinder radius="${nozzle_base_fixture_diameter/2}" length="${nozzle_base_fixture_length}"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="ur5e_tool0_to_nozzle_base_fixture" type="fixed">
+    <parent link="ur5e_tool0"/>
+    <child link="nozzle_base"/>
+    <origin rpy="0 0 0" xyz="0 0 ${nozzle_base_fixture_length/2}"/>
+  </joint>
+  </xacro:macro>
+</robot>

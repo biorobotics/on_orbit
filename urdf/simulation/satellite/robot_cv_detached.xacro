@@ -1,0 +1,25 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="FREND">
+  <xacro:include filename="./robot.xacro"/>
+  <xacro:include filename="./cv.xacro"/>
+
+  <link name="world">
+      <inertial>
+      <mass value="0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>        
+      <inertia ixx="0" ixy="0" ixz="0"
+               iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="$(arg prefix)world_to_client" type="floating">
+    <parent link="world"/>
+    <child link="$(arg prefix)client"/>
+  </joint>
+
+  <joint name="$(arg prefix)world_to_base" type="floating">
+    <parent link="world"/>
+    <child link="$(arg prefix)base_link"/>
+  </joint>
+
+</robot>

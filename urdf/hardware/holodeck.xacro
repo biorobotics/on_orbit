@@ -1,0 +1,28 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="holodeck">
+
+    <!-- load macros -->
+    <xacro:include filename="$(find on_orbit)/urdf/hardware/rails/single_rail_1.xacro" />
+    <xacro:include filename="$(find on_orbit)/urdf/hardware/rails/single_rail_2.xacro" />
+
+    <link name="world" />
+        <joint name="fixed_rail_1" type="fixed">
+        <origin
+            xyz="3.0 0 0"
+            rpy="0 0 3.14159265359" />
+            <parent link="world"/>
+            <child link="rail_1" />
+        </joint>
+
+        <xacro:rail_1 />
+
+        <joint name="fixed_rail_2" type="fixed">
+        <origin
+            xyz="-2.997 0.813 0"
+            rpy="0 0 0" />
+            <parent link="world"/>
+            <child link="rail_2" />
+        </joint>
+
+        <xacro:rail_2 />
+</robot>
