@@ -287,6 +287,7 @@ class InsertionDemo:
         
         # cont = input('Press Enter to continue...')
         self.call_position_servo()
+        rospy.sleep(0.2)
         print('send it')
         idx = 0
         while not rospy.is_shutdown():
@@ -374,7 +375,7 @@ class InsertionDemo:
         trj_idx = 0 # where in the pose trajectory to start from
         while not rospy.is_shutdown():
             self.initialize_hil()
-            for i in range(100):
+            for i in range(250):
                 if (self.mrv_ur_state == 'IDLE' and self.client_ur_state == 'IDLE' and self.mrv_carriage_state == 'READY_TO_MOVE' and self.client_carriage_state == 'READY_TO_MOVE'):
                     break
                 if i == 99:
