@@ -1062,23 +1062,23 @@
   </joint>
   <link name="ur_3_ee">
     <visual>
-      <origin rpy="0 0 0" xyz="0 0 -0.1045"/>
+      <origin rpy="0 0 0" xyz="0 0 -0.0779"/>
       <geometry>
-        <cylinder length="0.209" radius="0.01505"/>
+        <cylinder length="0.1558" radius="0.0079"/>
       </geometry>
       <material name="white">
         <color rgba="1.0 1.0 1.0 1.0"/>
       </material>
     </visual>
     <collision>
-      <origin rpy="0 0 0" xyz="0 0 -0.1045"/>
+      <origin rpy="0 0 0" xyz="0 0 -0.0779"/>
       <geometry>
-        <cylinder length="0.209" radius="0.01505"/>
+        <cylinder length="0.1558" radius="0.0079"/>
       </geometry>
     </collision>
     <inertial>
-      <mass value="0.14597807959"/>
-      <origin rpy="0 0 0" xyz="0 0 0.05865593628"/>
+      <mass value="0.035"/>
+      <origin rpy="0 0 0" xyz="0 0 0.089"/>
       <inertia ixx="0" ixy="0.0" ixz="0.0" iyy="0" iyz="0.0" izz="0"/>
     </inertial>
   </link>
@@ -1086,19 +1086,19 @@
   <joint name="ur_3_ee_to_peg_center" type="fixed">
     <parent link="ur_3_ee"/>
     <child link="peg_center"/>
-    <origin rpy="0 0 0" xyz="0 0 -0.1045"/>
+    <origin rpy="0 0 0" xyz="0 0 -0.0779"/>
   </joint>
   <joint name="ur_3_tool0_to_ee" type="fixed">
     <parent link="ur_3_tool0"/>
     <child link="ur_3_ee"/>
-    <origin rpy="0 0 0" xyz="0 0 0.209"/>
+    <origin rpy="0 0 0" xyz="0 0 0.1558"/>
   </joint>
   <!-- UR16 has the FT sensor-->
   <link name="ft_sensor"/>
   <joint name="ur_3_tool0_to_ft_sensor" type="fixed">
     <parent link="ur_3_tool0"/>
     <child link="ft_sensor"/>
-    <origin rpy="0 0 -0.53996123733" xyz="0 0 0.0315"/>
+    <origin rpy="0 0 -0.53996123733" xyz="0 0 0.029"/>
   </joint>
   <!--
     Base UR robot series xacro macro.
@@ -1452,24 +1452,17 @@
     <parent link="ur_4_flange"/>
     <child link="ur_4_tool0"/>
   </joint>
-  <!-- <link name="world"/> -->
-  <!-- <joint name="world_to_ur_4_base_link" type="fixed"> -->
-  <!-- <parent link="world"/> -->
-  <!-- <child link="ur_4_base_link"/> -->
-  <!--We will need to determine true orientation of each of robot as they are at an angle-->
-  <!-- <origin rpy="0 0 0" xyz="0 -0.9948543 -0.00045865"/> -->
-  <!-- </joint> -->
   <link name="hw_goal"/>
   <joint name="ur_4_ee_to_goal" type="fixed">
     <parent link="ur_4_ee"/>
     <child link="hw_goal"/>
-    <origin rpy="0 3.141592653589793 0" xyz="0 0 0.09017557238"/>
+    <origin rpy="0 3.141592653589793 0" xyz="0 0 0.11"/>
   </joint>
   <link name="ur_4_ee"/>
   <joint name="ur_4_tool0_to_ee" type="fixed">
     <parent link="ur_4_tool0"/>
     <child link="ur_4_ee"/>
-    <origin rpy="0 3.14159 0" xyz="0 0 0.12477"/>
+    <origin rpy="0 3.14159 0" xyz="0 0 0.1194"/>
   </joint>
   <link name="nozzle_base">
     <visual>
