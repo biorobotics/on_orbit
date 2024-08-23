@@ -2,7 +2,7 @@ import rospy
 import rospkg
 import roslaunch
 import numpy as np
-from std_msgs.msg import Float32MultiArray, Float32
+from std_msgs.msg import Float32MultiArray, Float32, String
 from geometry_msgs.msg import TransformStamped, WrenchStamped, Pose
 from ur_state_machine.srv import JointMove, PositionServo, PositionMove, PositionMoveRequest
 from ur_state_machine.msg import JointMoveParams, PositionServoParams, Move
@@ -48,10 +48,10 @@ class InsertionDemo:
         self.client_arm_js_sub = rospy.Subscriber(f'/{self.client_arm_name}/joint_states', JointState, self.client_arm_js_callback)
         self.mrv_arm_js_sub = rospy.Subscriber(f'/{self.mrv_carriage_name}/joint_state', JointState, self.mrv_carriage_js_callback)
         self.client_arm_js_sub = rospy.Subscriber(f'/{self.client_carriage_name}/joint_state', JointState, self.client_carriage_js_callback)
-        self.mrv_ur_state_sub = rospy.Subscriber(f'/{self.mrv_carriage_name}/state', Float32MultiArray, self.mrv_ur_state_callback)
-        self.client_ur_state_sub = rospy.Subscriber(f'/{self.client_carriage_name}/state', Float32MultiArray, self.client_ur_state_callback)
-        self.mrv_carriage_state_sub = rospy.Subscriber(f'/{self.mrv_carriage_name}/state', Float32, self.mrv_carriage_state_callback)
-        self.client_carriage_state_sub = rospy.Subscriber(f'/{self.client_carriage_name}/state', Float32, self.client_carriage_state_callback)
+        self.mrv_ur_state_sub = rospy.Subscriber(f'/{self.mrv_arm_name}/state', String, self.mrv_ur_state_callback)
+        self.client_ur_state_sub = rospy.Subscriber(f'/{self.client_arm_name}/state', String, self.client_ur_state_callback)
+        self.mrv_carriage_state_sub = rospy.Subscriber(f'/{self.mrv_carriage_name}/state', String, self.mrv_carriage_state_callback)
+        self.client_carriage_state_sub = rospy.Subscriber(f'/{self.client_carriage_name}/state', String, self.client_carriage_state_callback)
 
         # TF Initialization
         self._tf_buffer = tf.Buffer()
@@ -93,6 +93,7 @@ class InsertionDemo:
 
         self.mrv_arm_base_fid = self.model.getFrameId(f'ur_{self.mrv_arm_name[-1]}_base')
         self.mrv_arm_ee_fid = self.model.getFrameId(f'ur_{self.mrv_arm_name[-1]}_ee')
+        # self.mrv_arm_ee_fid = self.model.getFrameId(f'peg_center')
         self.mrv_arm_joint_idx = self.model.getJointId(f'ur_{self.mrv_arm_name[-1]}_shoulder_pan_joint')
         self.mrv_carriage_joint_idx = self.model.getJointId(f'carriage_{self.mrv_arm_name[-1]}')
         self.mrv_arm_q_idx = self.model.idx_qs[self.mrv_arm_joint_idx]
@@ -356,10 +357,16 @@ class InsertionDemo:
             print(f"Service call to {srv_name} failed: {e}")
 
         try:
-            stop = rospy.ServiceProxy(f'/{self.mrv_arm_name}/stop', Trigger)
-            response = stop()
+            stop1 = rospy.ServiceProxy(f'/{self.mrv_arm_name}/stop', Trigger)
+            response = stop1()
             print(f"Service call to stop succeeded")
             print(f"Response: {response}")
+
+            stop2 = rospy.ServiceProxy(f'/{self.client_arm_name}/stop', Trigger)
+            response = stop2()
+            print(f"Service call to stop succeeded")
+            print(f"Response: {response}")
+
         except rospy.ServiceException as e:
             print(f"Service call to stop failed: {e}")
 
@@ -367,8 +374,13 @@ class InsertionDemo:
         trj_idx = 0 # where in the pose trajectory to start from
         while not rospy.is_shutdown():
             self.initialize_hil()
-            while self.mrv_ur_state != 'IDLE' or self.client_ur_state != 'IDLE' or self.mrv_carriage_state != 'READY_TO_MOVE' or self.client_carriage_state != 'READY_TO_MOVE':
+            for i in range(100):
+                if (self.mrv_ur_state == 'IDLE' and self.client_ur_state == 'IDLE' and self.mrv_carriage_state == 'READY_TO_MOVE' and self.client_carriage_state == 'READY_TO_MOVE'):
+                    break
+                if i == 99:
+                    rospy.signal_shutdown('Failed to initialize HIL')
                 rospy.sleep(0.1)
+            rospy.sleep(1)
             rospy.logwarn('HIL initialized. Calibrating HIL-Sim transform...')
             self.calibrate_hil_sim_transform(trj_idx)
             rospy.logwarn('Calibration complete. Aligning Client HIL...')
@@ -416,7 +428,13 @@ class InsertionDemo:
                 self.rate.sleep()
             self.move_peg_out_of_hole()
             print('Trajectory complete. Moving peg out of hole...')
-            rospy.sleep(5)
+            for i in range(100):
+                if (self.mrv_ur_state == 'IDLE' and self.client_ur_state == 'IDLE' and self.mrv_carriage_state == 'READY_TO_MOVE' and self.client_carriage_state == 'READY_TO_MOVE'):
+                    break
+                if i == 99:
+                    rospy.signal_shutdown('Failed to initialize HIL')
+                rospy.sleep(0.1)
+            rospy.sleep(1)
             
 
 if __name__ == "__main__":
