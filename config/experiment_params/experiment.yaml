@@ -1,0 +1,158 @@
+delta_pos: [0.1, -0.1, 0.0] #m, position of tip of peg wrt centering waypoint
+delta_rot: [0., 0., 0.] #deg, axis angle vector 
+delta_v: [0., 0., 0.0] #m/s, relative velocity between base of MRV and base of client 
+initial_client_w: [0.15, 0.15, 0.] # in deg/s
+initial_mrv_w: [0., 0., 0.] # in deg/s
+
+do_save: False
+use_cw: True #use orbital gravitational dynamics
+save_folder: 'experiment_logs/06_28_24/test/'
+
+# This is the library used by Anoop before Andrew took over the code, which has a phase where contact is broken. 
+#traj_library_prefix: '/experiment_logs/01_30_24/ipopt_multicore/'
+#raj_library_prefix: '/experiment_logs/02_02_24/ipopt_slide_to_hole/'
+#traj_library_prefix: '/experiment_logs/04_02_24/contact_avoidance/'
+#traj_library_prefix: '/experiment_logs/04_09_24/x_grid/'
+#traj_library_prefix: '/experiment_logs/04_15_24/updated_urdf_test/'
+#traj_library_prefix: '/experiment_logs/04_15_24/contact_free/'
+#traj_library_prefix: '/experiment_logs/04_15_24/contact/'
+#traj_library_prefix: '/experiment_logs/04_16_24/cb_center_robust_with_contact/'
+#traj_library_prefix: '/experiment_logs/04_16_24/cb_corners_no_contact/'
+#traj_library_prefix: '/experiment_logs/04_16_24/wx_with_contact/'
+#traj_library_prefix: '/experiment_logs/04_22_24/cb_corners_no_angular_no_contact/'
+#traj_library_prefix: '/experiment_logs/04_23_24/cb_no_ang_vel/'
+#traj_library_prefix: '/experiment_logs/04_24_24/contact_free_cb_corners_0_2deg/'
+#traj_library_prefix: '/experiment_logs/05_07_24/lib_capture_box_zero_vel_5_10_15_s/'
+#traj_library_prefix: '/experiment_logs/05_07_24/lib_capture_box_0_1_5_w_vel_5_10_10_s/'
+#traj_library_prefix: '/experiment_logs/06_07_24/lib_contact_free_nozzle_align/'
+#traj_library_prefix: '/experiment_logs/06_14_24/WithPlunge/'
+traj_library_prefix: '/experiment_logs/06_14_24/lib_capture_box_ang_vel_0_15/'
+
+# Whether to clip joint-level acceleration and velocities based on limits specified in limits.yaml
+clip_joint_commands: True
+
+use_grid: True
+grid_type: 15
+initial_grid_idx: 0 #use zero-indexing
+visualize_before_moving: False
+
+debug_with_test_traj: False
+test_traj_id: 0 # see file TestTrajectories
+
+# If set to True, the Pybullet simulator will reset the pose of the client and/or MRV base frame to their initial poses, removing the floating-base behavior
+lock_client: False
+lock_mrv: False
+
+apply_wrench_only_when_close: False
+
+client_velocity_noise_ang_amp: 0.0 #deg/s
+
+probe_z_axis_plunge_velocity: 0.005 #See within_nozzle_admittance.py for definition
+use_variable_plunge_speed: False # See within_nozzle_admittance.py
+use_scheduled_gains: True # See resolved_accel.py
+
+# After this time, the simulation/experiment will shutdown
+time_limit: 500
+
+# Set to true to simulate sensor noise in the client state
+do_noisy_state_estimation: True
+
+# Set to true to simulate delay in client pose due to slower vision feedback rate
+do_vision_delay: True
+vision_measurement_rate: 10 #Hz
+
+# Number of times to run the experiment on the hardware platform
+num_hardware_trials: 1
+
+# Whether to visualize the simulator 
+visualize: True
+
+# Set to true to visualize trajectories before executing them on the hardware-in-the-loop system
+verify_trajectory_visually: True
+
+# Constants used to perform gravity compensation for the F/T sensor
+
+# Two white pegs stacked on each other
+# self.peg_mass = 0.148633
+# self.peg_com = 0.027880
+
+# Black peg
+# self.peg_mass = 0.189187
+# self.peg_com = 0.036813
+
+# Stiff white peg, same overall size as two white pegs described above
+peg_mass: 0.186515
+peg_com: 0.036562
+
+# Long peg with spherical tip
+# peg_mass = 0.203263
+# peg_com = 0.043117
+
+# dist_nozzle_opening_from_goal: 0.09017557238
+# dist_capture_box_from_nozzle_opening: 0. # Based on HIL longer white nozzle
+# dist_centering_waypoint_from_goal: 0.10552557238 # dist_nozzle_opening_from_goal + dist_capture_box_from_nozzle_opening + 2*(ur16 repeatability + ur5 repeatability) + peg rad
+
+dist_nozzle_opening_from_goal: 0.110 # Based on our nozzle CAD
+dist_capture_box_from_nozzle_opening: 0.38632442762 # Distance from front of capture box Based on actual CV nozzle where distance of nozzle opening to goal is 0.4765 m
+dist_centering_waypoint_from_goal: 0.481024428 # dist_nozzle_opening_from_goal + dist_capture_box_from_nozzle_opening + 2*(ur16 repeatability + ur5 repeatability) + peg radius
+
+# dist_nozzle_opening_from_goal: 0.193 # Translucent nozzle
+# dist_capture_box_from_nozzle_opening: 0.2835 # Based on actual CV nozzle where distance of nozzle opening to goal is 0.4765 m
+# dist_centering_waypoint_from_goal: 0.49185 # dist_nozzle_opening_from_goal + dist_capture_box_from_nozzle_opening + 2*(ur16 repeatability + ur5 repeatability) + peg rad
+
+# ur16_home_angles: [1.66726053, -1.43057123, -1.86577749, -2.95299162,  4.80611753,-1.52760011]
+# ur5_home_angles: [1.65511048, -2.18029942,  1.95486671,  0.26120297,  1.6538136 , -4.74756855]
+
+# ur16_home_angles: [2.14995217, -1.49073626, -1.77534533, -2.9662353 ,  5.50207472, -1.64739353]
+# ur5_home_angles: [ 1.27150869, -2.43323674,  1.98244697,  0.46629159,  1.61032021, -4.67806524]
+
+# ur16_home_angles: [ 4.39135647, -1.64549746,  1.39425689,  0.25232808,  1.47867489, -1.5930937 ]
+# ur5_home_angles: [1.19772053, -2.26660647,  1.629587  ,  0.6109616 ,  1.56574166, -4.66222376]
+
+# Sim rotated -90 degrees about nozzle frame z axis
+# ur16_home_angles: [1.3023839 , -1.82999816, -2.17433977, -2.25328269,  4.38873053, -3.1417895]
+# ur5_home_angles: [ 2.18494081, -1.74547352,  2.3119908 , -0.50975688,  2.20850158, -3.24855787]
+
+# Sim rotated 90 degrees about nozzle frame z axis
+# ur16_home_angles: [1.3023839 , -1.82999816, -2.17433977, -2.25328269,  4.38873053, -0.00019684641]
+# ur5_home_angles: [ 2.18494081, -1.74547352,  2.3119908 , -0.50975688,  2.20850158, -0.10696521641]
+
+# Testing the incomplete dirtran trajectory
+# ur16_home_angles: [1.60246265, -1.51915009, -1.23482561, -3.50104584,  4.66064882, -0.94396669]
+# ur5_home_angles: [1.66646111, -2.05895056,  1.38463766,  0.66507356,  1.66458476, -4.74760408]
+
+# Use these for -x angular velocities
+# ur16_home_angles: [1.66726053, -1.43057123, -1.86577749, -2.95299162,  4.80611753, 1.61399254359]
+# ur5_home_angles: [1.65511048, -2.18029942,  1.95486671,  0.26120297,  1.6538136 , -1.60597589641]
+
+# ur16_home_angles: [ 1.57380271, -1.32274389, -1.46559322, -3.4772202 ,  4.76479959,  1.70600152]
+# ur5_home_angles: [ 1.75626636, -2.07213654,  1.48084718,  0.58757441,  1.80901313, -1.59237463]
+
+# ur16_home_angles: [ 1.62636542, -2.37549414, -2.03918505, -0.33163102,  4.64791155,  1.17886603]
+# ur5_home_angles: [ 1.46701658, -1.76282611,  1.36374265, -1.21511923, -1.49713451,  1.3946017 ]
+
+# Use these for y client angular velocities, nozzle not moving
+# ur16_home_angles: [ 1.66827548, -2.60205569, -1.75405681, -0.39603801,  4.66131926,  1.56112432]
+# ur5_home_angles: [ 1.46225035, -1.71054043,  0.95363313, -0.79051353, -1.53538925,  1.3945235 ]
+
+# Use these for long translucent nozzle
+# ur16_home_angles: [1.74882889, -1.38548198, -1.83835268, -3.05165019,  4.89170504,  1.60572577]
+# ur5_home_angles: [1.65531993, -2.51071181,  2.02094347,  0.49662702,  1.69656444, -1.63044149]
+
+# HOME ANGLES I'M USING NOW (01/04/23)
+
+# Use these for y client angular velocities
+#ur16_home_angles: [ 1.66961682, -2.47053256, -1.98996222, -0.29160066,  4.66135645,  1.56115961] #rad
+#ur5_home_angles: [ 1.44885898, -1.76894393,  1.39487392, -1.15170537, -1.55057747,  1.39303124] #rad
+
+# Use these for -y client angular velocities
+# ur16_home_angles: [ 1.66961682, -2.47053256, -1.98996222, -0.29160066,  4.66135645,  -1.58043304359]
+# ur5_home_angles: [ 1.44885898, -1.76894393,  1.39487392, -1.15170537, -1.55057747,  -1.74856141359]
+
+# Use these for x client angular velocities
+#ur16_home_angles: [ 1.6268971 , -2.65728106, -1.38393378, -0.53140862,  4.6479578 ,  2.7496504367948966]
+#ur5_home_angles: [ 1.46224403, -1.99536481,  1.54856283, -1.02081795, -1.52034456,  -0.17617554679489666]
+
+# Use these for -x client angular velocities
+ur16_home_angles: [ 1.6268971 , -2.65728106, -1.38393378, -0.53140862,  4.6479578 ,  -0.3919422167948965]
+ur5_home_angles: [ 1.46224403, -1.99536481,  1.54856283, -1.02081795, -1.52034456,  2.9654171067948965]

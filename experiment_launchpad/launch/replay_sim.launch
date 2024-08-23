@@ -1,26 +1,22 @@
 <launch>
-  <rosparam file="$(find peg_in_hole)/config/cw.yaml"/>
-  <rosparam file="$(find peg_in_hole)/config/cone_slope.yaml"/>
-  <rosparam file="$(find peg_in_hole)/config/experiment.yaml"/>
-  <node name="replay_node" pkg="peg_in_hole" type="replay_sim_node.py" output="screen"/>
-  <node name="trail_node" pkg="peg_in_hole" type="trail_node.py" output="screen"/>
-  <!--<arg name="rvizconfig" default="$(find peg_in_hole)/rviz/nozzle_initially_identity_view_zoomed_in.rviz" />-->
-  <!--<arg name="rvizconfig" default="$(find peg_in_hole)/rviz/nozzle_initially_identity_view.rviz" />-->
-  <arg name="rvizconfig" default="$(find peg_in_hole)/rviz/nozzle_initially_identity_view_rotated_90.rviz" />
-  <!--<arg name="rvizconfig" default="$(find peg_in_hole)/rviz/nozzle_initially_identity_view_rotated_90_zoomed_in.rviz" />-->
-  <!--<arg name="rvizconfig" default="$(find peg_in_hole)/rviz/side_view.rviz" />-->
-  <!--<arg name="rvizconfig" default="$(find peg_in_hole)/rviz/top_view_zoomed_in.rviz" />-->
+  <rosparam file="$(find on_orbit)/config/cw_params/cw.yaml"/>
+  <rosparam file="$(find on_orbit)/config/holo_params/cone_slope.yaml"/>
+  <rosparam file="$(find on_orbit)/config/experiment_params/experiment.yaml"/>
+
+  <node name="replay_node" pkg="on_orbit" type="replay_sim_node.py" output="screen"/>
+  <node name="trail_node" pkg="on_orbit" type="trail_node.py" output="screen"/>
+  <arg name="rvizconfig" default="$(find on_orbit)/rviz/mrv_client.rviz" />
   <node name="peg_in_nozzle_rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" />
 
-  <param name="hw_robot_description" textfile="$(find peg_in_hole)/urdf/ur16e_and_ur5e.urdf" />
+  <param name="hw_robot_description" textfile="$(find on_orbit)/urdf/on_orbit.urdf" />
   <node name="hw_robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
-    <remap from="joint_states" to="/peg_in_hole/hw_joint_state" />
+    <remap from="joint_states" to="/on_orbit/hw_joint_state" />
     <remap from="robot_description" to="hw_robot_description" />
   </node>
 
-  <param name="sw_robot_description" textfile="$(find peg_in_hole)/urdf/robot_cv_detached.urdf" />
+  <param name="sw_robot_description" textfile="$(find on_orbit)/urdf/robot_cv_detached.urdf" />
   <node name="sw_robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
-    <remap from="joint_states" to="/peg_in_hole/sw_joint_state" />
+    <remap from="joint_states" to="/on_orbit/sw_joint_state" />
     <remap from="robot_description" to="sw_robot_description" />
   </node>
 </launch>
