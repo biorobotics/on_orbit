@@ -20,7 +20,6 @@ find_package(catkin REQUIRED COMPONENTS
   vention_control
   ur_state_machine
   holodeck_viz
-
 )
 
 set(pybind11_DIR ~/.local/lib/python3.8/site-packages/pybind11/share/cmake/pybind11/)
@@ -122,6 +121,7 @@ catkin_package(
  LIBRARIES on_orbit
  CATKIN_DEPENDS roscpp rospy std_msgs holodeck_viz ur_state_machine vention_control
  DEPENDS system_lib
+
 )
 
 ###########
