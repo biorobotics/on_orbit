@@ -31,34 +31,18 @@ verify_trajectory_visually = rospy.get_param('verify_trajectory_visually')
 
 dt = 0.01
 
-rospy.init_node('control_node')
+rospy.init_node('hw_control_node')
 
 rospack = rospkg.RosPack()
-rospath = rospack.get_path('peg_in_hole')
+rospath = rospack.get_path('on_orbit')
 
 rate = rospy.Rate(1/dt)
-mirror = False
 
-ur16_home_angles = np.array(rospy.get_param('ur16_home_angles'))
-ur5_home_angles = np.array(rospy.get_param('ur5_home_angles'))
+mrv_hil_home_angles = np.array(rospy.get_param('mrv_hil_home_angles'))
+client_hil_home_angles = np.array(rospy.get_param('client_hil_home_angles'))
 
-if mirror:
-  ur16_home_angles = -ur16_home_angles
-  ur5_home_angles = -ur5_home_angles
 
-  ur16_home_angles[1] -= np.pi
-  ur5_home_angles[1] -= np.pi
-
-  ur16_home_angles[3] -= np.pi
-  ur5_home_angles[3] -= np.pi
-
-  ur16_home_angles[4] += 2*np.pi
-  ur5_home_angles[4] += 2*np.pi
-
-  ur16_home_angles[5] += np.pi
-  ur5_home_angles[5] += np.pi
-
-hil_runner = HILRunner(rospath, ur16_home_angles, ur5_home_angles)
+hil_runner = HILRunner(rospath, mrv_hil_home_angles, client_hil_home_angles)
 sim_vis_publisher = SimROSVisPublisher(rospath)
 
 cone_slope = rospy.get_param('cone_slope')
@@ -152,9 +136,6 @@ for grid_idx in range(initial_grid_idx, final_grid_idx):
 
     delta_rot = np.array(rospy.get_param('delta_rot'))*np.pi/180
 
-    if mirror:
-      delta_pos[1] = -delta_pos[1]
-
     print('Desired position difference (m) in nozzle frame: ', delta_pos)
     print('Desired rotation difference (deg) in nozzle frame: ', delta_rot)
 
@@ -165,8 +146,6 @@ for grid_idx in range(initial_grid_idx, final_grid_idx):
       delta_v = np.array(rospy.get_param('delta_v'))
       initial_mrv_w = np.array(rospy.get_param('initial_mrv_w'))*np.pi/180
 
-    if mirror:
-      initial_mrv_w[0] = -initial_mrv_w[0]
 
     if use_grid:
       initial_client_w = ic_grid[grid_idx, 9:12]*np.pi/180

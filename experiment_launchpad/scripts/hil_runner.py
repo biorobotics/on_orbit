@@ -2,12 +2,6 @@ import numpy as np
 import time
 import pinocchio as pin
 from pinocchio.robot_wrapper import RobotWrapper
-
-from ur_state_machine.srv import JointVelocityServo, JointVelocityServoResponse
-from ur_state_machine.msg import JointVelocityServoParams, URJointCommand
-from vention_control.srv import PositionMove, PositionMoveResponse
-from std_srvs.srv import Trigger, TriggerResponse
-
 from scipy.spatial.transform import Rotation as R
 
 import rospy
@@ -17,14 +11,14 @@ from geometry_msgs.msg import TransformStamped, WrenchStamped, PointStamped, Poi
 from std_msgs.msg import String, Float32, Float32MultiArray
 
 
-from on_orbit.on_orbit_bindings import IKMoveEEBehindBarrierIKMoveEEBehindBarrier
+from on_orbit.on_orbit_bindings import IKMoveEEBehindBarrier
 
 import os
 
 from visualization_msgs.msg import Marker
 # UR 16 (jstate_right) has peg. Make sure to assign names appropraitely. UR 5 has the nozzle (jstate_left)
 class HILRunner(object):
-  def __init__(self, rospath, mrv_arm_home_angles, client_arm_home_angles):
+  def __init__(self, rospath, mrv_hil_home_angles, client_hil_home_angles):
     urdf_file = rospath + '/urdf/on_orbit.urdf' 
     
     # naming convention: 'mrv_hil' includes the mrv_arm and the mrv_carriage
@@ -40,24 +34,6 @@ class HILRunner(object):
 
     self.mrv_hil_js = JointState()
     self.client_hil_js = JointState() # order: [carriage, base, shoulder, elbow, wrist, wrist_2, wrist_3]
-
-    ## Setup subscripers and publishers ##
-    self.mrv_arm_pub = rospy.Publisher(f'/{self.mrv_arm_name}/joint_velocity', URJointCommand, queue_size=1)
-    self.client_arm_pub = rospy.Publisher(f'/{self.client_arm_name}/joint_velocity', URJointCommand, queue_size=1)
-    self.mrv_carriage_pub = rospy.Publisher(f'/{self.mrv_carriage_name}/joint_velocity', URJointCommand, queue_size=1)
-    self.client_carriage_pub = rospy.Publisher(f'/{self.client_carriage_name}/joint_velocity', URJointCommand, queue_size=1)
-
-    self.mrv_arm_js_sub = rospy.Subscriber(f'/{self.mrv_arm_name}/joint_states', JointState, self.mrv_arm_js_callback)
-    self.client_arm_js_sub = rospy.Subscriber(f'/{self.client_arm_name}/joint_states', JointState, self.client_arm_js_callback)
-    self.mrv_arm_js_sub = rospy.Subscriber(f'/{self.mrv_carriage_name}/joint_states', JointState, self.mrv_carriage_js_callback)
-    self.client_arm_js_sub = rospy.Subscriber(f'/{self.client_carriage_name}/joint_states', JointState, self.client_carriage_js_callback)
-
-    # Service Proxies
-    self.mrv_joint_velocity_servo = rospy.ServiceProxy(f'/{self.mrv_arm_name}/joint_velocity_servo', JointVelocityServo)
-    self.client_joint_velocity_servo = rospy.ServiceProxy(f'/{self.client_arm_name}/joint_velocity_servo', JointVelocityServo)
-
-    self.mrv_idle = rospy.ServiceProxy(f'/{self.mrv_arm_name}/stop', Trigger)
-    self.client_idle = rospy.ServiceProxy(f'/{self.client_arm_name}/stop', Trigger)
 
     # Initialize pinocchio model (used for forward and inverse kinematics)
     self.pin_model = RobotWrapper.BuildFromURDF(urdf_file).model
@@ -142,8 +118,13 @@ class HILRunner(object):
     self.ee_client_arm_path_marker.header.frame_id = "world"
     self.ee_mrv_arm_path_marker.ns = "control_node"
 
-    self.client_arm_home_angles = client_arm_home_angles
-    self.mrv_arm_home_angles = mrv_arm_home_angles
+    # TODO: This needs to be udpated so that it grabs just the arm joint angles and ignores the preceeding carriage joint angles
+    self.client_arm_home_angles = client_hil_home_angles[1:7]
+    self.mrv_arm_home_angles = mrv_hil_home_angles[1:7]
+
+    # TODO: Initialize the home angles for the mrv_carriage and client_carriage
+    self.client_carriage_home_angles = client_hil_home_angles[0]
+    self.mrv_carriage_home_angles = mrv_hil_home_angles[0]
 
     self.sensorSub = rospy.Subscriber('/netft_data', WrenchStamped, self.ft_sensor_callback)
 
@@ -242,8 +223,6 @@ class HILRunner(object):
       raise ValueError("Invalid arm name. Use 'mrv' or 'client'.")
     
     
-
-
   def calibrate_ft_bias(self):
     pin_model = self.pin_model
     pin_data = self.pin_data
@@ -542,12 +521,16 @@ class HILRunner(object):
     qidx_mrv_arm = self.qidx_mrv_hil
     qidx_client_arm = self.qidx_client_hil
 
+    ''' First move the carriages to their home configuration'''
+
     '''For moving the arms at the same time'''
     print('Moving client_arm and mrv_arm to home configuration')
     q_final = pin.neutral(self.pin_model)
     q_final[qidx_mrv_arm:qidx_mrv_arm + 6] = self.mrv_arm_home_angles
     q_final[qidx_client_arm:qidx_client_arm + 6] = self.client_arm_home_angles
     self.visualize_then_move_joints(q_final, check_for_continue)
+
+    ''' Now move the carriages to their home configuration'''
 
     self.calibrate_ft_bias() 
 
@@ -951,7 +934,6 @@ class HILRunner(object):
     dt = self.dt
     pin_model = self.pin_model
     pin_data = self.pin_data
-    ctrl = self.ctrl
     peg_fid = self.peg_fid
     ft_fid = self.ft_fid
     qidx_mrv_arm = self.qidx_mrv_hil
@@ -1036,7 +1018,8 @@ class HILRunner(object):
 
       if pos_err_norm <= 1e-3 and rot_err_norm <= 0.5*np.pi/180:
         break
-
+      
+      # TODO: Missed a bit here. This needs to be using the updated state machine not the ctrl.speedj
       acc_norm_mrv_arm = np.linalg.norm((v_mrv_arm_cmd - v[vidx_mrv_arm:vidx_mrv_arm + 6])/dt, ord=np.inf)
       ctrl.speedj(v_mrv_arm_cmd, mrv_arm_pub, acc_norm_mrv_arm)
 
@@ -1165,7 +1148,8 @@ class HILRunner(object):
       if pos_err_norm_client_arm <= 1e-3 and rot_err_norm_client_arm <= 0.5*np.pi/180 and \
          pos_err_norm_mrv_arm <= 1e-3 and rot_err_norm_mrv_arm <= 0.5*np.pi/180:
         break
-
+      
+      # TODO: Another missed bit here. This needs to be using the updated state machine not the ctrl.speedj
       acc_norm_client_arm = np.linalg.norm((v_client_arm_cmd - v[vidx_client_arm:vidx_client_arm + 6])/dt, ord=np.inf)
       acc_norm_mrv_arm = np.linalg.norm((v_mrv_arm_cmd - v[vidx_mrv_arm:vidx_mrv_arm + 6])/dt, ord=np.inf)
       ctrl.speedj(v_client_arm_cmd, client_arm_pub, acc_norm_client_arm)
@@ -1351,6 +1335,7 @@ class HILRunner(object):
 
     # Send commands to hardware
     if not self.need_to_reinitialize:
+      # Annnnnd another missed bit here. This needs to be using the updated state machine not the ctrl.speedj
       ctrl.speedj(v_client_arm_cmd, client_arm_pub, acc_norm_client_arm)
       ctrl.speedj(v_mrv_arm_cmd, mrv_arm_pub, acc_norm_mrv_arm)
     else: 
