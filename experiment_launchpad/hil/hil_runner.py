@@ -17,8 +17,6 @@ from geometry_msgs.msg import TransformStamped, WrenchStamped, PointStamped, Poi
 from std_msgs.msg import String, Float32, Float32MultiArray
 
 
-from ros_utils import ur_controllers
-
 from on_orbit.on_orbit_bindings import IKMoveEEBehindBarrierIKMoveEEBehindBarrier
 
 import os
