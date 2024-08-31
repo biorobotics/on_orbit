@@ -10,6 +10,7 @@ import rospy
 import rospkg
 
 from hil_runner import HILRunner
+from holodeck_interface import HolodeckInterface
 from sim_ros_vis_publisher import SimROSVisPublisher
 
 import os
@@ -67,6 +68,8 @@ use_cw = rospy.get_param('use_cw')
 
 do_save = rospy.get_param('do_save')
 
+holo_control = HolodeckInterface()
+
 def save_data(): 
   print('Saving data')
   hil_runner.save(save_path)
@@ -123,9 +126,18 @@ for grid_idx in range(initial_grid_idx, final_grid_idx):
     
 
     if grid_idx > initial_grid_idx or (grid_idx == initial_grid_idx and trial_idx > 0):
+      holo_control.ur_velocity_mode('mrv')
+      holo_control.ur_velocity_mode('client')
       hil_runner.move_peg_out_of_hole(visualize_before_moving=verify_trajectory_visually)
+      holo_control.ur_idle_mode('mrv')
+      holo_control.ur_idle_mode('client')
 
+    holo_control.ur_velocity_mode('mrv')
+    holo_control.ur_velocity_mode('client')
     hil_runner.reset_to_home_angles(check_for_continue=verify_trajectory_visually)
+    holo_control.ur_idle_mode('mrv')
+    holo_control.ur_idle_mode('client')
+    
 
     hil_runner.calibrate_ft_bias() 
 
@@ -145,7 +157,6 @@ for grid_idx in range(initial_grid_idx, final_grid_idx):
     else:
       delta_v = np.array(rospy.get_param('delta_v'))
       initial_mrv_w = np.array(rospy.get_param('initial_mrv_w'))*np.pi/180
-
 
     if use_grid:
       initial_client_w = ic_grid[grid_idx, 9:12]*np.pi/180
@@ -250,6 +261,7 @@ for grid_idx in range(initial_grid_idx, final_grid_idx):
     rate = rospy.Rate(1/dt)
 
     gc.disable()
+    
     while not rospy.is_shutdown():
       hw_status, wrench_peg_peg = hil_runner.emulate(sw_peg_pos, \
                                                       sw_peg_rmat, \
