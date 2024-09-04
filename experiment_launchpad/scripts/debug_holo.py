@@ -48,6 +48,9 @@ def main():
 
     hil_runner.reset_to_home_angles(check_for_continue=True)
 
+    holo_control.ur_idle_mode('mrv')
+    holo_control.ur_idle_mode('client')
+
     hil_runner.move_peg_out_of_hole()
     
     rospy.spin()

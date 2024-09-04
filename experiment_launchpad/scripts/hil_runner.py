@@ -97,7 +97,7 @@ class HILRunner(object):
     self.ee_mrv_arm_path_marker.pose.orientation.y = 0
     self.ee_mrv_arm_path_marker.pose.orientation.z = 0
     self.ee_mrv_arm_path_marker.scale.x = 0.01
-    self.ee_mrv_arm_path_marker.color.r = 0
+    self.ee_mrv_arm_path_marker.color.r = 1
     self.ee_mrv_arm_path_marker.color.g = 1
     self.ee_mrv_arm_path_marker.color.b = 0
     self.ee_mrv_arm_path_marker.color.a = 1
@@ -116,7 +116,7 @@ class HILRunner(object):
     self.ee_client_arm_path_marker.pose.orientation.y = 0
     self.ee_client_arm_path_marker.pose.orientation.z = 0
     self.ee_client_arm_path_marker.scale.x = 0.01
-    self.ee_client_arm_path_marker.color.r = 0
+    self.ee_client_arm_path_marker.color.r = 1
     self.ee_client_arm_path_marker.color.g = 1
     self.ee_client_arm_path_marker.color.b = 0
     self.ee_client_arm_path_marker.color.a = 1
@@ -245,11 +245,11 @@ class HILRunner(object):
     self.holo_control.ur_joint_move('mrv', self.mrv_arm_home_angles)
     self.holo_control.ur_joint_move('client', self.client_arm_home_angles)
 
+    '''Calibrate the force/torque sensor'''
+    # Currently, this is commmented out as our f/t sensor is down
     # self.calibrate_ft_bias() 
 
 
-  # TODO: I think what needs to happen here is a replacement where we no longer assume that hb and world frames are aligned becuase they are not and
-  # this will change the transforms that we send to our UR arm end effectors
 
   def move_peg_out_of_hole(self,visualize_before_moving=True):
     qidx_mrv_arm = self.qidx_mrv_hil + 1
@@ -271,11 +271,7 @@ class HILRunner(object):
 
     # Ensure that the arms are stationary
     holo_control.ur_idle_mode('mrv')
-    holo_control.ur_idle_mode('client')
-
-    # Arms into velocity servo mode
-    holo_control.ur_velocity_mode('mrv', 0.3)
-    holo_control.ur_velocity_mode('client', 0.3)
+    holo_control.ur_idle_mode('client') 
 
     # Visualize
     stop_vis = False
@@ -285,8 +281,8 @@ class HILRunner(object):
       
       mrv_hil_js = holo_control.get_mrv_hil_js()
       client_hil_js = holo_control.get_client_hil_js()
-      q_vis[qidx_mrv_arm:qidx_mrv_arm + 6] = np.copy(mrv_hil_js.position[1:7])
-      q_vis[qidx_client_arm:qidx_client_arm + 6] = np.copy(client_hil_js.position[1:7])
+      q_vis[self.qidx_mrv_hil:self.qidx_mrv_hil + 7] = np.copy(mrv_hil_js.position)
+      q_vis[self.qidx_client_hil:self.qidx_client_hil + 7] = np.copy(client_hil_js.position)
       v_vis = np.zeros(pin_model.nv)
       ee_mrv_arm_path_marker.points.clear()
       for step in range(move_out_steps):
@@ -327,6 +323,11 @@ class HILRunner(object):
         stop_vis = self.check_for_continue_with_visualization()
       else:
         stop_vis = True
+
+    if stop_vis:
+      # Arms into velocity servo mode
+      holo_control.ur_velocity_mode('mrv', 0.3)
+  
 
     rate = rospy.Rate(1/dt)
     q = pin.neutral(pin_model)

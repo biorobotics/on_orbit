@@ -20,8 +20,8 @@ class WithinNozzleAdmittance(object):
 
     self.goal_z_offset = 0.150 # extra offset added to goal_pos along z-axis of goal frame, added so that we ensure probe goes all the way into the hole
     self.throat_length = 0.0475
-    self.nozzle_length = 0.115 - self.throat_length
-    self.nozzle_opening_from_goal = 0.115 + self.goal_z_offset
+    self.nozzle_length = 0.4785 - self.throat_length
+    self.nozzle_opening_from_goal = 0.4785 + self.goal_z_offset
 
     self.resolved_accel = ResolvedAccel(use_scheduled_gains)
     self.resolved_accel.resolved_accel_base.use_min_norm = True
@@ -36,7 +36,7 @@ class WithinNozzleAdmittance(object):
     self.use_variable_plunge_speed = use_variable_plunge_speed
 
     if self.use_variable_plunge_speed:
-      self.throat_speed = 4*self.probe_z_axis_plunge_velocity
+      self.throat_speed = 5*self.probe_z_axis_plunge_velocity
     else: 
       self.throat_speed = self.probe_z_axis_plunge_velocity
 
@@ -110,10 +110,14 @@ class WithinNozzleAdmittance(object):
       wrench_err_peg_peg = np.copy(wrench_peg_peg)
       wrench_err_peg_peg[0:3] = wrench_err_peg_peg[0:3] - client_imp_force[0:3]
 
-      if mrv_client_sim.is_peg_in_throat(0.00):
+      dist_to_throat = mrv_client_sim.dist_to_throat_opening()
+      if dist_to_throat < 0.01:
         nom_speed = self.throat_speed
+      elif dist_to_throat > 0.11:
+        nom_speed = 4 * self.throat_speed
       else:
         nom_speed = self.probe_z_axis_plunge_velocity
+
       
       #print(f'nom_speed: {nom_speed}')
       p2d = self.get_curve_pos(self.last_s)

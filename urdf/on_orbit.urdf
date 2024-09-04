@@ -358,23 +358,23 @@
   </joint>
   <link name="ur_3_ee">
     <visual>
-      <origin rpy="0 0 0" xyz="0 0 -0.1045"/>
+      <origin rpy="0 0 0" xyz="0 0 -0.27"/>
       <geometry>
-        <cylinder length="0.209" radius="0.01505"/>
+        <cylinder length="0.54" radius="0.0079"/>
       </geometry>
       <material name="white">
         <color rgba="1.0 1.0 1.0 1.0"/>
       </material>
     </visual>
     <collision>
-      <origin rpy="0 0 0" xyz="0 0 -0.1045"/>
+      <origin rpy="0 0 0" xyz="0 0 -0.27"/>
       <geometry>
-        <cylinder length="0.209" radius="0.01505"/>
+        <cylinder length="0.54" radius="0.0079"/>
       </geometry>
     </collision>
     <inertial>
-      <mass value="0.14597807959"/>
-      <origin rpy="0 0 0" xyz="0 0 0.05865593628"/>
+      <mass value="0.26"/>
+      <origin rpy="0 0 0" xyz="0 0 0.09999999999999999"/>
       <inertia ixx="0" ixy="0.0" ixz="0.0" iyy="0" iyz="0.0" izz="0"/>
     </inertial>
   </link>
@@ -382,19 +382,19 @@
   <joint name="ur_3_ee_to_peg_center" type="fixed">
     <parent link="ur_3_ee"/>
     <child link="peg_center"/>
-    <origin rpy="0 0 0" xyz="0 0 -0.1045"/>
+    <origin rpy="0 0 0" xyz="0 0 -0.27"/>
   </joint>
   <joint name="ur_3_tool0_to_ee" type="fixed">
     <parent link="ur_3_tool0"/>
     <child link="ur_3_ee"/>
-    <origin rpy="0 0 0" xyz="0 0 0.209"/>
+    <origin rpy="0 0 0" xyz="0 0 0.54"/>
   </joint>
-  <!-- UR16 has the FT sensor-->
+  <!-- ur_3 has the FT sensor-->
   <link name="ft_sensor"/>
   <joint name="ur_3_tool0_to_ft_sensor" type="fixed">
     <parent link="ur_3_tool0"/>
     <child link="ft_sensor"/>
-    <origin rpy="0 0 -0.53996123733" xyz="0 0 0.0315"/>
+    <origin rpy="0 0 -0.53996123733" xyz="0 0 0.029"/>
   </joint>
   <!--
     Base UR robot series xacro macro.
@@ -748,30 +748,23 @@
     <parent link="ur_4_flange"/>
     <child link="ur_4_tool0"/>
   </joint>
-  <!-- <link name="world"/> -->
-  <!-- <joint name="world_to_ur_4_base_link" type="fixed"> -->
-  <!-- <parent link="world"/> -->
-  <!-- <child link="ur_4_base_link"/> -->
-  <!--We will need to determine true orientation of each of robot as they are at an angle-->
-  <!-- <origin rpy="0 0 0" xyz="0 -0.9948543 -0.00045865"/> -->
-  <!-- </joint> -->
   <link name="hw_goal"/>
   <joint name="ur_4_ee_to_goal" type="fixed">
     <parent link="ur_4_ee"/>
     <child link="hw_goal"/>
-    <origin rpy="0 3.141592653589793 0" xyz="0 0 0.09017557238"/>
+    <origin rpy="0 3.141592653589793 0" xyz="0 0 0.4656"/>
   </joint>
   <link name="ur_4_ee"/>
   <joint name="ur_4_tool0_to_ee" type="fixed">
     <parent link="ur_4_tool0"/>
     <child link="ur_4_ee"/>
-    <origin rpy="0 3.14159 0" xyz="0 0 0.12477"/>
+    <origin rpy="0 3.14159 0" xyz="0 0 0.4785"/>
   </joint>
   <link name="nozzle_base">
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <cylinder length="0.0095" radius="0.03"/>
+        <cylinder length="0.0095" radius="0.0315"/>
       </geometry>
       <material name="white">
         <color rgba="1.0 1.0 1.0 1.0"/>
@@ -780,7 +773,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <cylinder length="0.0095" radius="0.03"/>
+        <cylinder length="0.0095" radius="0.0315"/>
       </geometry>
     </collision>
   </link>
@@ -809,7 +802,7 @@
   <joint name="ur_4_ee_to_tube_geom0" type="fixed">
     <parent link="ur_4_ee"/>
     <child link="hw_tube_geom0"/>
-    <origin rpy="0 0 0" xyz="0.0127 0.0 0.08975"/>
+    <origin rpy="0 0 0" xyz="0.0127 0.0 0.45075"/>
   </joint>
   <link name="hw_tube_geom1">
     <visual>
@@ -831,7 +824,7 @@
   <joint name="ur_4_ee_to_tube_geom1" type="fixed">
     <parent link="ur_4_ee"/>
     <child link="hw_tube_geom1"/>
-    <origin rpy="0 0 0.7853981633974483" xyz="0.008980256121069154 0.008980256121069152 0.08975"/>
+    <origin rpy="0 0 0.7853981633974483" xyz="0.008980256121069154 0.008980256121069152 0.45075"/>
   </joint>
   <link name="hw_tube_geom2">
     <visual>
@@ -853,7 +846,7 @@
   <joint name="ur_4_ee_to_tube_geom2" type="fixed">
     <parent link="ur_4_ee"/>
     <child link="hw_tube_geom2"/>
-    <origin rpy="0 0 1.5707963267948966" xyz="7.776507174585693e-19 0.0127 0.08975"/>
+    <origin rpy="0 0 1.5707963267948966" xyz="7.776507174585693e-19 0.0127 0.45075"/>
   </joint>
   <link name="hw_tube_geom3">
     <visual>
@@ -875,7 +868,7 @@
   <joint name="ur_4_ee_to_tube_geom3" type="fixed">
     <parent link="ur_4_ee"/>
     <child link="hw_tube_geom3"/>
-    <origin rpy="0 0 2.356194490192345" xyz="-0.008980256121069152 0.008980256121069154 0.08975"/>
+    <origin rpy="0 0 2.356194490192345" xyz="-0.008980256121069152 0.008980256121069154 0.45075"/>
   </joint>
   <link name="hw_tube_geom4">
     <visual>
@@ -897,7 +890,7 @@
   <joint name="ur_4_ee_to_tube_geom4" type="fixed">
     <parent link="ur_4_ee"/>
     <child link="hw_tube_geom4"/>
-    <origin rpy="0 0 3.141592653589793" xyz="-0.0127 1.5553014349171385e-18 0.08975"/>
+    <origin rpy="0 0 3.141592653589793" xyz="-0.0127 1.5553014349171385e-18 0.45075"/>
   </joint>
   <link name="hw_tube_geom5">
     <visual>
@@ -919,7 +912,7 @@
   <joint name="ur_4_ee_to_tube_geom5" type="fixed">
     <parent link="ur_4_ee"/>
     <child link="hw_tube_geom5"/>
-    <origin rpy="0 0 3.9269908169872414" xyz="-0.008980256121069155 -0.008980256121069152 0.08975"/>
+    <origin rpy="0 0 3.9269908169872414" xyz="-0.008980256121069155 -0.008980256121069152 0.45075"/>
   </joint>
   <link name="hw_tube_geom6">
     <visual>
@@ -941,7 +934,7 @@
   <joint name="ur_4_ee_to_tube_geom6" type="fixed">
     <parent link="ur_4_ee"/>
     <child link="hw_tube_geom6"/>
-    <origin rpy="0 0 4.71238898038469" xyz="-2.3329521523757078e-18 -0.0127 0.08975"/>
+    <origin rpy="0 0 4.71238898038469" xyz="-2.3329521523757078e-18 -0.0127 0.45075"/>
   </joint>
   <link name="hw_tube_geom7">
     <visual>
@@ -963,13 +956,13 @@
   <joint name="ur_4_ee_to_tube_geom7" type="fixed">
     <parent link="ur_4_ee"/>
     <child link="hw_tube_geom7"/>
-    <origin rpy="0 0 5.497787143782138" xyz="0.00898025612106915 -0.008980256121069155 0.08975"/>
+    <origin rpy="0 0 5.497787143782138" xyz="0.00898025612106915 -0.008980256121069155 0.45075"/>
   </joint>
   <link name="hw_nozzle_geom0">
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <box size="0.003 0.04 0.07671"/>
+        <box size="0.005 0.125 0.4451"/>
       </geometry>
       <material name="translucent_white">
         <color rgba="1.0 1.0 1.0 0.5"/>
@@ -978,20 +971,20 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <box size="0.003 0.04 0.07671"/>
+        <box size="0.005 0.125 0.4451"/>
       </geometry>
     </collision>
   </link>
   <joint name="ur_4_ee_to_hw_nozzle_geom0" type="fixed">
     <parent link="ur_4_ee"/>
     <child link="hw_nozzle_geom0"/>
-    <origin rpy="0 -0.49514949 0" xyz="0.029920000000000002 0.0 0.03517396538237974"/>
+    <origin rpy="0 -0.3154949 0" xyz="0.079 0.0 0.21311701994296112"/>
   </joint>
   <link name="hw_nozzle_geom1">
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <box size="0.003 0.04 0.07671"/>
+        <box size="0.005 0.125 0.4451"/>
       </geometry>
       <material name="translucent_white">
         <color rgba="1.0 1.0 1.0 0.5"/>
@@ -1000,20 +993,20 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <box size="0.003 0.04 0.07671"/>
+        <box size="0.005 0.125 0.4451"/>
       </geometry>
     </collision>
   </link>
   <joint name="ur_4_ee_to_hw_nozzle_geom1" type="fixed">
     <parent link="ur_4_ee"/>
     <child link="hw_nozzle_geom1"/>
-    <origin rpy="0 -0.49514949 0.7853981633974483" xyz="0.021156634893101506 0.021156634893101503 0.03517396538237974"/>
+    <origin rpy="0 -0.3154949 0.7853981633974483" xyz="0.05586143571373726 0.05586143571373725 0.21311701994296112"/>
   </joint>
   <link name="hw_nozzle_geom2">
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <box size="0.003 0.04 0.07671"/>
+        <box size="0.005 0.125 0.4451"/>
       </geometry>
       <material name="translucent_white">
         <color rgba="1.0 1.0 1.0 0.5"/>
@@ -1022,20 +1015,20 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <box size="0.003 0.04 0.07671"/>
+        <box size="0.005 0.125 0.4451"/>
       </geometry>
     </collision>
   </link>
   <joint name="ur_4_ee_to_hw_nozzle_geom2" type="fixed">
     <parent link="ur_4_ee"/>
     <child link="hw_nozzle_geom2"/>
-    <origin rpy="0 -0.49514949 1.5707963267948966" xyz="1.8320716115244406e-18 0.029920000000000002 0.03517396538237974"/>
+    <origin rpy="0 -0.3154949 1.5707963267948966" xyz="4.837354856632045e-18 0.079 0.21311701994296112"/>
   </joint>
   <link name="hw_nozzle_geom3">
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <box size="0.003 0.04 0.07671"/>
+        <box size="0.005 0.125 0.4451"/>
       </geometry>
       <material name="translucent_white">
         <color rgba="1.0 1.0 1.0 0.5"/>
@@ -1044,20 +1037,20 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <box size="0.003 0.04 0.07671"/>
+        <box size="0.005 0.125 0.4451"/>
       </geometry>
     </collision>
   </link>
   <joint name="ur_4_ee_to_hw_nozzle_geom3" type="fixed">
     <parent link="ur_4_ee"/>
     <child link="hw_nozzle_geom3"/>
-    <origin rpy="0 -0.49514949 2.356194490192345" xyz="-0.021156634893101503 0.021156634893101506 0.03517396538237974"/>
+    <origin rpy="0 -0.3154949 2.356194490192345" xyz="-0.05586143571373725 0.05586143571373726 0.21311701994296112"/>
   </joint>
   <link name="hw_nozzle_geom4">
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <box size="0.003 0.04 0.07671"/>
+        <box size="0.005 0.125 0.4451"/>
       </geometry>
       <material name="translucent_white">
         <color rgba="1.0 1.0 1.0 0.5"/>
@@ -1066,20 +1059,20 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <box size="0.003 0.04 0.07671"/>
+        <box size="0.005 0.125 0.4451"/>
       </geometry>
     </collision>
   </link>
   <joint name="ur_4_ee_to_hw_nozzle_geom4" type="fixed">
     <parent link="ur_4_ee"/>
     <child link="hw_nozzle_geom4"/>
-    <origin rpy="0 -0.49514949 3.141592653589793" xyz="-0.029920000000000002 3.664143223048881e-18 0.03517396538237974"/>
+    <origin rpy="0 -0.3154949 3.141592653589793" xyz="-0.079 9.67470971326409e-18 0.21311701994296112"/>
   </joint>
   <link name="hw_nozzle_geom5">
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <box size="0.003 0.04 0.07671"/>
+        <box size="0.005 0.125 0.4451"/>
       </geometry>
       <material name="translucent_white">
         <color rgba="1.0 1.0 1.0 0.5"/>
@@ -1088,20 +1081,20 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <box size="0.003 0.04 0.07671"/>
+        <box size="0.005 0.125 0.4451"/>
       </geometry>
     </collision>
   </link>
   <joint name="ur_4_ee_to_hw_nozzle_geom5" type="fixed">
     <parent link="ur_4_ee"/>
     <child link="hw_nozzle_geom5"/>
-    <origin rpy="0 -0.49514949 3.9269908169872414" xyz="-0.021156634893101506 -0.021156634893101503 0.03517396538237974"/>
+    <origin rpy="0 -0.3154949 3.9269908169872414" xyz="-0.055861435713737265 -0.05586143571373725 0.21311701994296112"/>
   </joint>
   <link name="hw_nozzle_geom6">
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <box size="0.003 0.04 0.07671"/>
+        <box size="0.005 0.125 0.4451"/>
       </geometry>
       <material name="translucent_white">
         <color rgba="1.0 1.0 1.0 0.5"/>
@@ -1110,20 +1103,20 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <box size="0.003 0.04 0.07671"/>
+        <box size="0.005 0.125 0.4451"/>
       </geometry>
     </collision>
   </link>
   <joint name="ur_4_ee_to_hw_nozzle_geom6" type="fixed">
     <parent link="ur_4_ee"/>
     <child link="hw_nozzle_geom6"/>
-    <origin rpy="0 -0.49514949 4.71238898038469" xyz="-5.496214834573321e-18 -0.029920000000000002 0.03517396538237974"/>
+    <origin rpy="0 -0.3154949 4.71238898038469" xyz="-1.4512064569896134e-17 -0.079 0.21311701994296112"/>
   </joint>
   <link name="hw_nozzle_geom7">
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <box size="0.003 0.04 0.07671"/>
+        <box size="0.005 0.125 0.4451"/>
       </geometry>
       <material name="translucent_white">
         <color rgba="1.0 1.0 1.0 0.5"/>
@@ -1132,14 +1125,14 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <box size="0.003 0.04 0.07671"/>
+        <box size="0.005 0.125 0.4451"/>
       </geometry>
     </collision>
   </link>
   <joint name="ur_4_ee_to_hw_nozzle_geom7" type="fixed">
     <parent link="ur_4_ee"/>
     <child link="hw_nozzle_geom7"/>
-    <origin rpy="0 -0.49514949 5.497787143782138" xyz="0.0211566348931015 -0.021156634893101506 0.03517396538237974"/>
+    <origin rpy="0 -0.3154949 5.497787143782138" xyz="0.055861435713737244 -0.055861435713737265 0.21311701994296112"/>
   </joint>
   <link name="world"/>
   <joint name="fixed_rail_2" type="fixed">

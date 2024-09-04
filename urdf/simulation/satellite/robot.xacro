@@ -372,7 +372,7 @@
   <joint name="$(arg prefix)ee_peg_joint" type="fixed">
   <parent link="$(arg prefix)ee_body"/>
     <child link="$(arg prefix)ee_peg"/>
-    <origin rpy="0 0 0" xyz="0 0 1.1101"/>
+    <origin rpy="0 0 0" xyz="0 0 1.3101"/>
   </joint>
 
   <link name="$(arg prefix)ee_peg">

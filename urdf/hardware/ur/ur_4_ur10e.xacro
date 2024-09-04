@@ -6,13 +6,11 @@
   <xacro:include filename="$(find on_orbit)/urdf/hardware/ur/ur10e_macro.xacro"/>
   <xacro:ur10e_robot prefix="ur_4_" calibration_file="$(find on_orbit)/config/holo_params/ur_4_calibration.yaml"/>
 
-  <xacro:property name="dist_tool_to_ft_sensor" value="0.0315" />
-
   
   <!--Short White Nozzle Attached to Robot 4-->
   <!-- Will need to be updated after the print-->
-  <xacro:property name="ur_4_ee_length" value="0.1194"/>
-  <xacro:property name="ur_4_ee_signed_dist_from_ee_to_goal" value="0.110"/>
+  <xacro:property name="ur_4_ee_length" value="0.4785"/>
+  <xacro:property name="ur_4_ee_signed_dist_from_ee_to_goal" value="0.4656"/>
 
 
   <link name="hw_goal"/>

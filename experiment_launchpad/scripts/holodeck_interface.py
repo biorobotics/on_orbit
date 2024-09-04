@@ -46,8 +46,8 @@ class HolodeckInterface:
         # ROS Publishers, Subscribers
         self.mrv_arm_pub = rospy.Publisher(f'/{self.mrv_arm_name}/target_joint_velocity', URJointCommand, queue_size=1)
         self.client_arm_pub = rospy.Publisher(f'/{self.client_arm_name}/target_joint_velocity', URJointCommand, queue_size=1)
-        self.mrv_carriage_pub = rospy.Publisher(f'/{self.mrv_carriage_name}/target_joint_velocity', Float32, queue_size=1)
-        self.client_carriage_pub = rospy.Publisher(f'/{self.client_carriage_name}/target_joint_velocity', Float32, queue_size=1)
+        self.mrv_carriage_pub = rospy.Publisher(f'/{self.mrv_carriage_name}/joint_velocity', Float32, queue_size=1)
+        self.client_carriage_pub = rospy.Publisher(f'/{self.client_carriage_name}/joint_velocity', Float32, queue_size=1)
 
         self.mrv_arm_js_sub = rospy.Subscriber(f'/{self.mrv_arm_name}/joint_states', JointState, self.mrv_arm_js_callback)
         self.client_arm_js_sub = rospy.Subscriber(f'/{self.client_arm_name}/joint_states', JointState, self.client_arm_js_callback)
@@ -193,7 +193,7 @@ class HolodeckInterface:
             quit()
     
     def ur_joint_move(self, name, angles):
-        rospy.loginfo(f"Moving {name} arm to {angles}")
+        # rospy.loginfo(f"Moving {name} arm to {angles}")
         # Move the specified arm to the specified joint angles
         if len(angles) != 6:
             raise ValueError("Joint angles must have 6 elements.")
@@ -236,10 +236,8 @@ class HolodeckInterface:
         vel_msg.wrist3 = v[5]
 
         if name == 'mrv':
-            rospy.loginfo(f"Sending velocity command to MRV arm: {v}")
             self.mrv_arm_pub.publish(vel_msg)
         elif name == 'client':
-            rospy.loginfo(f"Sending velocity command to Client arm: {v}")
             self.client_arm_pub.publish(vel_msg)
         
     # Vention Utility Functions

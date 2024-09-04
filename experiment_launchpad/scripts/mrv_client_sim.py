@@ -1070,6 +1070,18 @@ class MRVClientSim(object):
 
     return np.abs(sw_rel_pos[2]) < (self.get_dist_throat_opening_to_goal() - depth_offset)
   
+  def dist_to_throat_opening(self):
+    ''' Returns the distance between the peg and the throat opening of the nozzle'''
+    if self.do_noisy_state_estimation:
+      sw_peg_pos, _, _, sw_nozzle_pos, sw_nozzle_rmat, _ = self.get_peg_and_nozzle_info()
+    else:
+      sw_peg_pos, _, _, sw_nozzle_pos, sw_nozzle_rmat, _ = self.get_peg_and_nozzle_info_est()
+
+    sw_pos_goal = sw_nozzle_pos + sw_nozzle_rmat[:, 2]*self.get_dist_nozzle_opening_from_goal()
+    sw_rel_pos = sw_nozzle_rmat.transpose()@(sw_peg_pos - sw_pos_goal)
+
+    return np.abs(sw_rel_pos[2])
+  
   def is_peg_past_nozzle_opening(self,depth_offset = 0):
     ''' Returns True if peg is inside the nozzle, False otherwise 
 

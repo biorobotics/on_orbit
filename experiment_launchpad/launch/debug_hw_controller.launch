@@ -7,7 +7,7 @@
   <arg name="sw_rvizconfig" default="$(find on_orbit)/rviz/mrv_client.rviz" />
   <node name="sw_rviz" pkg="rviz" type="rviz" args="-d $(arg sw_rvizconfig)" required="true" />
 
-  <arg name="hw_rvizconfig" default="$(find on_orbit)/rviz/on_orbit.rviz" />
+  <arg name="hw_rvizconfig" default="$(find on_orbit)/rviz/on_orbit_hil.rviz" />
   <node name="hw_rviz" pkg="rviz" type="rviz" args="-d $(arg hw_rvizconfig)" required="true" />
 
   <param name="hw_robot_description" textfile="$(find on_orbit)/urdf/on_orbit.urdf" />

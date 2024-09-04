@@ -12,8 +12,8 @@ xacro $PACKAGE_PATH/urdf/simulation/satellite/robot.xacro -o robot.urdf
 echo -n "Creating cv.urdf"
 xacro $PACKAGE_PATH/urdf/simulation/satellite/cv.xacro -o cv.urdf
 
-echo -n "Creating on_orbit_rail.urdf"
-xacro $PACKAGE_PATH/urdf/hardware/on_orbit.xacro -o on_orbit_rail.urdf
+echo -n "Creating on_orbit.urdf"
+xacro $PACKAGE_PATH/urdf/hardware/on_orbit.xacro -o on_orbit.urdf
 
 echo -n "Creating holodeck.urdf"
 xacro $PACKAGE_PATH/urdf/hardware/holodeck.xacro -o holodeck.urdf

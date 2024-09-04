@@ -77,11 +77,11 @@ peg_mass: 0.186515
 peg_com: 0.036562
 
 
-dist_nozzle_opening_from_goal: 0.110 # Based on our nozzle CAD
-dist_capture_box_from_nozzle_opening: 0.38632442762 # Distance from front of capture box Based on actual CV nozzle where distance of nozzle opening to goal is 0.4765 m
+dist_nozzle_opening_from_goal: 0.4675 # Based on our nozzle CAD
+dist_capture_box_from_nozzle_opening: 0.00 # Distance from front of capture box Based on actual CV nozzle where distance of nozzle opening to goal is 0.4765 m
 dist_centering_waypoint_from_goal: 0.481024428 # dist_nozzle_opening_from_goal + dist_capture_box_from_nozzle_opening + 2*(ur16 repeatability + ur5 repeatability) + peg radius
 
 
 # Home angles for the mrv and client (Leading value is the carriage position in meters)
-mrv_hil_home_angles: [2.01,-3.6132238546954554, -1.449615129535534, -2.2138543128967285, -2.505747457543844, -2.078312698994772, -0.5055072943316858]
-client_hil_home_angles: [1.24, 3.244448184967041, -1.167282060985901, 1.7743399778949183, -0.6228822034648438, -4.635807816182272, 0.05253524333238602]
+mrv_hil_home_angles: [1.4672,-3.6132238546954554, -1.449615129535534, -2.2138543128967285, -2.505747457543844, -2.078312698994772, -0.5055072943316858]
+client_hil_home_angles: [1.2384, 3.244448184967041, -1.167282060985901, 1.7743399778949183, -0.6228822034648438, -4.635807816182272, 0.05253524333238602]
