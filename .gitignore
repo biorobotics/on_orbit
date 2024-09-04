@@ -2,6 +2,7 @@ __pycache__
 data/*
 bags/*
 *.png
+.vscode/*
 *.jpg
 scripts/__pycache__
 *.swp

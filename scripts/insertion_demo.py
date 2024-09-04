@@ -88,7 +88,7 @@ class InsertionDemo:
             rospy.logerr(e)
 
         # Pinocchio Model Initialization
-        self.model = pin.buildModelFromUrdf(rospath + '/urdf/on_orbit_rail.urdf')
+        self.model = pin.buildModelFromUrdf(rospath + '/urdf/on_orbit.urdf')
         self.data = self.model.createData()
 
         self.mrv_arm_base_fid = self.model.getFrameId(f'ur_{self.mrv_arm_name[-1]}_base')
@@ -117,7 +117,7 @@ class InsertionDemo:
                               [0, np.sqrt(2)/2, np.sqrt(2)/2]]) 
         
         # Load EE Pose Trajectories
-        path = '/experiment_logs/pos__0.1_0.1_0.0_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.002617993877991494_0.002617993877991494_0.0_20240628-170528/'
+        path = '/experiment_logs/pos__-0.1_-0.1_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_-0.0_-0.0_0.020240904-122516/'
         self.mrv_ee_pos_trj = np.load(rospath + path + 'sw_peg_pos_trj.npy')
         self.mrv_ee_rmat_trj = np.load(rospath + path + 'sw_peg_rmat_trj.npy')
         self.client_ee_pos_trj = np.load(rospath + path + 'sw_nozzle_pos_trj.npy')
@@ -179,7 +179,7 @@ class InsertionDemo:
         mrv_arm_target.joint_angles = [-3.6132238546954554, -1.449615129535534, -2.2138543128967285, -2.505747457543844, -2.078312698994772, -0.5055072943316858]
 
         try:
-            resp1 = mrv_carriage_srv([2.01]) 
+            resp1 = mrv_carriage_srv([1.185]) 
             resp2 = mrv_arm_srv(mrv_arm_target)
             print(f"Response: {resp1}, {resp2}")
         except rospy.ServiceException as e:
@@ -197,7 +197,7 @@ class InsertionDemo:
         # client_arm_target.joint_angles = [3.2340543270111084, -1.013890103702881, 1.2362335363971155, -0.23575575769458013, -4.647035304700033, -0.023717228566304982]
         client_arm_target.joint_angles = [3.244448184967041, -1.167282060985901, 1.7743399778949183, -0.6228822034648438, -4.635807816182272, 0.05253524333238602]
         try:
-            resp1 = client_carriage_srv([1.24])
+            resp1 = client_carriage_srv([1.4682])
             resp2 = client_arm_srv(client_arm_target)
             print(f"Response: {resp1}, {resp2}")
         except rospy.ServiceException as e:
@@ -351,7 +351,7 @@ class InsertionDemo:
         rospy.wait_for_service(srv_name)
         try:
             position_move = rospy.ServiceProxy(srv_name, VentionPositionMove)
-            response = position_move([self.mrv_hil_js.position[0] - 0.4])
+            response = position_move([self.mrv_hil_js.position[0] - 0.8])
             print(f"Service call to {srv_name} succeeded")
             print(f"Response: {response}")
         except rospy.ServiceException as e:
