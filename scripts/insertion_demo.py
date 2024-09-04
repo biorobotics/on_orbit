@@ -117,7 +117,7 @@ class InsertionDemo:
                               [0, np.sqrt(2)/2, np.sqrt(2)/2]]) 
         
         # Load EE Pose Trajectories
-        path = '/experiment_logs/pos__-0.1_-0.1_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_-0.0_-0.0_0.020240904-122516/'
+        path = '/experiment_logs/pos__-0.1_-0.1_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_-0.0_-0.0_0.020240904-164824/'
         self.mrv_ee_pos_trj = np.load(rospath + path + 'sw_peg_pos_trj.npy')
         self.mrv_ee_rmat_trj = np.load(rospath + path + 'sw_peg_rmat_trj.npy')
         self.client_ee_pos_trj = np.load(rospath + path + 'sw_nozzle_pos_trj.npy')
