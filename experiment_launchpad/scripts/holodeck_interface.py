@@ -11,7 +11,7 @@ from sensor_msgs.msg import JointState
 from threading import Lock
 
 class HolodeckInterface:
-    def __init__(self, dt):
+    def __init__(self, dt = 0.01):
 
         # Time step
         self.dt = dt

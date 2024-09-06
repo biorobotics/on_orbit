@@ -2,7 +2,7 @@
 
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:property name="nozzle_length" value="0.4285" />
-  <xacro:property name="nozzle_geom_length" value="0.4451" />
+  <xacro:property name="nozzle_geom_length" value="0.4551" />
   <xacro:property name="nozzle_wall_width" value="0.005" />
   <xacro:property name="nozzle_box_width" value="0.125" />
   <xacro:property name="throat_outer_diameter" value="0.032" />
@@ -11,7 +11,7 @@
   <xacro:property name="entry_middle_diameter" value="${entry_outer_diameter - nozzle_wall_width}" />
   <xacro:property name="entry_inner_rad" value="${(entry_outer_diameter - 2*nozzle_wall_width)/2}" />
   <xacro:property name="dist_from_centerline" value="${(throat_middle_diameter + entry_middle_diameter)/4}" />
-  <xacro:property name="slope_angle" value="0.3054949" />
+  <xacro:property name="slope_angle" value="0.3073" />
   <xacro:macro name="nozzle_geom" params="num theta prefix"> 
     <link name="${prefix}nozzle_geom${num}">
       
