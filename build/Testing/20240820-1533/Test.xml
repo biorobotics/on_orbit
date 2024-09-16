@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Site BuildName="(empty)"
+	BuildStamp="20240820-1533-Experimental"
+	Name="medusal-XPS-8960"
+	Generator="ctest-3.30.0-rc4"
+	CompilerName="/usr/bin/c++"
+	CompilerVersion="9.4.0"
+	OSName="Linux"
+	Hostname="medusal-XPS-8960"
+	OSRelease="5.15.0-117-generic"
+	OSVersion="#127~20.04.1-Ubuntu SMP Thu Jul 11 15:36:12 UTC 2024"
+	OSPlatform="x86_64"
+	Is64Bits="1"
+	VendorString="GenuineIntel"
+	VendorID="Intel Corporation"
+	FamilyID="6"
+	ModelID="183"
+	ProcessorCacheSize="36864"
+	NumberOfLogicalCPU="32"
+	NumberOfPhysicalCPU="24"
+	TotalVirtualMemory="2047"
+	TotalPhysicalMemory="63946"
+	LogicalProcessorsPerPhysical="1"
+	ProcessorClockFrequency="3000"
+	>
+	<Testing>
+		<StartDateTime>Aug 20 11:42 EDT</StartDateTime>
+		<StartTestTime>1724168576</StartTestTime>
+		<TestList/>
+		<EndDateTime>Aug 20 11:42 EDT</EndDateTime>
+		<EndTestTime>1724168576</EndTestTime>
+		<ElapsedMinutes>0</ElapsedMinutes>
+	</Testing>
+</Site>

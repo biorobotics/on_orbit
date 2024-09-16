@@ -1,0 +1,3 @@
+cw_a: 6793137 # Orbital radius of client
+cw_mu: 3.986e+14 # Gravitational parameter
+cw_orbit_dir: 'x' # When we initialize the simulation, what is the direction of the CV's orbit in our sim's world frame? Can't have a z component, since we assume that's the radial direction

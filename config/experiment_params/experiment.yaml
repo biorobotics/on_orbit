@@ -1,0 +1,100 @@
+delta_pos: [0.0, 0.0, -0.05] #m, position of tip of peg wrt centering waypoint
+delta_rot: [0., 0., 0.] #deg, axis angle vector 
+delta_v: [0., 0., 0.0] #m/s, relative velocity between base of MRV and base of client 
+initial_client_w: [0.0, 0.0, 0.] # in deg/s
+initial_mrv_w: [0., 0., 0.] # in deg/s
+
+do_save: False
+use_cw: True #use orbital gravitational dynamics
+save_folder: 'experiment_logs/06_28_24/test/'
+
+# This is the library used by Anoop before Andrew took over the code, which has a phase where contact is broken. 
+#traj_library_prefix: '/experiment_logs/01_30_24/ipopt_multicore/'
+#raj_library_prefix: '/experiment_logs/02_02_24/ipopt_slide_to_hole/'
+#traj_library_prefix: '/experiment_logs/04_02_24/contact_avoidance/'
+#traj_library_prefix: '/experiment_logs/04_09_24/x_grid/'
+#traj_library_prefix: '/experiment_logs/04_15_24/updated_urdf_test/'
+#traj_library_prefix: '/experiment_logs/04_15_24/contact_free/'
+#traj_library_prefix: '/experiment_logs/04_15_24/contact/'
+#traj_library_prefix: '/experiment_logs/04_16_24/cb_center_robust_with_contact/'
+#traj_library_prefix: '/experiment_logs/04_16_24/cb_corners_no_contact/'
+#traj_library_prefix: '/experiment_logs/04_16_24/wx_with_contact/'
+#traj_library_prefix: '/experiment_logs/04_22_24/cb_corners_no_angular_no_contact/'
+#traj_library_prefix: '/experiment_logs/04_23_24/cb_no_ang_vel/'
+#traj_library_prefix: '/experiment_logs/04_24_24/contact_free_cb_corners_0_2deg/'
+#traj_library_prefix: '/experiment_logs/05_07_24/lib_capture_box_zero_vel_5_10_15_s/'
+#traj_library_prefix: '/experiment_logs/05_07_24/lib_capture_box_0_1_5_w_vel_5_10_10_s/'
+#traj_library_prefix: '/experiment_logs/06_07_24/lib_contact_free_nozzle_align/'
+#traj_library_prefix: '/experiment_logs/06_14_24/WithPlunge/'
+traj_library_prefix: '/experiment_logs/09_10_24/test_lib/no_contact/'
+
+# Whether to clip joint-level acceleration and velocities based on limits specified in limits.yaml
+clip_joint_commands: True
+
+use_grid: False
+grid_type: 15
+initial_grid_idx: 0 #use zero-indexing
+visualize_before_moving: True
+
+debug_with_test_traj: False
+test_traj_id: 0 # see file TestTrajectories
+
+# If set to True, the Pybullet simulator will reset the pose of the client and/or MRV base frame to their initial poses, removing the floating-base behavior
+lock_client: False
+lock_mrv: False
+
+apply_wrench_only_when_close: False
+
+client_velocity_noise_ang_amp: 0.0 #deg/s
+
+probe_z_axis_plunge_velocity: 0.005 #See within_nozzle_admittance.py for definition
+use_variable_plunge_speed: False # See within_nozzle_admittance.py
+use_scheduled_gains: True # See resolved_accel.py
+
+# After this time, the simulation/experiment will shutdown
+time_limit: 500
+
+# Set to true to simulate sensor noise in the client state
+do_noisy_state_estimation: False
+
+# Set to true to simulate delay in client pose due to slower vision feedback rate
+do_vision_delay: False
+vision_measurement_rate: 10 #Hz
+
+# Number of times to run the experiment on the hardware platform
+num_hardware_trials: 1
+
+# Whether to visualize the simulator 
+visualize: True
+
+# Set to true to visualize trajectories before executing them on the hardware-in-the-loop system
+verify_trajectory_visually: True
+
+# Constants used to perform gravity compensation for the F/T sensor
+# peg_mass: 0.186515
+# peg_com: 0.036562
+# peg_mass: 0.114890
+# peg_com: 0.039034
+peg_mass: 0.039034
+peg_com: 0.114890
+# peg_mass: 0.123257
+# peg_com: 0.031410
+# Mass = 0.034586
+# CoM = 0.114204
+# Mass = 0.039034
+# CoM = 0.114890
+# Mass = 0.038308
+# CoM = 0.117127
+
+
+
+
+
+dist_nozzle_opening_from_goal: 0.4675 # Based on our nozzle CAD
+dist_capture_box_from_nozzle_opening: 0.00 # Distance from front of capture box Based on actual CV nozzle where distance of nozzle opening to goal is 0.4765 m
+dist_centering_waypoint_from_goal: 0.481024428 # dist_nozzle_opening_from_goal + dist_capture_box_from_nozzle_opening + 2*(ur16 repeatability + ur5 repeatability) + peg radius
+
+
+# Home angles for the mrv and client (Leading value is the carriage position in meters)
+mrv_hil_home_angles: [1.4500, -3.284766499196188, -1.1100249749473114, -2.4770896434783936, -2.675643583337301, -1.739727799092428, -0.7776368300067347]
+client_hil_home_angles: [1.2384, 3.244448184967041, -1.167282060985901, 1.7743399778949183, -0.6228822034648438, -4.635807816182272, 0.05253524333238602]
