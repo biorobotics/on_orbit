@@ -766,12 +766,21 @@ class MrvController(object):
     elif self.controller_type == 3: 
       joint_acc_cmd = self.within_nozzle_admittance.compute_control(ref_traj_point, mrv_client_sim, wrench_peg_peg, self.dt, mrv_config, mrv_config_dot)
     elif self.controller_type == 4: 
-      if mrv_client_sim.is_peg_past_nozzle_opening():         
-         if not self.within_nozzle_admittance.admittance_traj_reset:
-           print("Resetting admittance trajectory")
-           self.within_nozzle_admittance.reset_admittance_traj(mrv_client_sim)
+      # TODO: Lets turn this on only when we are some distance inside the nozzle
+      # if mrv_client_sim.is_peg_past_nozzle_opening():         
+      #    if not self.within_nozzle_admittance.admittance_traj_reset:
+      #      print("Resetting admittance trajectory")
+      #      self.within_nozzle_admittance.reset_admittance_traj(mrv_client_sim)
 
-         joint_acc_cmd = self.within_nozzle_admittance.compute_control(ref_traj_point, mrv_client_sim, wrench_peg_peg, self.dt, mrv_config, mrv_config_dot)
+      #    joint_acc_cmd = self.within_nozzle_admittance.compute_control(ref_traj_point, mrv_client_sim, wrench_peg_peg, self.dt, mrv_config, mrv_config_dot)
+      # else:
+      #   joint_acc_cmd = self.resolved_accel.compute_control(ref_traj_point, mrv_client_sim, wrench_peg_peg, self.dt, mrv_config, mrv_config_dot)
+      if mrv_client_sim.dist_to_throat_opening() < 0.167:
+        if not self.within_nozzle_admittance.admittance_traj_reset:
+          print("Resetting admittance trajectory")
+          self.within_nozzle_admittance.reset_admittance_traj(mrv_client_sim)
+          
+        joint_acc_cmd = self.within_nozzle_admittance.compute_control(ref_traj_point, mrv_client_sim, wrench_peg_peg, self.dt, mrv_config, mrv_config_dot)
       else:
         joint_acc_cmd = self.resolved_accel.compute_control(ref_traj_point, mrv_client_sim, wrench_peg_peg, self.dt, mrv_config, mrv_config_dot)
     else:

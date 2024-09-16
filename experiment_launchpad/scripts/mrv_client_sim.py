@@ -230,12 +230,6 @@ class MRVClientSim(object):
       if 'nozzle' in joint_info[1].decode('UTF-8'):
         self.pb_nozzle_id = j
 
-    urdf_idx = mrv_cv_urdf_file.find('urdf/')
-    self.flex_solar_urdf_file = mrv_cv_urdf_file[:urdf_idx + 5] + '/robot_cv_detached_with_flexible_solar_panels.urdf'
-    self.flex_solar_pin_model = RobotWrapper.BuildFromURDF(self.flex_solar_urdf_file).model
-    self.flex_solar_pin_model.gravity.setZero()
-    self.flex_solar_pin_data = pin.Data(self.flex_solar_pin_model)
-
     # For some reason I need this line to enable torque control
     self.pb_client.setJointMotorControlArray(self.pb_mrv_id, self.pb_joint_indices, pybullet.VELOCITY_CONTROL, forces=np.zeros(len(self.pb_joint_indices)))
     self.pb_client.setJointMotorControlArray(self.pb_mrv_id, self.pb_solar_indices, pybullet.VELOCITY_CONTROL, forces=np.zeros(len(self.pb_solar_indices)))
@@ -1080,6 +1074,7 @@ class MRVClientSim(object):
     sw_pos_goal = sw_nozzle_pos + sw_nozzle_rmat[:, 2]*self.get_dist_nozzle_opening_from_goal()
     sw_rel_pos = sw_nozzle_rmat.transpose()@(sw_peg_pos - sw_pos_goal)
 
+    # print('Distance to throat opening', np.abs(sw_rel_pos[2]))
     return np.abs(sw_rel_pos[2])
   
   def is_peg_past_nozzle_opening(self,depth_offset = 0):

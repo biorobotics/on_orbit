@@ -20,7 +20,7 @@ class WithinNozzleAdmittance(object):
 
     self.goal_z_offset = 0.150 # extra offset added to goal_pos along z-axis of goal frame, added so that we ensure probe goes all the way into the hole
     self.throat_length = 0.0475
-    self.nozzle_length = 0.4785 - self.throat_length
+    self.nozzle_length = 0.1785 - self.throat_length
     self.nozzle_opening_from_goal = 0.4785 + self.goal_z_offset
 
     self.resolved_accel = ResolvedAccel(use_scheduled_gains)
@@ -113,8 +113,6 @@ class WithinNozzleAdmittance(object):
       dist_to_throat = mrv_client_sim.dist_to_throat_opening()
       if dist_to_throat < 0.01:
         nom_speed = self.throat_speed
-      elif dist_to_throat > 0.11:
-        nom_speed = 4 * self.throat_speed
       else:
         nom_speed = self.probe_z_axis_plunge_velocity
 

@@ -1,7 +1,7 @@
-delta_pos: [0.1, -0.1, 0.0] #m, position of tip of peg wrt centering waypoint
+delta_pos: [0.0, 0.0, -0.05] #m, position of tip of peg wrt centering waypoint
 delta_rot: [0., 0., 0.] #deg, axis angle vector 
 delta_v: [0., 0., 0.0] #m/s, relative velocity between base of MRV and base of client 
-initial_client_w: [0.15, 0.15, 0.] # in deg/s
+initial_client_w: [0.0, 0.0, 0.] # in deg/s
 initial_mrv_w: [0., 0., 0.] # in deg/s
 
 do_save: False
@@ -26,15 +26,15 @@ save_folder: 'experiment_logs/06_28_24/test/'
 #traj_library_prefix: '/experiment_logs/05_07_24/lib_capture_box_0_1_5_w_vel_5_10_10_s/'
 #traj_library_prefix: '/experiment_logs/06_07_24/lib_contact_free_nozzle_align/'
 #traj_library_prefix: '/experiment_logs/06_14_24/WithPlunge/'
-traj_library_prefix: '/experiment_logs/06_14_24/lib_capture_box_ang_vel_0_15/'
+traj_library_prefix: '/experiment_logs/09_10_24/test_lib/no_contact/'
 
 # Whether to clip joint-level acceleration and velocities based on limits specified in limits.yaml
 clip_joint_commands: True
 
-use_grid: True
+use_grid: False
 grid_type: 15
 initial_grid_idx: 0 #use zero-indexing
-visualize_before_moving: False
+visualize_before_moving: True
 
 debug_with_test_traj: False
 test_traj_id: 0 # see file TestTrajectories
@@ -55,10 +55,10 @@ use_scheduled_gains: True # See resolved_accel.py
 time_limit: 500
 
 # Set to true to simulate sensor noise in the client state
-do_noisy_state_estimation: True
+do_noisy_state_estimation: False
 
 # Set to true to simulate delay in client pose due to slower vision feedback rate
-do_vision_delay: True
+do_vision_delay: False
 vision_measurement_rate: 10 #Hz
 
 # Number of times to run the experiment on the hardware platform
@@ -71,10 +71,23 @@ visualize: True
 verify_trajectory_visually: True
 
 # Constants used to perform gravity compensation for the F/T sensor
+# peg_mass: 0.186515
+# peg_com: 0.036562
+# peg_mass: 0.114890
+# peg_com: 0.039034
+peg_mass: 0.039034
+peg_com: 0.114890
+# peg_mass: 0.123257
+# peg_com: 0.031410
+# Mass = 0.034586
+# CoM = 0.114204
+# Mass = 0.039034
+# CoM = 0.114890
+# Mass = 0.038308
+# CoM = 0.117127
 
-# Stiff white peg, same overall size as two white pegs described above
-peg_mass: 0.186515
-peg_com: 0.036562
+
+
 
 
 dist_nozzle_opening_from_goal: 0.4675 # Based on our nozzle CAD
@@ -83,5 +96,5 @@ dist_centering_waypoint_from_goal: 0.481024428 # dist_nozzle_opening_from_goal +
 
 
 # Home angles for the mrv and client (Leading value is the carriage position in meters)
-mrv_hil_home_angles: [1.4672,-3.6132238546954554, -1.449615129535534, -2.2138543128967285, -2.505747457543844, -2.078312698994772, -0.5055072943316858]
+mrv_hil_home_angles: [1.4500, -3.284766499196188, -1.1100249749473114, -2.4770896434783936, -2.675643583337301, -1.739727799092428, -0.7776368300067347]
 client_hil_home_angles: [1.2384, 3.244448184967041, -1.167282060985901, 1.7743399778949183, -0.6228822034648438, -4.635807816182272, 0.05253524333238602]

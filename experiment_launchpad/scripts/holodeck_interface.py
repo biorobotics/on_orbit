@@ -1,5 +1,6 @@
 import rospy
 import numpy as np
+import pinocchio as pin
 from std_msgs.msg import Float32MultiArray, Float32, String
 from geometry_msgs.msg import TransformStamped, WrenchStamped, Pose
 from ur_state_machine.srv import JointMove, PositionServo, PositionMove, PositionMoveRequest, JointVelocityServo, JointVelocityServoResponse
@@ -8,6 +9,7 @@ from vention_control.srv import PositionMove as VentionPositionMove
 from vention_control.srv import PositionMoveResponse as VentionPositionMoveResponse
 from std_srvs.srv import Trigger, TriggerResponse
 from sensor_msgs.msg import JointState
+
 from threading import Lock
 
 class HolodeckInterface:
@@ -144,8 +146,37 @@ class HolodeckInterface:
         js_new.effort = js.effort
         return js_new
     
+    # # Frame Transformations
+    # def interpolate_poses(self, pose1, pose2):
+    #     '''Interpolate between two poses'''
+    #     traj = rtb.tools.trajectory.ctraj(SE3(pose1), SE3(pose2), 150)
+    #     return traj
 
-        
+    # def to_ur_base_frame(self, g_WN, is_mrv=True):
+    #     '''Update the transform from world frame to MRV arm base frame so commands can be sent to the arm in its base frame'''
+    #     self.q[self.mrv_carriage_q_idx:self.mrv_carriage_q_idx + 7] = self.mrv_hil_js.position
+    #     self.q[self.client_carriage_q_idx:self.client_carriage_q_idx + 7] = self.client_hil_js.position
+    #     pin.forwardKinematics(self.model, self.data, self.q)
+    #     pin.updateFramePlacements(self.model, self.data)
+    #     Tc_fid = self.model.getFrameId(f'ur_{self.client_arm_name[-1]}_tool0')
+    #     Tm_fid = self.model.getFrameId(f'ur_{self.mrv_arm_name[-1]}_tool0')
+
+    #     if is_mrv:
+    #         g_WB = np.copy(self.data.oMf[self.mrv_arm_base_fid]) # transform MRV base to world frame
+    #         g_WP = g_WN
+    #         g_PT = np.linalg.inv(self.data.oMf[self.mrv_arm_ee_fid]) @ self.data.oMf[Tm_fid] # constant transform from MRV tool0 frame to MRV EE frame
+    #     else:
+    #         g_WB = np.copy(self.data.oMf[self.client_arm_base_fid])
+    #         g_WP = g_WN
+    #         g_PT = np.linalg.inv(self.data.oMf[self.client_arm_ee_fid]) @ self.data.oMf[Tc_fid]
+
+    #     return np.linalg.inv(g_WB) @ g_WP @ g_PT
+    
+
+    def global_move(self, name, pose_start, pose_end, duration):
+        ''' Psuedo Code for now'''
+        'Pose in world frame currently is sent as pose_start, desired pose in world frame is pose_end'
+        ' When we send a position servo command it needs to be in the based frame of the arm'
 
     # UR Utility Functions
 
@@ -239,6 +270,8 @@ class HolodeckInterface:
             self.mrv_arm_pub.publish(vel_msg)
         elif name == 'client':
             self.client_arm_pub.publish(vel_msg)
+
+    
         
     # Vention Utility Functions
     def vention_position_move(self, name, pos):

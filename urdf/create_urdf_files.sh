@@ -18,4 +18,7 @@ xacro $PACKAGE_PATH/urdf/hardware/on_orbit.xacro -o on_orbit.urdf
 echo -n "Creating holodeck.urdf"
 xacro $PACKAGE_PATH/urdf/hardware/holodeck.xacro -o holodeck.urdf
 
+echo -n "Creating mrv_ur_arm.urdf"
+xacro $PACKAGE_PATH/urdf/hardware/ur/ur_3_ur10e.xacro -o mrv_ur_arm.urdf
+
 echo "Done."

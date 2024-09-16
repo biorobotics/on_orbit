@@ -1,6 +1,8 @@
 import numpy as np
 import time
 import pinocchio as pin
+import roboticstoolbox as rtb
+from spatialmath import SE3
 from pinocchio.robot_wrapper import RobotWrapper
 from scipy.spatial.transform import Rotation as R
 from holodeck_interface import HolodeckInterface
@@ -9,10 +11,10 @@ import rospy
 from sensor_msgs.msg import JointState
 from tf2_ros import TransformBroadcaster
 from geometry_msgs.msg import TransformStamped, WrenchStamped, PointStamped, Point
-from std_msgs.msg import String, Float32, Float32MultiArray
+from std_msgs.msg import String, Float32, Float32MultiArray 
 
 
-# from on_orbit.on_orbit_bindings import IKMoveEEBehindBarrier
+from on_orbit.on_orbit_bindings import IKMoveEEBehindBarrier
 
 import os
 
@@ -29,6 +31,9 @@ class HILRunner(object):
     self.client_arm_name = 'UR4'
     self.mrv_carriage_name = f'vention{self.mrv_arm_name[-1]}'
     self.client_carriage_name = f'vention{self.client_arm_name[-1]}'
+    self.mrv_ft_sensor = f'netft_{self.mrv_arm_name[-1]}_data'
+    # Placeholder for now but we may end up putting an f/t sensor on the client arm
+    # self.client_ft_sensor = f'netft_{self.client_arm_name[-1]}_data'
     self.holo_control = HolodeckInterface(dt=dt)
     self.mrv_arm_pub = rospy.Publisher(f'/{self.mrv_arm_name}/joint_velocity', Float32MultiArray, queue_size=1)
     self.client_arm_pub = rospy.Publisher(f'/{self.client_arm_name}/joint_velocity', Float32MultiArray, queue_size=1)
@@ -65,6 +70,7 @@ class HILRunner(object):
     # poses during forward kinematics
     self.nozzle_fid = self.pin_model.getFrameId('ur_4_ee') 
     self.peg_fid = self.pin_model.getFrameId('ur_3_ee')
+    rospy.loginfo(f'Peg fid: {self.peg_fid}, Nozzle fid: {self.nozzle_fid}')
     self.ft_fid = self.pin_model.getFrameId('ft_sensor')
 
     # Limits for linear and angular velocity of the client_arm end-effector
@@ -129,7 +135,8 @@ class HILRunner(object):
     self.client_carriage_home_angles = client_hil_home_angles[0]
     self.mrv_carriage_home_angles = mrv_hil_home_angles[0]
 
-    self.sensorSub = rospy.Subscriber('/netft_node_data', WrenchStamped, self.ft_sensor_callback)
+    # Subscribe to the force/torque sensor data on the mrv_arm
+    self.sensorSub = rospy.Subscriber('/'+self.mrv_ft_sensor, WrenchStamped, self.ft_sensor_callback)
 
     ''' Use this to move the robot beyond the safety barrier
     Unsafe but was necessary for debugging'''
@@ -202,6 +209,7 @@ class HILRunner(object):
       rate.sleep()
 
     self.ft_bias = bias_estimate
+    
 
   def clip_client_arm_cmd(self,v_client_arm_curr,v_client_arm_cmd):
     ''' Clip client_arm joint velocities and accelerations to satisfy limits'''
@@ -236,18 +244,26 @@ class HILRunner(object):
 
   def reset_to_home_angles(self, check_for_continue=True):
 
-    ''' First move the carriages to their home configuration'''
-    self.holo_control.vention_position_move('mrv', [self.mrv_carriage_home_angles])
-    self.holo_control.vention_position_move('client', [self.client_carriage_home_angles])
-
-
     '''Arms to home configuration'''
     self.holo_control.ur_joint_move('mrv', self.mrv_arm_home_angles)
     self.holo_control.ur_joint_move('client', self.client_arm_home_angles)
 
+    ''' First move the carriages to their home configuration'''
+    self.holo_control.vention_position_move('mrv', [self.mrv_carriage_home_angles])
+    self.holo_control.vention_position_move('client', [self.client_carriage_home_angles])
+    mrv_carriage_pos = self.holo_control.get_mrv_hil_js().position[0]
+    client_carriage_pos = self.holo_control.get_client_hil_js().position[0]
+    while (abs(mrv_carriage_pos - self.mrv_carriage_home_angles) > 0.01) or (abs(client_carriage_pos - self.client_carriage_home_angles) > 0.01):
+      rospy.logwarn_once(f'Carriages are heading to start positions')
+      mrv_carriage_pos = self.holo_control.get_mrv_hil_js().position[0]
+      client_carriage_pos = self.holo_control.get_client_hil_js().position[0]
+    rospy.logwarn_once(f'Carriages are at start positions')
+
+
+
+
     '''Calibrate the force/torque sensor'''
-    # Currently, this is commmented out as our f/t sensor is down
-    # self.calibrate_ft_bias() 
+    self.calibrate_ft_bias() 
 
 
 
@@ -265,7 +281,7 @@ class HILRunner(object):
     ee_mrv_arm_path_marker = self.ee_mrv_arm_path_marker
     ee_mrv_arm_path_pub = self.ee_mrv_arm_path_pub
 
-    move_out_time = 6 # s
+    move_out_time = 20 # s
     move_out_speed = 0.015 # m/s
     move_out_steps = int(move_out_time/self.dt)
 
@@ -303,7 +319,7 @@ class HILRunner(object):
 
         # Solve instantaneous inverse kinematics
         v_mrv_arm_cmd = np.linalg.lstsq(Jpeg, peg_twist_ctrl, rcond=None)[0]
-        v_mrv_arm_cmd = self.clip_mrv_arm_cmd(v_vis[self.vidx_mrv_hil:self.vidx_mrv_hil + 6],v_mrv_arm_cmd)
+        v_mrv_arm_cmd = self.clip_mrv_arm_cmd(v_vis[vidx_mrv_arm:vidx_mrv_arm + 6],v_mrv_arm_cmd)
 
         q_vis[qidx_mrv_arm:qidx_mrv_arm + 6] += v_mrv_arm_cmd*dt
         v_vis[vidx_mrv_arm:vidx_mrv_arm + 6] = np.copy(v_mrv_arm_cmd)
@@ -352,14 +368,16 @@ class HILRunner(object):
 
       pin.updateFramePlacement(pin_model, pin_data, ft_fid)
 
-      # ft_compensated = self.get_ft_compensated(pin_data, ft_fid)
-      # if ft_compensated is None:
-      #   print("Stopping because F/T data is unavailable.")
-      #   quit()
+      ft_compensated = self.get_ft_compensated(pin_data, ft_fid)
+      if ft_compensated is None:
+        print("Stopping because F/T data is unavailable.")
+        quit()
 
-      # if self.is_ft_excessive(ft_compensated):
-      #   print('Stopping because of excessive force on F/T sensor.')
-      #   quit()
+      if self.is_ft_excessive(ft_compensated):
+        print('Stopping because of excessive force on F/T sensor.')
+        holo_control.ur_idle_mode('mrv')
+        holo_control.ur_idle_mode('client')
+        quit()
 
       peg_twist_ctrl = np.zeros(6)
       peg_twist_ctrl[:3] = -move_out_speed*rmat_peg_w[:, 2]
@@ -369,13 +387,15 @@ class HILRunner(object):
       # We have end-effector velocity commands. Now we solve
       # for joint velocity commands using inverse kinematics
       v_mrv_arm_cmd = np.linalg.lstsq(Jpeg, peg_twist_ctrl, rcond=None)[0]
-      v_mrv_arm_cmd = self.clip_mrv_arm_cmd(v[self.vidx_mrv_hil:self.vidx_mrv_hil + 6],v_mrv_arm_cmd)
+      v_mrv_arm_cmd = self.clip_mrv_arm_cmd(v[vidx_mrv_arm:vidx_mrv_arm + 6],v_mrv_arm_cmd)
 
       # acc_norm_mrv_arm = np.linalg.norm((v_mrv_arm_cmd - v[vidx_mrv_arm:vidx_mrv_arm + 6])/dt, ord=np.inf)
       holo_control.cmd_ur_velocity('mrv', v_mrv_arm_cmd)
 
       rate.sleep()
     holo_control.ur_idle_mode('mrv')
+    # Move mrv carriage back away from the hole after peg is free from collision
+    self.holo_control.vention_position_move('mrv', [self.mrv_carriage_home_angles - 0.5])
   
  
 
@@ -443,14 +463,22 @@ class HILRunner(object):
                                   verify_trajectory_visually):
     pin_data = self.pin_data
     nozzle_fid = self.nozzle_fid
+    peg_fid = self.peg_fid
 
-    t_peg_hb, _, t_nozzle_hb, _ = self.update_pin_model()
+    t_peg_w, _, t_nozzle_w, _ = self.update_pin_model()
 
     # The following blocks assume the robot has already been moved to its initial home configuration via a call to self.reset_to_home_angles
-    ''' Move nozzle and peg to have identity rotation matrices '''
+    ''' Move nozzle and peg to initial rotations '''
     print("Modifying arm pose.")
-    pos_offset = np.array([0,0.050,0])
-    self.move_mrv_arm_and_client_arm_to_pose(t_peg_hb + pos_offset,np.eye(3),t_nozzle_hb + pos_offset,np.eye(3),False)
+    pos_offset = np.array([.05,0,0])
+
+    rot = np.array([[0,  0, -1],
+                    [0, -1,  0],
+                    [-1, 0,  0]])
+    
+
+    self.move_to_waypoint('mrv', peg_fid, t_peg_w + pos_offset, rot , verify_trajectory_visually)
+    self.move_to_waypoint('client', nozzle_fid, t_nozzle_w - pos_offset, rot, verify_trajectory_visually)
     self.update_pin_model()
 
     self.calibrate_ft_bias() 
@@ -473,42 +501,259 @@ class HILRunner(object):
                                                               sw_nozzle_twist)
 
     print("Initializing mrv_arm and client_arm to pose.")
-    self.move_mrv_arm_and_client_arm_to_pose(hw_peg_pos_d,hw_peg_rmat_d,hw_nozzle_pos_d,hw_nozzle_rmat_d,verify_trajectory_visually)
+    self.move_to_waypoint('mrv', peg_fid, hw_peg_pos_d, hw_peg_rmat_d, verify_trajectory_visually)
+    self.move_to_waypoint('client', nozzle_fid, hw_nozzle_pos_d, hw_nozzle_rmat_d, verify_trajectory_visually)
     print("Initialized client_arm and mrv_arm poses.")
 
     self.need_to_reinitialize = False
 
+  
+  def move_to_waypoint(self, name, frame_fid, frame_pos_d, frame_rmat_d, visualize_before_moving):
+    qidx_mrv_arm = self.qidx_mrv_hil + 1
+    vidx_mrv_arm = self.vidx_mrv_hil + 1
+    qidx_client_arm = self.qidx_client_hil + 1
+    vidx_client_arm = self.vidx_client_hil + 1
+
+    qidx_mrv_hil = self.qidx_mrv_hil
+    qidx_client_hil = self.qidx_client_hil
+    vidx_client_hil = self.vidx_client_hil
+    vidx_mrv_hil = self.vidx_mrv_hil
+
+    holo_control = self.holo_control
+    ee_mrv_arm_path_pub = self.ee_mrv_arm_path_pub
+    ee_mrv_arm_path_marker = self.ee_mrv_arm_path_marker
+    ee_client_arm_path_pub = self.ee_client_arm_path_pub
+    ee_client_arm_path_marker = self.ee_client_arm_path_marker
+    pin_model = self.pin_model
+    pin_data = self.pin_data
+    dt = self.dt
+    pos_kp = 2
+    rot_kp = 1
+    rate = rospy.Rate(1 / dt)
+    q = pin.neutral(pin_model)
+    v = np.zeros(pin_model.nv)
+    frame_twist_ctrl = np.zeros(6)
+
+    # Limits for linear and angular velocity of the end-effector
+    lin_vel_limit = 0.05
+    ang_vel_limit = 0.15
+
+    # Limit on the joint velocities
+    max_joint_vel = np.pi / 8 * np.ones(6)
+    max_joint_acc = np.pi / 4 * np.ones(6)
+
+    # Full joint states
+    mrv_hil_js = holo_control.get_mrv_hil_js()
+    client_hil_js = holo_control.get_client_hil_js()
+
+    # Ensure that the arms are stationary
+    holo_control.ur_idle_mode('mrv')
+    holo_control.ur_idle_mode('client')
+
+
+    # Visualize
+    stop_vis = False
+    while not stop_vis:
+        q_vis = pin.neutral(pin_model)
+
+        mrv_hil_js = holo_control.get_mrv_hil_js()
+        client_hil_js = holo_control.get_client_hil_js()
+        v_vis = np.zeros(pin_model.nv)
+
+        # Update q_vis with the appropriate joint positions
+        q_vis[qidx_mrv_hil:qidx_mrv_hil + 7] = np.copy(mrv_hil_js.position)
+        q_vis[qidx_client_hil:qidx_client_hil + 7] = np.copy(client_hil_js.position)
+        v_vis=np.zeros(pin_model.nv)
+        ee_mrv_arm_path_marker.points.clear()
+        ee_client_arm_path_marker.points.clear()
+
+        pin.forwardKinematics(pin_model, pin_data, q_vis)
+        pin.computeJointJacobians(pin_model, pin_data)
+        pin.updateFramePlacement(pin_model, pin_data, frame_fid)
+
+        frame_pos = pin_data.oMf[frame_fid].translation
+        frame_rmat = pin_data.oMf[frame_fid].rotation
+
+        if name == 'mrv':
+            Jframe = pin.getFrameJacobian(pin_model, pin_data, frame_fid, pin.ReferenceFrame.LOCAL_WORLD_ALIGNED)[:, vidx_mrv_arm:vidx_mrv_arm + 6]
+        elif name == 'client':
+            Jframe = pin.getFrameJacobian(pin_model, pin_data, frame_fid, pin.ReferenceFrame.LOCAL_WORLD_ALIGNED)[:, vidx_client_arm:vidx_client_arm + 6]
+
+        pos_err = frame_pos_d - frame_pos
+        rot_err = frame_rmat @ pin.log3(frame_rmat_d.transpose() @ frame_rmat)
+        
+
+        while not rospy.is_shutdown() and (np.linalg.norm(pos_err) > 1e-3 or np.linalg.norm(rot_err) > 0.1 * np.pi / 180):
+            if rospy.is_shutdown():
+                break
+            # Forward kinematics: get poses and Jacobians
+            pin.forwardKinematics(pin_model, pin_data, q_vis)
+            pin.computeJointJacobians(pin_model, pin_data)
+            pin.updateFramePlacement(pin_model, pin_data, frame_fid)
+
+            frame_pos = pin_data.oMf[frame_fid].translation
+            frame_rmat = pin_data.oMf[frame_fid].rotation
+            if name == 'mrv':
+                Jframe = pin.getFrameJacobian(pin_model, pin_data, frame_fid, pin.ReferenceFrame.LOCAL_WORLD_ALIGNED)[:, vidx_mrv_arm:vidx_mrv_arm + 6]
+                if np.linalg.cond(Jframe) > 1 / np.finfo(float).eps:
+                    print("Warning: Jacobian is close to singular.")
+                    break
+            elif name == 'client':
+                Jframe = pin.getFrameJacobian(pin_model, pin_data, frame_fid, pin.ReferenceFrame.LOCAL_WORLD_ALIGNED)[:, vidx_client_arm:vidx_client_arm + 6]
+                if np.linalg.cond(Jframe) > 1 / np.finfo(float).eps:
+                    print("Warning: Jacobian is close to singular.")
+                    break
+
+            pos_err = frame_pos_d - frame_pos
+            rot_err = frame_rmat @ pin.log3(frame_rmat_d.transpose() @ frame_rmat)
+            frame_twist_ctrl[:3] =  pos_kp * pos_err
+            frame_twist_ctrl[3:] = -rot_kp * rot_err
+
+            frame_twist_ctrl[:3] = np.clip(frame_twist_ctrl[:3], -lin_vel_limit, lin_vel_limit)
+            frame_twist_ctrl[3:] = np.clip(frame_twist_ctrl[3:], -ang_vel_limit, ang_vel_limit)
+
+            # Solve instantaneous inverse kinematics
+            v_arm_cmd = np.linalg.lstsq(Jframe, frame_twist_ctrl, rcond=None)[0]
+            if name == 'mrv':
+              v_arm_cmd = self.clip_mrv_arm_cmd(v_vis[vidx_mrv_arm:vidx_mrv_arm + 6],v_arm_cmd)
+            elif name == 'client':
+              v_arm_cmd = self.clip_client_arm_cmd(v_vis[vidx_client_arm:vidx_client_arm + 6],v_arm_cmd)
+
+            if name == 'mrv':
+                # Markers for visualization
+                ee_mrv_arm_path_marker.points.append(Point(frame_pos[0], frame_pos[1], frame_pos[2]))
+                ee_mrv_arm_path_marker.header.stamp = rospy.Time.now()
+                ee_mrv_arm_path_pub.publish(ee_mrv_arm_path_marker)
+
+                # Update joint states for visualization
+                q_vis[qidx_mrv_arm:qidx_mrv_arm + 6] += v_arm_cmd * dt
+                v_vis[vidx_mrv_arm:vidx_mrv_arm + 6] = np.copy(v_arm_cmd)
+
+            elif name == 'client':
+                # Markers for visualization
+                ee_client_arm_path_marker.points.append(Point(frame_pos[0], frame_pos[1], frame_pos[2]))
+                ee_client_arm_path_marker.header.stamp = rospy.Time.now()
+                ee_client_arm_path_pub.publish(ee_client_arm_path_marker)
+
+                # Update joint states for visualization
+                q_vis[qidx_client_arm:qidx_client_arm + 6] += v_arm_cmd * dt
+                v_vis[vidx_client_arm:vidx_client_arm + 6] = np.copy(v_arm_cmd)
+            
+
+            if self.visualize_while_simulating:
+                self.publish_hw_joints_for_viz(pin_model.nv, q_vis)
+
+            rate.sleep()
+
+        if visualize_before_moving:
+            stop_vis = self.check_for_continue_with_visualization()
+        else:
+            stop_vis = True
+
+    rate = rospy.Rate(1 / dt)
+    q = pin.neutral(pin_model)
+    v = np.zeros(pin_model.nv)
+    # Update with real hardware joint states
+    mrv_hil_js = holo_control.get_mrv_hil_js()
+    client_hil_js = holo_control.get_client_hil_js()
+    q[qidx_mrv_hil:qidx_mrv_hil + 7] = np.copy(mrv_hil_js.position)
+    q[qidx_client_hil:qidx_client_hil + 7] = np.copy(client_hil_js.position)
+    v=np.zeros(pin_model.nv)
+
+    pin.forwardKinematics(pin_model, pin_data, q)
+    pin.computeJointJacobians(pin_model, pin_data)
+    pin.updateFramePlacement(pin_model, pin_data, frame_fid)
+
+    frame_pos = pin_data.oMf[frame_fid].translation
+    frame_rmat = pin_data.oMf[frame_fid].rotation
+
+    if name == 'mrv':
+        Jframe = pin.getFrameJacobian(pin_model, pin_data, frame_fid, pin.ReferenceFrame.LOCAL_WORLD_ALIGNED)[:, vidx_mrv_arm:vidx_mrv_arm + 6]
+    elif name == 'client':
+        Jframe = pin.getFrameJacobian(pin_model, pin_data, frame_fid, pin.ReferenceFrame.LOCAL_WORLD_ALIGNED)[:, vidx_client_arm:vidx_client_arm + 6]
+
+    pos_err = frame_pos_d - frame_pos
+    rot_err = frame_rmat @ pin.log3(frame_rmat_d.transpose() @ frame_rmat)
+    
+    # Execute movement
+    holo_control.ur_velocity_mode(name, 0.3)
+    while not rospy.is_shutdown() and (np.linalg.norm(pos_err) > 1e-3 or np.linalg.norm(rot_err) > 0.1 * np.pi / 180):
+        if rospy.is_shutdown():
+            holo_control.ur_idle_mode(name)
+            break
+          
+        # Get joint positions and velocities
+        mrv_hil_js = holo_control.get_mrv_hil_js()
+        client_hil_js = holo_control.get_client_hil_js()
+        q[qidx_mrv_hil:qidx_mrv_hil + 7] = mrv_hil_js.position
+        q[qidx_client_hil:qidx_client_hil + 7] = client_hil_js.position
+        v[vidx_mrv_hil:vidx_mrv_hil + 7] = mrv_hil_js.velocity
+        v[vidx_client_hil:vidx_client_hil + 7] = client_hil_js.velocity
+
+        # Forward kinematics: get poses and Jacobians
+        pin.forwardKinematics(pin_model, pin_data, q)
+        pin.computeJointJacobians(pin_model, pin_data)
+        pin.updateFramePlacement(pin_model, pin_data, frame_fid)
+
+        frame_pos = pin_data.oMf[frame_fid].translation
+        frame_rmat = pin_data.oMf[frame_fid].rotation
+        if name == 'mrv':
+            Jframe = pin.getFrameJacobian(pin_model, pin_data, frame_fid, pin.ReferenceFrame.LOCAL_WORLD_ALIGNED)[:, vidx_mrv_arm:vidx_mrv_arm + 6]
+        elif name == 'client':
+            Jframe = pin.getFrameJacobian(pin_model, pin_data, frame_fid, pin.ReferenceFrame.LOCAL_WORLD_ALIGNED)[:, vidx_client_arm:vidx_client_arm + 6]
+
+        pos_err = frame_pos_d - frame_pos
+        rot_err = frame_rmat @ pin.log3(frame_rmat_d.transpose() @ frame_rmat)
+        frame_twist_ctrl[:3] = pos_kp * pos_err
+        frame_twist_ctrl[3:] = -rot_kp * rot_err
+
+        frame_twist_ctrl[:3] = np.clip(frame_twist_ctrl[:3], -lin_vel_limit, lin_vel_limit)
+        frame_twist_ctrl[3:] = np.clip(frame_twist_ctrl[3:], -ang_vel_limit, ang_vel_limit)
+
+        # Solve instantaneous inverse kinematics
+        v_arm_cmd = np.linalg.lstsq(Jframe, frame_twist_ctrl, rcond=None)[0]
+        if name == 'mrv':
+          v_arm_cmd = self.clip_mrv_arm_cmd(v[vidx_mrv_arm:vidx_mrv_arm + 6],v_arm_cmd)
+        elif name == 'client':
+          v_arm_cmd = self.clip_client_arm_cmd(v[vidx_client_arm:vidx_client_arm + 6],v_arm_cmd)
+
+        holo_control.cmd_ur_velocity(name, v_arm_cmd)
+
+        rate.sleep()
+    holo_control.ur_idle_mode(name)
+
   def update_pin_model(self):
     '''Update the UR arms' Pinnochio model using the current UR arm joint values and return the peg/nozzle position and orientation.
     
-    Outputs: 
-      t_peg_hb - position of peg in hardware base frame
-      rmat_peg_hb - rotation matrix of peg in hardware base frame
-      t_nozzle_hb - position of nozzle in hardware base frame
-      rmat_nozzle_hb - rotation matrix of nozzle in hardware base frame'''
+    Returns:
+      t_peg_w: position of peg in world frame
+      rmat_peg_w: rotation of peg in world frame
+      t_nozzle_w: position of nozzle in world frame
+      rmat_nozzle_w: rotation of nozzle in world frame
+    '''
     
     pin_model = self.pin_model
     pin_data = self.pin_data
     holo_control = self.holo_control
     peg_fid = self.peg_fid
     nozzle_fid = self.nozzle_fid
-    qidx_mrv_arm = self.qidx_mrv_hil + 1 
-    qidx_client_arm = self.qidx_client_hil + 1
+    qidx_hil_mrv = self.qidx_mrv_hil
+    qidx_hil_client = self.qidx_client_hil
     
     mrv_hil_js = holo_control.get_mrv_hil_js()
     client_hil_js = holo_control.get_client_hil_js()
     q = pin.neutral(pin_model)
-    q[qidx_mrv_arm:qidx_mrv_arm + 6] = mrv_hil_js.position[1:7]
-    q[qidx_client_arm:qidx_client_arm + 6] = client_hil_js.position[1:7]
+    q[qidx_hil_mrv:qidx_hil_mrv + 7] = mrv_hil_js.position
+    q[qidx_hil_client:qidx_hil_client + 7] = client_hil_js.position
     pin.forwardKinematics(pin_model, pin_data, q)
     pin.updateFramePlacement(pin_model, pin_data, peg_fid)
     pin.updateFramePlacement(pin_model, pin_data, nozzle_fid)
-    t_peg_hb = pin_data.oMf[peg_fid].translation
-    rmat_peg_hb = pin_data.oMf[peg_fid].rotation
-    t_nozzle_hb = pin_data.oMf[nozzle_fid].translation
-    rmat_nozzle_hb = pin_data.oMf[nozzle_fid].rotation
+    t_peg_w = pin_data.oMf[peg_fid].translation
+    rmat_peg_w = pin_data.oMf[peg_fid].rotation
+    t_nozzle_w = pin_data.oMf[nozzle_fid].translation
+    rmat_nozzle_w = pin_data.oMf[nozzle_fid].rotation
   
-    return t_peg_hb, rmat_peg_hb, t_nozzle_hb, rmat_nozzle_hb
+    return t_peg_w, rmat_peg_w, t_nozzle_w, rmat_nozzle_w
 
   def emulate(self, sw_peg_pos, sw_peg_rmat, sw_peg_twist, sw_nozzle_pos, sw_nozzle_rmat, sw_nozzle_twist, sw_dist_nozzle_opening_from_goal):
     '''
@@ -524,10 +769,17 @@ class HILRunner(object):
     nozzle_fid = self.nozzle_fid
     ft_fid = self.ft_fid
     rmat_ft_peg = self.rmat_ft_peg
+
     qidx_mrv_arm = self.qidx_mrv_hil + 1
     qidx_client_arm = self.qidx_client_hil + 1
     vidx_mrv_arm = self.vidx_mrv_hil + 1
     vidx_client_arm = self.vidx_client_hil + 1
+
+    qidx_hil_mrv = self.qidx_mrv_hil
+    qidx_hil_client = self.qidx_client_hil
+    vidx_hil_mrv = self.vidx_mrv_hil
+    vidx_hil_client = self.vidx_client_hil
+
     dt = self.dt
     mrv_arm_pub = self.mrv_arm_pub
     client_arm_pub = self.client_arm_pub
@@ -540,10 +792,10 @@ class HILRunner(object):
     v = np.zeros(pin_model.nv)
     mrv_hil_js = holo_control.get_mrv_hil_js()
     client_hil_js = holo_control.get_client_hil_js()
-    q[qidx_mrv_arm:qidx_mrv_arm + 6] = mrv_hil_js.position[1:7]
-    q[qidx_client_arm:qidx_client_arm + 6] = client_hil_js.position[1:7]
-    v[vidx_mrv_arm:vidx_mrv_arm + 6] = mrv_hil_js.velocity[1:7]
-    v[vidx_client_arm:vidx_client_arm + 6] = client_hil_js.velocity[1:7]
+    q[qidx_hil_mrv:qidx_hil_mrv + 7] = mrv_hil_js.position
+    q[qidx_hil_client:qidx_hil_client + 7] = client_hil_js.position
+    v[vidx_hil_mrv:vidx_hil_mrv + 7] = mrv_hil_js.velocity
+    v[vidx_hil_client:vidx_hil_client + 7] = client_hil_js.velocity
 
     # Forward kinematics: get poses and Jacobians of the peg (mrv_arm end-effector) and nozzle (client_arm end-effector)
     pin.forwardKinematics(pin_model, pin_data, q)
@@ -557,12 +809,12 @@ class HILRunner(object):
     Jnozzle = pin.getFrameJacobian(pin_model, pin_data, nozzle_fid, pin.ReferenceFrame.LOCAL_WORLD_ALIGNED)[:, vidx_client_arm:vidx_client_arm + 6]
     #nozzle_twist = Jnozzle@v[vidx_client_arm:vidx_client_arm + 6]
 
-    t_peg_hb = pin_data.oMf[peg_fid].translation
-    rmat_peg_hb = pin_data.oMf[peg_fid].rotation
+    t_peg_w = pin_data.oMf[peg_fid].translation
+    rmat_peg_w = pin_data.oMf[peg_fid].rotation
     Jpeg = pin.getFrameJacobian(pin_model, pin_data, peg_fid, pin.ReferenceFrame.LOCAL_WORLD_ALIGNED)[:, vidx_mrv_arm:vidx_mrv_arm + 6]
 
-    self.ee_mrv_pos_trj.append(np.copy(t_peg_hb))
-    self.ee_mrv_rmat_trj.append(np.copy(rmat_peg_hb))
+    self.ee_mrv_pos_trj.append(np.copy(t_peg_w))
+    self.ee_mrv_rmat_trj.append(np.copy(rmat_peg_w))
     self.ee_mrv_twist_trj.append(np.copy(Jpeg@v[vidx_mrv_arm:vidx_mrv_arm + 6]))
 
     self.ee_client_pos_trj.append(np.copy(nozzle_pos))
@@ -590,16 +842,23 @@ class HILRunner(object):
     # Calculate F/T in frame of peg
     wrench_peg_peg = np.zeros(6)
     # Don't apply a force to the simulation unless the measured force is significant
-    if np.abs(ft_compensated[0]) > 0.1 or np.abs(ft_compensated[1]) > 0.1 or np.abs(ft_compensated[2]) > 2: 
-      f_peg_hb = rmat_peg_hb@rmat_ft_peg@ft_compensated[:3]
-      wrench_peg_peg[:3] = rmat_peg_hb.transpose()@f_peg_hb
+    if np.abs(ft_compensated[0]) > 0.3 or np.abs(ft_compensated[1]) > 0.3 or np.abs(ft_compensated[2]) > 2:
+      # rospy.loginfo("Force applied to peg.")
+      # rospy.loginfo(ft_compensated)
+      # holo_control.ur_idle_mode('mrv')
+      # holo_control.ur_idle_mode('client')
+      # quit()
+      f_peg_w = rmat_peg_w@rmat_ft_peg@ft_compensated[:3]
+      wrench_peg_peg[:3] = rmat_peg_w.transpose()@f_peg_w
 
       #self.t_ft_peg is position of f/t sensor frame wrt peg frame, expressed in hardware peg frame
-      tau_ft_hb = rmat_peg_hb@rmat_ft_peg@ft_compensated[3:]
-      wrench_peg_peg[3:] = rmat_peg_hb.transpose()@tau_ft_hb + np.cross(-1*self.t_ft_peg, wrench_peg_peg[:3])
+      tau_ft_w = rmat_peg_w@rmat_ft_peg@ft_compensated[3:]
+      wrench_peg_peg[3:] = rmat_peg_w.transpose()@tau_ft_w + np.cross(-1*self.t_ft_peg, wrench_peg_peg[:3])
 
     if self.is_ft_excessive(ft_compensated):
       print('Stopping because of excessive force')
+      holo_control.ur_idle_mode('mrv')
+      holo_control.ur_idle_mode('client')
       fail_reason = 'Excessive force'
 
       return fail_reason, wrench_peg_peg
@@ -631,8 +890,8 @@ class HILRunner(object):
     # Compute desired mrv_arm end-effector twist
     pos_kp = 10
     rot_kp = 10
-    peg_twist_ctrl[:3] = hw_peg_twist_d[:3] - pos_kp*(t_peg_hb - hw_peg_pos_d)
-    peg_twist_ctrl[3:] = hw_peg_twist_d[3:] + rot_kp*pin.log3(hw_peg_rmat_d@rmat_peg_hb.transpose())
+    peg_twist_ctrl[:3] = hw_peg_twist_d[:3] - pos_kp*(t_peg_w - hw_peg_pos_d)
+    peg_twist_ctrl[3:] = hw_peg_twist_d[3:] + rot_kp*pin.log3(hw_peg_rmat_d@rmat_peg_w.transpose())
 
     peg_twist_ctrl = self.clip_twist(peg_twist_ctrl)
 
@@ -667,7 +926,6 @@ class HILRunner(object):
 
     # Send commands to hardware
     if not self.need_to_reinitialize:
-      # Annnnnd another missed bit here. This needs to be using the updated state machine not the ctrl.speedj
       holo_control.cmd_ur_velocity('mrv', v_mrv_arm_cmd)
       holo_control.cmd_ur_velocity('client', v_client_arm_cmd)
     else: 
@@ -726,10 +984,15 @@ class HILRunner(object):
       # If we see less than 3 N force along that axis, just assume zero force along that axis
       # 
       # We should consider removing this, because it creates discontinuities in the z-axis force
-      if abs(ft_compensated[2]) < 3.0:
+      if abs(ft_compensated[2]) < 2.0:
         ft_compensated[2] = 0
 
     return ft_compensated
+  
+  def print_ft_compensated(self):
+    if self.sensor_array is not None:
+      print(self.sensor_array)
+      print(self.get_ft_compensated(self.pin_data, self.ft_fid))
   
   @staticmethod
   def check_for_continue_with_visualization():

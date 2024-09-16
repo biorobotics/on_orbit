@@ -457,7 +457,7 @@
   <joint name="nozzle_to_cone_vertex" type="fixed">
     <parent link="nozzle"/>
     <child link="cone_vertex"/>
-    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <origin rpy="0 0 0" xyz="0 0 0.51"/>
   </joint>
   <link name="hole">
     <inertial>

@@ -320,11 +320,39 @@ Visualization Manager:
           Value: false
         actual_UR4tcp:
           Value: false
+        base:
+          Value: false
+        base_2:
+          Value: false
+        base_3:
+          Value: false
+        base_4:
+          Value: false
         base_link:
+          Value: false
+        base_link_1:
+          Value: false
+        base_link_1_inertia:
+          Value: false
+        base_link_2:
+          Value: false
+        base_link_2_inertia:
+          Value: false
+        base_link_3:
+          Value: false
+        base_link_3_inertia:
+          Value: false
+        base_link_4:
+          Value: false
+        base_link_4_inertia:
           Value: false
         cam_link:
           Value: false
         capture_box:
+          Value: false
+        carriage_link_1:
+          Value: false
+        carriage_link_2:
           Value: false
         carriage_link_3:
           Value: false
@@ -342,10 +370,26 @@ Visualization Manager:
           Value: false
         ee_tip:
           Value: false
+        flange:
+          Value: false
+        flange_2:
+          Value: false
+        flange_3:
+          Value: false
+        flange_4:
+          Value: false
+        forearm_link:
+          Value: false
+        forearm_link_2:
+          Value: false
+        forearm_link_3:
+          Value: false
+        forearm_link_4:
+          Value: false
         ft_sensor:
-          Value: true
+          Value: false
         goal:
-          Value: true
+          Value: false
         hole:
           Value: false
         hole_end:
@@ -426,7 +470,25 @@ Visualization Manager:
           Value: false
         peg_center:
           Value: false
+        rail_1:
+          Value: false
         rail_2:
+          Value: false
+        shoulder_link:
+          Value: false
+        shoulder_link_2:
+          Value: false
+        shoulder_link_3:
+          Value: false
+        shoulder_link_4:
+          Value: false
+        tool0:
+          Value: false
+        tool0_2:
+          Value: false
+        tool0_3:
+          Value: false
+        tool0_4:
           Value: false
         tube_geom0:
           Value: false
@@ -443,6 +505,14 @@ Visualization Manager:
         tube_geom6:
           Value: false
         tube_geom7:
+          Value: false
+        upper_arm_link:
+          Value: false
+        upper_arm_link_2:
+          Value: false
+        upper_arm_link_3:
+          Value: false
+        upper_arm_link_4:
           Value: false
         ur_3_base:
           Value: false
@@ -495,6 +565,30 @@ Visualization Manager:
         world:
           Value: false
         wrist:
+          Value: false
+        wrist_1_link:
+          Value: false
+        wrist_1_link_2:
+          Value: false
+        wrist_1_link_3:
+          Value: false
+        wrist_1_link_4:
+          Value: false
+        wrist_2_link:
+          Value: false
+        wrist_2_link_2:
+          Value: false
+        wrist_2_link_3:
+          Value: false
+        wrist_2_link_4:
+          Value: false
+        wrist_3_link:
+          Value: false
+        wrist_3_link_2:
+          Value: false
+        wrist_3_link_3:
+          Value: false
+        wrist_3_link_4:
           Value: false
       Marker Alpha: 1
       Marker Scale: 1
@@ -592,8 +686,50 @@ Visualization Manager:
           wrist:
             {}
         world:
+          rail_1:
+            carriage_link_1:
+              base_link_1:
+                base:
+                  {}
+                base_link_1_inertia:
+                  shoulder_link:
+                    upper_arm_link:
+                      forearm_link:
+                        wrist_1_link:
+                          wrist_2_link:
+                            wrist_3_link:
+                              flange:
+                                tool0:
+                                  {}
+            carriage_link_2:
+              base_link_2:
+                base_2:
+                  {}
+                base_link_2_inertia:
+                  shoulder_link_2:
+                    upper_arm_link_2:
+                      forearm_link_2:
+                        wrist_1_link_2:
+                          wrist_2_link_2:
+                            wrist_3_link_2:
+                              flange_2:
+                                tool0_2:
+                                  {}
           rail_2:
             carriage_link_3:
+              base_link_3:
+                base_3:
+                  {}
+                base_link_3_inertia:
+                  shoulder_link_3:
+                    upper_arm_link_3:
+                      forearm_link_3:
+                        wrist_1_link_3:
+                          wrist_2_link_3:
+                            wrist_3_link_3:
+                              flange_3:
+                                tool0_3:
+                                  {}
               ur_3_base_link:
                 ur_3_base:
                   {}
@@ -611,6 +747,19 @@ Visualization Manager:
                                   ur_3_ee:
                                     {}
             carriage_link_4:
+              base_link_4:
+                base_4:
+                  {}
+                base_link_4_inertia:
+                  shoulder_link_4:
+                    upper_arm_link_4:
+                      forearm_link_4:
+                        wrist_1_link_4:
+                          wrist_2_link_4:
+                            wrist_3_link_4:
+                              flange_4:
+                                tool0_4:
+                                  {}
               ur_4_base_link:
                 ur_4_base:
                   {}
@@ -690,7 +839,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 6.807000637054443
+      Distance: 4.377303123474121
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -706,9 +855,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.010399239137768745
+      Pitch: -0.01460071187466383
       Target Frame: <Fixed Frame>
-      Yaw: 4.638188362121582
+      Yaw: 4.615009784698486
     Saved: ~
 Window Geometry:
   Displays:

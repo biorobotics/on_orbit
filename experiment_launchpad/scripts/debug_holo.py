@@ -6,7 +6,10 @@ from hil_runner import HILRunner
 from sim_ros_vis_publisher import SimROSVisPublisher
 from holodeck_interface import HolodeckInterface
 
+calibrated = False
+
 def main():
+    global calibrated
 
     rospack = rospkg.RosPack()
     rospath = rospack.get_path('on_orbit')
@@ -35,7 +38,7 @@ def main():
     cw_orbit_dir = rospy.get_param('cw_orbit_dir')
 
     peg_rad = 0.01505
-    nozzle_opening_rad = 0.038
+    nozzle_opening_rad = 0.142
 
     use_cw = rospy.get_param('use_cw')
 
@@ -47,12 +50,22 @@ def main():
     holo_control.ur_idle_mode('client')
 
     hil_runner.reset_to_home_angles(check_for_continue=True)
-
+    
     holo_control.ur_idle_mode('mrv')
     holo_control.ur_idle_mode('client')
 
     hil_runner.move_peg_out_of_hole()
+    # if not calibrated:
+    #     hil_runner.calibrate_ft_bias()
+    #     calibrated = True
     
+    # rate = rospy.Rate(1/0.01)
+    # while not rospy.is_shutdown():
+    #     if calibrated:
+    #         hil_runner.print_ft_compensated()
+    #     rate.sleep()
+
+        
     rospy.spin()
 
 if __name__ == '__main__':

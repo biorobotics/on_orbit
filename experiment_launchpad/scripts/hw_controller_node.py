@@ -43,7 +43,7 @@ mrv_hil_home_angles = np.array(rospy.get_param('mrv_hil_home_angles'))
 client_hil_home_angles = np.array(rospy.get_param('client_hil_home_angles'))
 
 
-hil_runner = HILRunner(rospath, mrv_hil_home_angles, client_hil_home_angles)
+hil_runner = HILRunner(rospath, mrv_hil_home_angles, client_hil_home_angles, dt=dt)
 sim_vis_publisher = SimROSVisPublisher(rospath)
 
 cone_slope = rospy.get_param('cone_slope')
@@ -62,7 +62,7 @@ cw_mu = rospy.get_param('cw_mu')
 cw_orbit_dir = rospy.get_param('cw_orbit_dir')
 
 peg_rad = 0.01505
-nozzle_opening_rad = 0.038
+nozzle_opening_rad = 0.142
 
 use_cw = rospy.get_param('use_cw')
 
@@ -126,14 +126,16 @@ for grid_idx in range(initial_grid_idx, final_grid_idx):
     
 
     if grid_idx > initial_grid_idx or (grid_idx == initial_grid_idx and trial_idx > 0):
+      holo_control.ur_idle_mode('mrv')
+      holo_control.ur_idle_mode('client')
       holo_control.ur_velocity_mode('mrv')
       holo_control.ur_velocity_mode('client')
       hil_runner.move_peg_out_of_hole(visualize_before_moving=verify_trajectory_visually)
       holo_control.ur_idle_mode('mrv')
       holo_control.ur_idle_mode('client')
 
-    holo_control.ur_velocity_mode('mrv')
-    holo_control.ur_velocity_mode('client')
+    holo_control.ur_idle_mode('mrv')
+    holo_control.ur_idle_mode('client')
     hil_runner.reset_to_home_angles(check_for_continue=verify_trajectory_visually)
     holo_control.ur_idle_mode('mrv')
     holo_control.ur_idle_mode('client')
@@ -261,7 +263,11 @@ for grid_idx in range(initial_grid_idx, final_grid_idx):
     rate = rospy.Rate(1/dt)
 
     gc.disable()
-    
+
+    holo_control.ur_idle_mode('mrv')
+    holo_control.ur_idle_mode('client')
+    holo_control.ur_velocity_mode('mrv')
+    holo_control.ur_velocity_mode('client')
     while not rospy.is_shutdown():
       hw_status, wrench_peg_peg = hil_runner.emulate(sw_peg_pos, \
                                                       sw_peg_rmat, \
