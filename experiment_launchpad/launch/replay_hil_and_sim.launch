@@ -1,0 +1,21 @@
+<launch>
+  <node name="replay_node" pkg="on_orbit" type="replay_hil_and_sim.py" output="screen"/>
+  <node name="trail_node" pkg="space_robot" type="trail_node.py" output="screen"/>
+  <arg name="rvizconfig" default="$(find on_orbit)/rviz/mrv_cleint.rviz" />
+  <node name="peg_in_nozzle_rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" />
+
+  <arg name="hw_rvizconfig" default="$(find on_orbit)/rviz/on_orbit.rviz" />
+  <node name="hw_rviz" pkg="rviz" type="rviz" args="-d $(arg hw_rvizconfig)" required="true" />
+
+  <param name="hw_robot_description" textfile="$(find on_orbit)/urdf/on_orbit.urdf" />
+  <node name="hw_robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
+    <remap from="joint_states" to="/on_orbit/hw_joint_state" />
+    <remap from="robot_description" to="hw_robot_description" />
+  </node>
+
+  <param name="sw_robot_description" textfile="$(find on_orbit)/urdf/robot_cv_detached.urdf" />
+  <node name="sw_robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
+    <remap from="joint_states" to="/on_orbit/sw_joint_state" />
+    <remap from="robot_description" to="sw_robot_description" />
+  </node>
+</launch>
