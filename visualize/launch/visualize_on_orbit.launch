@@ -1,16 +1,13 @@
 <launch>
+
   <arg name="model" />
   <arg name="rvizconfig" default="$(find on_orbit)/rviz/on_orbit.rviz" />
   <arg name="config_file" default="$(find on_orbit)/config/holo_params/on_orbit_joints.yaml" />
-  <node name="visualize_on_orbit" pkg="on_orbit" type="visualize_on_orbit.py" output="screen"/>
 
+  <param name="robot_description" command="xacro $(find on_orbit)/urdf/hardware/on_orbit.xacro" />
 
-  <param name="robot_description" textfile="$(find on_orbit)/urdf/on_orbit.urdf" />
-  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
-    <remap from="joint_states" to="/on_orbit/hw_joint_state" />
-    <remap from="robot_description" to="robot_description" />
-  </node>
-
+  <node name="joint_state_publisher_gui" pkg="joint_state_publisher_gui" type="joint_state_publisher_gui" />
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" />
 
 </launch>

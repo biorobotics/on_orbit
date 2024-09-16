@@ -2,7 +2,7 @@
 
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:property name="nozzle_base_fixture_length" value="0.0095" />
-  <xacro:property name="nozzle_base_fixture_diameter" value="0.063" />
+  <xacro:property name="nozzle_base_fixture_diameter" value="0.06" />
   <xacro:macro name="nozzle_base" params=""> 
   <link name="nozzle_base">
     <visual>

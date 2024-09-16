@@ -1,7 +1,0 @@
-joint_angle_lower_limits: [-2.792526803, -1.745329252, -2.967059728, -2.967059728, -4.36332313, -1.919862177, -4.310963252]
-joint_angle_upper_limits: [2.792526803, 1.745329252, 2.565634, 2.617993878, 1.221730476, 1.919862177, 1.169370599]
-#joint_angle_lower_limits: [-Inf,-Inf,-Inf,-Inf,-Inf,-Inf,-Inf]
-#joint_angle_upper_limits: [Inf,Inf,Inf,Inf,Inf,Inf,Inf]
-joint_vel_limits: [0.069813, 0.069813, 0.10472, 0.10472, 0.12217, 0.12217, 0.12217]
-joint_acc_limits: [0.12217, 0.12217, 0.22689, 0.22689, 0.3316, 0.33161, 0.33161]
-joint_torque_limits: [150, 150, 150, 150, 150, 150, 150]
