@@ -6,12 +6,22 @@
   <xacro:include filename="$(find on_orbit)/urdf/hardware/ur/ur10e_macro.xacro"/>
   <xacro:ur10e_robot prefix="ur_4_" calibration_file="$(find on_orbit)/config/holo_params/ur_4_calibration.yaml"/>
 
-  
+  <xacro:property name="dist_tool_to_ft_sensor" value="0.0315" />
+
+
   <!--Short White Nozzle Attached to Robot 4-->
   <!-- Will need to be updated after the print-->
-  <xacro:property name="ur_4_ee_length" value="0.4785"/>
-  <xacro:property name="ur_4_ee_signed_dist_from_ee_to_goal" value="0.4656"/>
+  <xacro:property name="ur_4_ee_length" value="0.12477"/>
+  <xacro:property name="ur_4_ee_signed_dist_from_ee_to_goal" value="0.09017557238"/>
 
+
+  <!-- <link name="world"/> -->
+  <!-- <joint name="world_to_ur_4_base_link" type="fixed"> -->
+    <!-- <parent link="world"/> -->
+    <!-- <child link="ur_4_base_link"/> -->
+    <!--We will need to determine true orientation of each of robot as they are at an angle-->
+    <!-- <origin rpy="0 0 0" xyz="0 -0.9948543 -0.00045865"/> -->
+  <!-- </joint> -->
 
   <link name="hw_goal"/>
   <joint name="ur_4_ee_to_goal" type="fixed">

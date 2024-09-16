@@ -1,8 +1,0 @@
-prefix=/usr/local
-
-Name: on_orbit
-Description: Description of on_orbit
-Version: 0.0.0
-Cflags: 
-Libs: -L${prefix}/lib 
-Requires: roscpp rospy std_msgs ur_state_machine

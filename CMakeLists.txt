@@ -1,14 +1,8 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(on_orbit)
 
-function(set_pybind_target_properties name)
-  set_target_properties(${name} PROPERTIES
-          LIBRARY_OUTPUT_DIRECTORY ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_PYTHON_DESTINATION}
-          )
-endfunction()
-
 ## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++17 -Wl,--no-undefined)
+# add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -17,16 +11,8 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
-  vention_control
-  ur_state_machine
-  holodeck_viz
 )
 
-set(pybind11_DIR ~/.local/lib/python3.8/site-packages/pybind11/share/cmake/pybind11/)
-find_package(pybind11 REQUIRED)
-find_package(pinocchio REQUIRED)
-find_package(OsqpEigen REQUIRED)
-find_package(OpenMP REQUIRED)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -34,7 +20,7 @@ find_package(OpenMP REQUIRED)
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-catkin_python_setup()
+# catkin_python_setup()
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -117,11 +103,10 @@ catkin_python_setup()
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
- INCLUDE_DIRS include
- LIBRARIES on_orbit
- CATKIN_DEPENDS roscpp rospy std_msgs holodeck_viz ur_state_machine vention_control
- DEPENDS system_lib
-
+#  INCLUDE_DIRS include
+#  LIBRARIES on_orbit
+#  CATKIN_DEPENDS roscpp rospy std_msgs
+#  DEPENDS system_lib
 )
 
 ###########
@@ -133,30 +118,12 @@ catkin_package(
 include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
-  include
-  /opt/openrobots/include
-  /usr/local/include/osqp
-  /usr/include/eigen3
 )
-
 
 ## Declare a C++ library
-add_library(on_orbit SHARED
-  src/constrained_llsq.cpp
-  src/ik_ee_trajectory_tracker.cpp
-  src/ik_move_ee_behind_barrier.cpp
-  src/ik_waypoint_follower.cpp
-  src/osqp_wrapper.cpp
-)
-
-target_link_libraries(on_orbit pinocchio::pinocchio OsqpEigen::OsqpEigen OpenMP::OpenMP_CXX )
-
-add_library(on_orbit_bindings SHARED MODULE
-  src/bind.cpp
-)
-target_link_libraries(on_orbit_bindings on_orbit pybind11::module pybind11::lto)
-pybind11_extension(on_orbit_bindings)
-set_pybind_target_properties(on_orbit_bindings)
+# add_library(${PROJECT_NAME}
+#   src/${PROJECT_NAME}/on_orbit.cpp
+# )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -209,18 +176,18 @@ set_pybind_target_properties(on_orbit_bindings)
 
 ## Mark libraries for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_libraries.html
-install(TARGETS on_orbit
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
-)
+# install(TARGETS ${PROJECT_NAME}
+#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#   RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
+# )
 
 ## Mark cpp header files for installation
-install(DIRECTORY include
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-  FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
-  PATTERN ".svn" EXCLUDE
-)
+# install(DIRECTORY include/${PROJECT_NAME}/
+#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+#   FILES_MATCHING PATTERN "*.h"
+#   PATTERN ".svn" EXCLUDE
+# )
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 # install(FILES
