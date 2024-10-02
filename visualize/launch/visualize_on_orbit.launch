@@ -1,6 +1,6 @@
 <launch>
   <arg name="model" />
-  <arg name="rvizconfig" default="$(find on_orbit)/rviz/on_orbit.rviz" />
+  <arg name="rvizconfig" default="$(find on_orbit)/rviz/on_orbit_visualize.rviz" />
   <arg name="config_file" default="$(find on_orbit)/config/holo_params/on_orbit_joints.yaml" />
   <node name="visualize_on_orbit" pkg="on_orbit" type="visualize_on_orbit.py" output="screen"/>
 

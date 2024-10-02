@@ -8,6 +8,7 @@ scripts/__pycache__
 *.swp
 *.npy
 plots/*
+.vscode/*
 experiment_logs/*
 *.venv
 *c_generated_code
