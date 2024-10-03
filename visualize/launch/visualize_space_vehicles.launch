@@ -4,7 +4,7 @@
   <node name="peg_in_nozzle_rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" />
 
   <param name="sw_robot_description" textfile="$(find on_orbit)/urdf/robot_cv_detached.urdf" />
-  <!--<param name="sw_robot_description" textfile="$(find peg_in_hole)/urdf/mirrored_robot_cv_detached.urdf" />-->
+  <!--<param name="sw_robot_description" textfile="$(find on_orbit)/urdf/mirrored_robot_cv_detached.urdf" />-->
   <node name="sw_robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
     <remap from="joint_states" to="/on_orbit/sw_joint_state" />
     <remap from="robot_description" to="sw_robot_description" />

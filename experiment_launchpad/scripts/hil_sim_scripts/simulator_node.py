@@ -41,7 +41,7 @@ dt = 0.01
 rospy.init_node('control_node')
 
 rospack = rospkg.RosPack()
-rospath = rospack.get_path('peg_in_hole')
+rospath = rospack.get_path('on_orbit')
 
 rate = rospy.Rate(1/dt)
 

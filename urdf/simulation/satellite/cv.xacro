@@ -44,7 +44,7 @@
   <joint name="$(arg prefix)nozzle_to_capture_box" type="fixed">
     <parent link="$(arg prefix)nozzle"/>
     <child link="$(arg prefix)capture_box"/>
-    <origin rpy="0 0 0" xyz="0 0 -0.05"/>
+    <origin rpy="0 0 0" xyz="0 0 -0.07"/>
   </joint>
 
   <link name="$(arg prefix)capture_box">
@@ -107,7 +107,7 @@
   <joint name="$(arg prefix)nozzle_to_goal" type="fixed">
     <parent link="$(arg prefix)nozzle"/>
     <child link="$(arg prefix)goal"/>
-    <origin rpy="0 0 0" xyz="0 0 0.4656"/> 
+    <origin rpy="0 0 0" xyz="0 0 0.4585"/> 
   </joint>
 
   <link name="$(arg prefix)hole_end">

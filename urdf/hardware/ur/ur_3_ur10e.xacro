@@ -2,18 +2,18 @@
 <robot xmlns:xacro="http://wiki.ros.org/xacro" name="ur10e_robot">
   <xacro:include filename="$(find on_orbit)/urdf/hardware/ur/ur10e_macro.xacro"/>
   <xacro:ur10e_robot prefix="ur_3_" calibration_file="$(find on_orbit)/config/holo_params/ur_3_calibration.yaml"/>
-  <xacro:property name="dist_tool_to_ft_sensor" value="0.029" />
+  <xacro:property name="dist_tool_to_ft_sensor" value="0.03175" />
 
   <!--Peg-->
-  <xacro:property name="peg_rad" value="0.0079"/>
-  <xacro:property name="peg_mass" value="0.260"/>
-  <xacro:property name="peg_com" value="0.071"/>
+  <xacro:property name="peg_rad" value="0.008"/>
+  <xacro:property name="peg_mass" value="0.130"/>
+  <xacro:property name="peg_com" value="0.125"/>
 
   <!-- Will need to be updated after the print-->
   <!-- Old Value -->
   <!-- <xacro:property name="ur_3_ee_length" value="0.1558"/> -->
   <!-- New Value -->
-  <xacro:property name="ur_3_ee_length" value="0.540"/>
+  <xacro:property name="ur_3_ee_length" value="0.5428"/>
 
 
 

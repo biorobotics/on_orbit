@@ -7,7 +7,7 @@ import rospkg
 
 
 rospack = rospkg.RosPack()
-rospath = rospack.get_path('peg_in_hole')
+rospath = rospack.get_path('on_orbit')
 
 
 root_dir = "/home/medusar/experiment_logs/07_15_24/constant_gains_scheduled_plunge/"  

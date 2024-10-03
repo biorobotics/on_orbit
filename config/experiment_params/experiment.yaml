@@ -31,9 +31,9 @@ traj_library_prefix: '/experiment_logs/09_10_24/test_lib/no_contact/'
 # Whether to clip joint-level acceleration and velocities based on limits specified in limits.yaml
 clip_joint_commands: True
 
-use_grid: False
-grid_type: 15
-initial_grid_idx: 0 #use zero-indexing
+use_grid: True
+grid_type: 17
+initial_grid_idx: 2 #use zero-indexing
 visualize_before_moving: True
 
 debug_with_test_traj: False
@@ -48,17 +48,17 @@ apply_wrench_only_when_close: False
 client_velocity_noise_ang_amp: 0.0 #deg/s
 
 probe_z_axis_plunge_velocity: 0.005 #See within_nozzle_admittance.py for definition
-use_variable_plunge_speed: False # See within_nozzle_admittance.py
+use_variable_plunge_speed: True # See within_nozzle_admittance.py
 use_scheduled_gains: True # See resolved_accel.py
 
 # After this time, the simulation/experiment will shutdown
 time_limit: 500
 
 # Set to true to simulate sensor noise in the client state
-do_noisy_state_estimation: False
+do_noisy_state_estimation: True
 
 # Set to true to simulate delay in client pose due to slower vision feedback rate
-do_vision_delay: False
+do_vision_delay: True
 vision_measurement_rate: 10 #Hz
 
 # Number of times to run the experiment on the hardware platform
@@ -68,15 +68,15 @@ num_hardware_trials: 1
 visualize: True
 
 # Set to true to visualize trajectories before executing them on the hardware-in-the-loop system
-verify_trajectory_visually: True
+verify_trajectory_visually: False
 
 # Constants used to perform gravity compensation for the F/T sensor
 # peg_mass: 0.186515
 # peg_com: 0.036562
 # peg_mass: 0.114890
 # peg_com: 0.039034
-peg_mass: 0.039034
-peg_com: 0.114890
+peg_mass: 0.130
+peg_com: 0.125000
 # peg_mass: 0.123257
 # peg_com: 0.031410
 # Mass = 0.034586
@@ -90,9 +90,9 @@ peg_com: 0.114890
 
 
 
-dist_nozzle_opening_from_goal: 0.4675 # Based on our nozzle CAD
-dist_capture_box_from_nozzle_opening: 0.00 # Distance from front of capture box Based on actual CV nozzle where distance of nozzle opening to goal is 0.4765 m
-dist_centering_waypoint_from_goal: 0.481024428 # dist_nozzle_opening_from_goal + dist_capture_box_from_nozzle_opening + 2*(ur16 repeatability + ur5 repeatability) + peg radius
+dist_nozzle_opening_from_goal: 0.4585 # Based on our nozzle CAD
+dist_capture_box_from_nozzle_opening: 0.02 # Distance from front of capture box Based on actual CV nozzle where distance of nozzle opening to goal is 0.4765 m
+dist_centering_waypoint_from_goal: 0.4785 # dist_nozzle_opening_from_goal + dist_capture_box_from_nozzle_opening + 2*(ur16 repeatability + ur5 repeatability) + peg radius
 
 
 # Home angles for the mrv and client (Leading value is the carriage position in meters)
