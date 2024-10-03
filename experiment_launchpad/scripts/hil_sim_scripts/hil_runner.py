@@ -158,6 +158,10 @@ class HILRunner(object):
     self.peg_mass = rospy.get_param('peg_mass', None)
     self.peg_com = rospy.get_param('peg_com', None)
 
+    self.buffer_size = 5
+    self.ft_buffer = []
+    self.biasing_complete = False
+
     if (self.peg_mass is None) or (self.peg_com is None):
       raise Exception("peg_mass and peg_com must be specified in experiment.xml")
 
@@ -207,7 +211,7 @@ class HILRunner(object):
       bias_estimate = (num_data_points_so_far*bias_estimate + ft_compensated)/(num_data_points_so_far + 1)
       num_data_points_so_far += 1
       rate.sleep()
-
+    self.biasing_complete = True
     self.ft_bias = bias_estimate
     
 
@@ -240,6 +244,17 @@ class HILRunner(object):
     self.sensor_array[3] = data.wrench.torque.x - self.ft_bias[3]
     self.sensor_array[4] = data.wrench.torque.y - self.ft_bias[4]
     self.sensor_array[5] = data.wrench.torque.z - self.ft_bias[5]
+
+    
+    if self.biasing_complete:
+      self.ft_buffer.append(np.copy(self.sensor_array))
+      if len(self.ft_buffer) > self.buffer_size:
+        self.ft_buffer.pop(0)
+      self.sensor_array = np.mean(self.ft_buffer, axis=0)
+    else:
+      self.ft_buffer = []
+    
+    
 
 
   def reset_to_home_angles(self, check_for_continue=True):
@@ -831,6 +846,7 @@ class HILRunner(object):
 
     # Bias and gravity compensation for force sensor
     ft_compensated = self.get_ft_compensated(pin_data, ft_fid)
+    #print(ft_compensated)
     if ft_compensated is None:
       print("Stopping because F/T data is unavailable.")
       quit()
@@ -842,7 +858,7 @@ class HILRunner(object):
     # Calculate F/T in frame of peg
     wrench_peg_peg = np.zeros(6)
     # Don't apply a force to the simulation unless the measured force is significant
-    if np.abs(ft_compensated[0]) > 0.3 or np.abs(ft_compensated[1]) > 0.3 or np.abs(ft_compensated[2]) > 2:
+    if np.abs(ft_compensated[0]) > 1.5 or np.abs(ft_compensated[1]) > 1.0 or np.abs(ft_compensated[2]) > 2.5:
       # rospy.loginfo("Force applied to peg.")
       # rospy.loginfo(ft_compensated)
       # holo_control.ur_idle_mode('mrv')
@@ -959,13 +975,13 @@ class HILRunner(object):
     elif ft_np_array[2] > 500:
       print("Fz force exceeded.")
       return True, 2
-    elif ft_np_array[3] > 3: 
+    elif ft_np_array[3] > 20: 
       print("Tx torque exceeded.")
       return True, 3
-    elif ft_np_array[4] > 3: 
+    elif ft_np_array[4] > 20: 
       print("Ty torque exceeded.")
       return True, 4
-    elif ft_np_array[5] > 3:
+    elif ft_np_array[5] > 20:
       print("Tz torque exceeded.")
       return True, 5
     else:
@@ -977,6 +993,8 @@ class HILRunner(object):
 
     if self.sensor_array is not None:
       ft_compensated = np.copy(self.sensor_array)
+      #print("FT compensated")
+      #print(ft_compensated)
 
       ft_compensated[:3] -= pin_data.oMf[ft_fid].rotation.transpose()@self.fg_world # Subtract force due to gravity
       ft_compensated[3:] -= pin_data.oMf[ft_fid].rotation.transpose()@np.cross(pin_data.oMf[ft_fid].rotation[:, 2]*self.peg_com, self.fg_world) # Subtract torque due to gravity
@@ -984,7 +1002,8 @@ class HILRunner(object):
       # If we see less than 3 N force along that axis, just assume zero force along that axis
       # 
       # We should consider removing this, because it creates discontinuities in the z-axis force
-      if abs(ft_compensated[2]) < 2.0:
+        
+      if abs(ft_compensated[2]) < 2.5:
         ft_compensated[2] = 0
 
     return ft_compensated

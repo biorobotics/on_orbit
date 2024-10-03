@@ -9,8 +9,8 @@
   
   <!--Short White Nozzle Attached to Robot 4-->
   <!-- Will need to be updated after the print-->
-  <xacro:property name="ur_4_ee_length" value="0.4785"/>
-  <xacro:property name="ur_4_ee_signed_dist_from_ee_to_goal" value="0.4656"/>
+  <xacro:property name="ur_4_ee_length" value="0.4835"/>
+  <xacro:property name="ur_4_ee_signed_dist_from_ee_to_goal" value="0.4585"/>
 
 
   <link name="hw_goal"/>
