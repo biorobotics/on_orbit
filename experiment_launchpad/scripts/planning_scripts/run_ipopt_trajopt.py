@@ -4,10 +4,10 @@ from ipopt_trajopt import IpoptTrajopt
 import numpy as np
 import time
 
-date = '09_09_24'
+date = '10_03_24'
 folder_tag = 'insertion_traj'
 save_path_prefix = 'experiment_logs/' + date + '/' + folder_tag
-do_save = False
+do_save = True
 nozzle_align = True  # Set to True to algin ee tip with nozzle frame
 
 ipopt_traj_opt = IpoptTrajopt(save_path_prefix,do_save)
@@ -16,10 +16,10 @@ max_ang_vel_for_contact_avoidance = 100#deg/s
 
 '''Poses'''
 # Corners of capture box
-# step_size = 20
-# x_range = 0.01*np.array([np.arange(-10,10+step_size,step_size)])
-# y_range = 0.01*np.array([np.arange(-10,10+step_size,step_size)])
-# z_range = [0.0]
+step_size = 20
+x_range = 0.01*np.array([np.arange(-10,10+step_size,step_size)])
+y_range = 0.01*np.array([np.arange(-10,10+step_size,step_size)])
+z_range = [0.0,-0.1]
 # print("x_range")
 # print(x_range)
 # print("y_range")
@@ -28,14 +28,14 @@ max_ang_vel_for_contact_avoidance = 100#deg/s
 
 # # One point. Note that (0,0,0) is the front/center of the capture box, and the box is 20cm wide, 20cm high, and 10 cm deep
 # # Center of capture box is (0,0,-0.05)
-x_range = -np.array([0.00])
-y_range = -np.array([0.00])
-z_range = -np.array([0.05])
+# x_range = -np.array([0.00])
+# y_range = -np.array([0.00])
+# z_range = -np.array([0.05])
 
 '''Velocities'''
 # One points
 wx_range = np.array([0.0])
-wy_range = np.array([0.1])
+wy_range = np.array([0.0])
 wz_range = np.array([0.0])
 
 # From -1 to 1 deg/s in x direction in steps of 0.2

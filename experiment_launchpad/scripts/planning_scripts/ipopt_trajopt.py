@@ -16,9 +16,10 @@ import os
 
 import sys
 sys.path.append('../')
-# sys.path.append('/home/biorobotics/Documents/sr_ws/devel/lib/python3/dist-packages/')
 sys.path.append('/home/medusar/bspin/on_orbit/catkin_ws/devel/lib/python3/dist-packages/')
-from mrv_controller import MrvController
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'hil_sim_scripts')))
+from hil_sim_scripts.mrv_controller import MrvController
+
 
 class IpoptTrajopt():
   
@@ -35,8 +36,7 @@ class IpoptTrajopt():
     self.save_path_prefix = save_path_prefix
 
     rospack = rospkg.RosPack()
-    self.rospath = rospack.get_path('peg_in_hole')
-    # self.rospath = rospack.get_path('on_orbit')
+    self.rospath = rospack.get_path('on_orbit')
     
     # Confirm this is equal to tan(pi/2 - slope_angle) where slope angle is found in sim_nozzle_geom
     # We narrow the cone by 1 degree so that it avoids getting too close to the edge of the nozzle

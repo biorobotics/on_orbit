@@ -232,7 +232,7 @@ bool ContactNLP::eval_g(
   int max_vio_idx = -1;         // Track the index of the maximum constraint violation
   int violation_phase = -1;     // Track the phase where the violation occurred
   int constraint_within_phase = -1; // Track the specific constraint within the violated phase
-  bool condition = true;
+  bool condition = false;       // Set to true to print out information about the constraint violation
 
   // Loop over phases and steps
   for (int phase_idx = 0; phase_idx < phase_starts.size() - 1; ++phase_idx) {

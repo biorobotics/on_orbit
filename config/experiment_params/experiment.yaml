@@ -26,12 +26,13 @@ save_folder: 'experiment_logs/06_28_24/test/'
 #traj_library_prefix: '/experiment_logs/05_07_24/lib_capture_box_0_1_5_w_vel_5_10_10_s/'
 #traj_library_prefix: '/experiment_logs/06_07_24/lib_contact_free_nozzle_align/'
 #traj_library_prefix: '/experiment_logs/06_14_24/WithPlunge/'
-traj_library_prefix: '/experiment_logs/09_10_24/test_lib/no_contact/'
+# traj_library_prefix: '/experiment_logs/09_10_24/test_lib/no_contact/'
+traj_library_prefix: '/experiment_logs/10_03_24/insertion_traj/'
 
 # Whether to clip joint-level acceleration and velocities based on limits specified in limits.yaml
 clip_joint_commands: True
 
-use_grid: True
+use_grid: False
 grid_type: 17
 initial_grid_idx: 2 #use zero-indexing
 visualize_before_moving: True
