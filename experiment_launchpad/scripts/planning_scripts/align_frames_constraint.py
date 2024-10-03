@@ -5,7 +5,7 @@ from casadi_rp_conversion import *
 import numpy as np
 from inf_def import inf
 
-def export_algin_frames_constraint(cpin_model, x_acados, frame1, frame2, upper_tol=np.zeros(6), lower_tol=np.zeros(6), pos_diff=np.array([0, 0, 0]), rot_diff=np.array([0, 0, 0]), enforce = np.array([True, True, True, True, True, True])):
+def export_align_frames_constraint(cpin_model, x_acados, frame1, frame2, upper_tol=np.zeros(6), lower_tol=np.zeros(6), pos_diff=np.array([0, 0, 0]), rot_diff=np.array([0, 0, 0]), enforce = np.array([True, True, True, True, True, True])):
   '''
   This function enforces that the relative position and orientation between two frames is equal to a given value.
 
@@ -49,5 +49,3 @@ def export_algin_frames_constraint(cpin_model, x_acados, frame1, frame2, upper_t
   ub[enforce] = upper_tol[enforce]
 
   return constraints, lb, ub
-
-

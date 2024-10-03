@@ -227,15 +227,59 @@ bool ContactNLP::eval_g(
    Ipopt::Index         m,
    Ipopt::Number*       g
 ) {
-  int c_idx = 0;
+  int c_idx = 0;                // Cumulative index across all phases and steps
+  double max_vio = 0.0;         // Track the maximum constraint violation
+  int max_vio_idx = -1;         // Track the index of the maximum constraint violation
+  int violation_phase = -1;     // Track the phase where the violation occurred
+  int constraint_within_phase = -1; // Track the specific constraint within the violated phase
+  bool condition = true;
+
+  // Loop over phases and steps
   for (int phase_idx = 0; phase_idx < phase_starts.size() - 1; ++phase_idx) {
     for (int step = phase_starts(phase_idx); step < phase_starts(phase_idx + 1); ++step) {
-      constraint_functions[phase_idx]->call(&x[vars_per_step*step], &g[c_idx]);
-      c_idx += constraint_sizes(phase_idx);
+      // Call constraint function for this step
+      constraint_functions[phase_idx]->call(&x[vars_per_step * step], &g[c_idx]);
+
+      // Loop through constraints in this step and check for violations
+      if (condition) {
+      for (int i = 0; i < constraint_sizes(phase_idx); ++i) {
+        double g_val = g[c_idx + i];
+        double lower_bound = cl[c_idx + i];
+        double upper_bound = cu[c_idx + i];
+        double vio = 0.0;
+
+        // Check if the constraint is violated (above upper or below lower bound)
+        if (g_val < lower_bound) {
+          vio = lower_bound - g_val;
+        } else if (g_val > upper_bound) {
+          vio = g_val - upper_bound;
+        }
+
+        // If violation is bigger than the current max, update max_vio
+        if (vio > max_vio) {
+          max_vio = vio;
+          max_vio_idx = c_idx + i;  // Global index of the violation
+          violation_phase = phase_idx;  // Track which phase this violation occurred in
+          constraint_within_phase = i;  // Index within the phase
+        }
+      }
+      }
+      c_idx += constraint_sizes(phase_idx);  // Increment cumulative index
     }
+
+  }
+
+  // Output information for debugging
+  if (condition) {
+    std::cout << "Max constraint violation is " << max_vio
+              << " at global index " << max_vio_idx
+              << ", phase " << violation_phase
+              << ", constraint index within phase: " << constraint_within_phase << std::endl;
   }
   return true;
 }
+
+
 
 /** Method to return:
  *   1) The structure of the jacobian (if "values" is NULL)
@@ -350,24 +394,22 @@ bool ContactNLP::intermediate_callback(
   {
     if (iter >= success_after_iter) 
     {
-      return false;
+      return false; 
     }
   } 
   /**
    * Stop after finding the first feasible point. Comment the below code to solve to optimility.
    */
 
-  /**
   else if (mode != Ipopt::AlgorithmMode::RestorationPhaseMode) 
   {
     double max_vio = ip_cq->unscaled_curr_nlp_constraint_violation(Ipopt::ENormType::NORM_MAX);
-    /**
     if (max_vio < 1e-4) {
       std::cout << "Found feasible point. Max constraint violation is " << max_vio << ". Stopping" << std::endl;
       return false;
     }
   }
-  */
+  
 
   return true;
 }
