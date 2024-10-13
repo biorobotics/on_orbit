@@ -20,8 +20,8 @@ class R3SO3EKF(object):
     self.kf_R = 10*np.eye(self.ndz)
     self.initialized = False
 
-    self.client_mass = 6000
-    self.client_inertia = np.diag([8001.1405, 8430.025, 5268.8845])
+    self.client_mass = 1050
+    self.client_inertia = np.diag([1792.419, 2015.632, 630.731])
     self.client_inertia_inv = np.linalg.inv(self.client_inertia)
 
   # w should global, not local

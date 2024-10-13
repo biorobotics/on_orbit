@@ -257,8 +257,7 @@ class HILRunner(object):
     
 
 
-  def reset_to_home_angles(self, check_for_continue=True):
-
+  def reset_to_home_angles(self,seed_used,check_for_continue=True ):
     '''Arms to home configuration'''
     self.holo_control.ur_joint_move('mrv', self.mrv_arm_home_angles)
     self.holo_control.ur_joint_move('client', self.client_arm_home_angles)
@@ -274,8 +273,8 @@ class HILRunner(object):
       client_carriage_pos = self.holo_control.get_client_hil_js().position[0]
     rospy.logwarn_once(f'Carriages are at start positions')
 
-
-
+    # Record the seed used for the experiment
+    self.seed_used = seed_used
 
     '''Calibrate the force/torque sensor'''
     self.calibrate_ft_bias() 
@@ -406,11 +405,16 @@ class HILRunner(object):
 
       # acc_norm_mrv_arm = np.linalg.norm((v_mrv_arm_cmd - v[vidx_mrv_arm:vidx_mrv_arm + 6])/dt, ord=np.inf)
       holo_control.cmd_ur_velocity('mrv', v_mrv_arm_cmd)
+      if self.is_ft_excessive(self.sensor_array):
+        print('Stopping because of excessive force on F/T sensor.')
+        self.holo_control.ur_idle_mode('mrv')
+        self.holo_control.ur_idle_mode('client')
+        quit() 
 
       rate.sleep()
     holo_control.ur_idle_mode('mrv')
     # Move mrv carriage back away from the hole after peg is free from collision
-    self.holo_control.vention_position_move('mrv', [self.mrv_carriage_home_angles - 0.5])
+    # self.holo_control.vention_position_move('mrv', [self.mrv_carriage_home_angles - 0.5])
   
  
 
@@ -445,6 +449,11 @@ class HILRunner(object):
     self.moving_hw = []
 
     self.ft_compensated_trj = []
+
+    self.peg_pos_error_trj = []
+    self.peg_rmat_error_trj = []
+    self.nozzle_pos_error_trj = [] 
+    self.nozzle_rmat_error_trj = []
 
   def get_des_peg_and_nozzle_kinematics(self, sw_peg_pos, sw_peg_rmat, sw_peg_twist, sw_nozzle_pos, sw_nozzle_rmat, sw_nozzle_twist):
     rmat_sw_hw = self.rmat_sw_hw
@@ -822,11 +831,30 @@ class HILRunner(object):
     nozzle_pos = pin_data.oMf[nozzle_fid].translation
     nozzle_rmat = pin_data.oMf[nozzle_fid].rotation
     Jnozzle = pin.getFrameJacobian(pin_model, pin_data, nozzle_fid, pin.ReferenceFrame.LOCAL_WORLD_ALIGNED)[:, vidx_client_arm:vidx_client_arm + 6]
+
     #nozzle_twist = Jnozzle@v[vidx_client_arm:vidx_client_arm + 6]
 
     t_peg_w = pin_data.oMf[peg_fid].translation
     rmat_peg_w = pin_data.oMf[peg_fid].rotation
     Jpeg = pin.getFrameJacobian(pin_model, pin_data, peg_fid, pin.ReferenceFrame.LOCAL_WORLD_ALIGNED)[:, vidx_mrv_arm:vidx_mrv_arm + 6]
+
+    # rospy.loginfo("Jnozzle")
+    # rospy.loginfo(Jnozzle)
+
+    # rospy.loginfo("Jpeg")
+    # rospy.loginfo(Jpeg)
+
+    # # Display the inverse of the Jacobian
+    # inv_Jnozzle = np.linalg.pinv(Jnozzle)
+    # inv_Jpeg = np.linalg.pinv(Jpeg)
+    # print("Inverse of the nozzle Jacobian: ", inv_Jnozzle)
+    # print("Inverse of the peg Jacobian: ", inv_Jpeg)
+
+    # # Check the condition of the peg and nozzle
+    # cond_nozzle = np.linalg.cond(Jnozzle)
+    # cond_peg = np.linalg.cond(Jpeg)
+    # print("Condition number of the nozzle Jacobian: ", cond_nozzle)
+    # print("Condition number of the peg Jacobian: ", cond_peg)
 
     self.ee_mrv_pos_trj.append(np.copy(t_peg_w))
     self.ee_mrv_rmat_trj.append(np.copy(rmat_peg_w))
@@ -900,6 +928,8 @@ class HILRunner(object):
     rot_kp = 10
     nozzle_twist_ctrl[:3] = hw_nozzle_twist_d[:3] - pos_kp*(nozzle_pos - hw_nozzle_pos_d)
     nozzle_twist_ctrl[3:] = hw_nozzle_twist_d[3:] + rot_kp*pin.log3(hw_nozzle_rmat_d@nozzle_rmat.transpose())
+    self.nozzle_pos_error_trj.append(np.copy(nozzle_pos - hw_nozzle_pos_d))
+    self.nozzle_rmat_error_trj.append(np.copy(pin.log3(hw_nozzle_rmat_d@nozzle_rmat.transpose())))
 
     nozzle_twist_ctrl = self.clip_twist(nozzle_twist_ctrl)
 
@@ -908,6 +938,8 @@ class HILRunner(object):
     rot_kp = 10
     peg_twist_ctrl[:3] = hw_peg_twist_d[:3] - pos_kp*(t_peg_w - hw_peg_pos_d)
     peg_twist_ctrl[3:] = hw_peg_twist_d[3:] + rot_kp*pin.log3(hw_peg_rmat_d@rmat_peg_w.transpose())
+    self.peg_pos_error_trj.append(np.copy(t_peg_w - hw_peg_pos_d))
+    self.peg_rmat_error_trj.append(np.copy(pin.log3(hw_peg_rmat_d@rmat_peg_w.transpose())))
 
     peg_twist_ctrl = self.clip_twist(peg_twist_ctrl)
 
@@ -1038,9 +1070,9 @@ class HILRunner(object):
 
 
   def save(self, save_path):
-    np.save(save_path + '/ee_client_pos_trj.npy', self.ee_mrv_pos_trj)
-    np.save(save_path + '/ee_client_rmat_trj.npy', self.ee_mrv_rmat_trj)
-    np.save(save_path + '/ee_client_twist_trj.npy', self.ee_mrv_twist_trj)
+    np.save(save_path + '/ee_mrv_pos_trj.npy', self.ee_mrv_pos_trj)
+    np.save(save_path + '/ee_mrv_rmat_trj.npy', self.ee_mrv_rmat_trj)
+    np.save(save_path + '/ee_mrv_twist_trj.npy', self.ee_mrv_twist_trj)
 
     np.save(save_path + '/ee_client_pos_trj.npy', self.ee_client_pos_trj)
     np.save(save_path + '/ee_client_rmat_trj.npy', self.ee_client_rmat_trj)
@@ -1064,6 +1096,15 @@ class HILRunner(object):
     np.save(save_path + '/ft_compensated_trj.npy', self.ft_compensated_trj)
     print(self.ft_compensated_trj)
 
+    np.save(save_path + '/hw_peg_pos_error_trj.npy', self.peg_pos_error_trj)
+    np.save(save_path + '/hw_peg_rmat_error_trj.npy', self.peg_rmat_error_trj)
+
+    np.save(save_path + '/hw_nozzle_pos_error_trj.npy', self.nozzle_pos_error_trj)
+    np.save(save_path + '/hw_nozzle_rmat_error_trj.npy', self.nozzle_rmat_error_trj)
+    
+
+    np.save(save_path + '/seed.npy', self.seed_used)
+
     # Compute max time interval
     if len(self.hw_ts) > 1:
         hw_dts = np.diff(self.hw_ts)
@@ -1071,3 +1112,17 @@ class HILRunner(object):
         print('Max time interval: %f' %(hw_dts[argmax]))
         print('Max time interval index: %d' %(argmax))
 
+
+# TODO: Incorporate readme file into the save folders
+# import os
+# import git
+# import pickle
+
+# def write_README(outfolder,**kwargs):
+#     git_repo_path=os.path.join(os.path.dirname(__file__),"..","..")
+#     repo=git.Repo(os.path.abspath(git_repo_path))
+#     commit_name=repo.head.commit.name_rev
+#     with open(os.path.join(outfolder,"README"),"w") as fh:
+#         fh.write(f"commit: {commit_name}\n")
+#         for key,val in kwargs.items():
+#             fh.write(f"{key}: {val}\n")

@@ -13,7 +13,7 @@
   <!-- Old Value -->
   <!-- <xacro:property name="ur_3_ee_length" value="0.1558"/> -->
   <!-- New Value -->
-  <xacro:property name="ur_3_ee_length" value="0.5428"/>
+  <xacro:property name="ur_3_ee_length" value="0.547"/>
 
 
 

@@ -15,7 +15,7 @@
   <xacro:macro name="nozzle_geom" params="num theta prefix"> 
     <link name="${prefix}nozzle_geom${num}">
       
-      <!-- <visual>
+      <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <geometry>
           <box size="${nozzle_wall_width} ${nozzle_box_width} ${nozzle_geom_length}"/>
@@ -23,7 +23,7 @@
         <material name="translucent_white">
           <color rgba="1.0 1.0 1.0 0.5"/>
         </material>
-      </visual> -->
+      </visual>
      
       <inertial>
         <mass value="0"/>

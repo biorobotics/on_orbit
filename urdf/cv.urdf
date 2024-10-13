@@ -340,15 +340,15 @@
     <origin rpy="0 0 5.497787143782138" xyz="0.00898025612106915 -0.008980256121069155 0.45075"/>
   </joint>
   <link name="nozzle_geom0">
-    <!-- <visual>
-        <origin rpy="0 0 0" xyz="0 0 0"/>
-        <geometry>
-          <box size="${nozzle_wall_width} ${nozzle_box_width} ${nozzle_geom_length}"/>
-        </geometry>
-        <material name="translucent_white">
-          <color rgba="1.0 1.0 1.0 0.5"/>
-        </material>
-      </visual> -->
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.005 0.125 0.4551"/>
+      </geometry>
+      <material name="translucent_white">
+        <color rgba="1.0 1.0 1.0 0.5"/>
+      </material>
+    </visual>
     <inertial>
       <mass value="0"/>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -379,15 +379,15 @@
     <origin rpy="0 -0.3073 0" xyz="0.142 0.0 0"/>
   </joint>
   <link name="nozzle_geom1">
-    <!-- <visual>
-        <origin rpy="0 0 0" xyz="0 0 0"/>
-        <geometry>
-          <box size="${nozzle_wall_width} ${nozzle_box_width} ${nozzle_geom_length}"/>
-        </geometry>
-        <material name="translucent_white">
-          <color rgba="1.0 1.0 1.0 0.5"/>
-        </material>
-      </visual> -->
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.005 0.125 0.4551"/>
+      </geometry>
+      <material name="translucent_white">
+        <color rgba="1.0 1.0 1.0 0.5"/>
+      </material>
+    </visual>
     <inertial>
       <mass value="0"/>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -418,15 +418,15 @@
     <origin rpy="0 -0.3073 0.7853981633974483" xyz="0.10040916292848974 0.10040916292848973 0"/>
   </joint>
   <link name="nozzle_geom2">
-    <!-- <visual>
-        <origin rpy="0 0 0" xyz="0 0 0"/>
-        <geometry>
-          <box size="${nozzle_wall_width} ${nozzle_box_width} ${nozzle_geom_length}"/>
-        </geometry>
-        <material name="translucent_white">
-          <color rgba="1.0 1.0 1.0 0.5"/>
-        </material>
-      </visual> -->
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.005 0.125 0.4551"/>
+      </geometry>
+      <material name="translucent_white">
+        <color rgba="1.0 1.0 1.0 0.5"/>
+      </material>
+    </visual>
     <inertial>
       <mass value="0"/>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -457,15 +457,15 @@
     <origin rpy="0 -0.3073 1.5707963267948966" xyz="8.694992273946207e-18 0.142 0"/>
   </joint>
   <link name="nozzle_geom3">
-    <!-- <visual>
-        <origin rpy="0 0 0" xyz="0 0 0"/>
-        <geometry>
-          <box size="${nozzle_wall_width} ${nozzle_box_width} ${nozzle_geom_length}"/>
-        </geometry>
-        <material name="translucent_white">
-          <color rgba="1.0 1.0 1.0 0.5"/>
-        </material>
-      </visual> -->
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.005 0.125 0.4551"/>
+      </geometry>
+      <material name="translucent_white">
+        <color rgba="1.0 1.0 1.0 0.5"/>
+      </material>
+    </visual>
     <inertial>
       <mass value="0"/>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -496,15 +496,15 @@
     <origin rpy="0 -0.3073 2.356194490192345" xyz="-0.10040916292848973 0.10040916292848974 0"/>
   </joint>
   <link name="nozzle_geom4">
-    <!-- <visual>
-        <origin rpy="0 0 0" xyz="0 0 0"/>
-        <geometry>
-          <box size="${nozzle_wall_width} ${nozzle_box_width} ${nozzle_geom_length}"/>
-        </geometry>
-        <material name="translucent_white">
-          <color rgba="1.0 1.0 1.0 0.5"/>
-        </material>
-      </visual> -->
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.005 0.125 0.4551"/>
+      </geometry>
+      <material name="translucent_white">
+        <color rgba="1.0 1.0 1.0 0.5"/>
+      </material>
+    </visual>
     <inertial>
       <mass value="0"/>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -535,15 +535,15 @@
     <origin rpy="0 -0.3073 3.141592653589793" xyz="-0.142 1.7389984547892414e-17 0"/>
   </joint>
   <link name="nozzle_geom5">
-    <!-- <visual>
-        <origin rpy="0 0 0" xyz="0 0 0"/>
-        <geometry>
-          <box size="${nozzle_wall_width} ${nozzle_box_width} ${nozzle_geom_length}"/>
-        </geometry>
-        <material name="translucent_white">
-          <color rgba="1.0 1.0 1.0 0.5"/>
-        </material>
-      </visual> -->
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.005 0.125 0.4551"/>
+      </geometry>
+      <material name="translucent_white">
+        <color rgba="1.0 1.0 1.0 0.5"/>
+      </material>
+    </visual>
     <inertial>
       <mass value="0"/>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -574,15 +574,15 @@
     <origin rpy="0 -0.3073 3.9269908169872414" xyz="-0.10040916292848977 -0.10040916292848973 0"/>
   </joint>
   <link name="nozzle_geom6">
-    <!-- <visual>
-        <origin rpy="0 0 0" xyz="0 0 0"/>
-        <geometry>
-          <box size="${nozzle_wall_width} ${nozzle_box_width} ${nozzle_geom_length}"/>
-        </geometry>
-        <material name="translucent_white">
-          <color rgba="1.0 1.0 1.0 0.5"/>
-        </material>
-      </visual> -->
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.005 0.125 0.4551"/>
+      </geometry>
+      <material name="translucent_white">
+        <color rgba="1.0 1.0 1.0 0.5"/>
+      </material>
+    </visual>
     <inertial>
       <mass value="0"/>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -613,15 +613,15 @@
     <origin rpy="0 -0.3073 4.71238898038469" xyz="-2.6084976821838618e-17 -0.142 0"/>
   </joint>
   <link name="nozzle_geom7">
-    <!-- <visual>
-        <origin rpy="0 0 0" xyz="0 0 0"/>
-        <geometry>
-          <box size="${nozzle_wall_width} ${nozzle_box_width} ${nozzle_geom_length}"/>
-        </geometry>
-        <material name="translucent_white">
-          <color rgba="1.0 1.0 1.0 0.5"/>
-        </material>
-      </visual> -->
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.005 0.125 0.4551"/>
+      </geometry>
+      <material name="translucent_white">
+        <color rgba="1.0 1.0 1.0 0.5"/>
+      </material>
+    </visual>
     <inertial>
       <mass value="0"/>
       <origin rpy="0 0 0" xyz="0 0 0"/>

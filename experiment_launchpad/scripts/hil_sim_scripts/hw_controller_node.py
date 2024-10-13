@@ -124,7 +124,7 @@ for grid_idx in range(initial_grid_idx, final_grid_idx):
     # Use the seed for the trial corresponding to the trial index
     rng = np.random.default_rng(rng_sequences[trial_idx])
     
-
+    hil_runner.calibrate_ft_bias()
     if grid_idx > initial_grid_idx or (grid_idx == initial_grid_idx and trial_idx > 0):
       holo_control.ur_idle_mode('mrv')
       holo_control.ur_idle_mode('client')
@@ -136,7 +136,7 @@ for grid_idx in range(initial_grid_idx, final_grid_idx):
 
     holo_control.ur_idle_mode('mrv')
     holo_control.ur_idle_mode('client')
-    hil_runner.reset_to_home_angles(check_for_continue=verify_trajectory_visually)
+    hil_runner.reset_to_home_angles(check_for_continue=verify_trajectory_visually , seed_used = trial_idx)
     holo_control.ur_idle_mode('mrv')
     holo_control.ur_idle_mode('client')
     
@@ -219,9 +219,10 @@ for grid_idx in range(initial_grid_idx, final_grid_idx):
     #The trajectories in TestTrajectories may not take us to the nozzle, so we skip this if debugging with TestTrajectories
     while fail_reason == 'None' and not rospy.is_shutdown() and not debug_with_test_traj: 
 
-      # Check if we're close enough to the nozzle to run hardware emulation
+      # # Check if we're close enough to the nozzle to run hardware emulation
       sw_peg_pos_wrt_nozzle = sw_nozzle_rmat.transpose()@(sw_peg_pos - sw_nozzle_pos)
-      if np.abs(sw_peg_pos_wrt_nozzle[0]) <= 0.11 and np.abs(sw_peg_pos_wrt_nozzle[1]) <= 0.11 and sw_peg_pos_wrt_nozzle[2] >= -0.11 and sw_peg_pos_wrt_nozzle[2] <= 1.1*mrv_controller.dist_nozzle_opening_from_goal:
+      if True:
+      # if np.abs(sw_peg_pos_wrt_nozzle[0]) <= 0.11 and np.abs(sw_peg_pos_wrt_nozzle[1]) <= 0.11 and sw_peg_pos_wrt_nozzle[2] >= -0.11 and sw_peg_pos_wrt_nozzle[2] <= 1.1*mrv_controller.dist_nozzle_opening_from_goal:
         break
 
       status = mrv_controller.step(np.zeros(6), apply_wrench_only_when_close=False) # This is pure sim, so always apply the wrench
@@ -317,3 +318,18 @@ print("Done")
 while not rospy.is_shutdown():
   sim_vis_publisher.publish(sw_joint_angles, sw_base_pos, sw_base_rmat, sw_client_pos, sw_client_rmat, traj_pos, traj_rmat)
   rate.sleep()
+
+
+# TODO: Incorporate readme file into the save folders
+# import os
+# import git
+# import pickle
+
+# def write_README(outfolder,**kwargs):
+#     git_repo_path=os.path.join(os.path.dirname(__file__),"..","..")
+#     repo=git.Repo(os.path.abspath(git_repo_path))
+#     commit_name=repo.head.commit.name_rev
+#     with open(os.path.join(outfolder,"README"),"w") as fh:
+#         fh.write(f"commit: {commit_name}\n")
+#         for key,val in kwargs.items():
+#             fh.write(f"{key}: {val}\n")

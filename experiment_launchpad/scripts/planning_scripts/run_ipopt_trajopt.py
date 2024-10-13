@@ -16,10 +16,10 @@ max_ang_vel_for_contact_avoidance = 100#deg/s
 
 '''Poses'''
 # Corners of capture box
-step_size = 20
-x_range = 0.01*np.array([np.arange(-10,10+step_size,step_size)])
-y_range = 0.01*np.array([np.arange(-10,10+step_size,step_size)])
-z_range = [0.0,-0.1]
+# step_size = 20
+# x_range = 0.01*np.array([np.arange(-10,10+step_size,step_size)])
+# y_range = 0.01*np.array([np.arange(-10,10+step_size,step_size)])
+# z_range = [0.0,-0.1]
 # print("x_range")
 # print(x_range)
 # print("y_range")
@@ -28,9 +28,9 @@ z_range = [0.0,-0.1]
 
 # # One point. Note that (0,0,0) is the front/center of the capture box, and the box is 20cm wide, 20cm high, and 10 cm deep
 # # Center of capture box is (0,0,-0.05)
-# x_range = -np.array([0.00])
-# y_range = -np.array([0.00])
-# z_range = -np.array([0.05])
+x_range = -np.array([0.00])
+y_range = -np.array([0.00])
+z_range = -np.array([0.05])
 
 '''Velocities'''
 # One points
