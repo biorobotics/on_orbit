@@ -9,8 +9,8 @@ class R3SO3EKF(object):
     self.SO3_pin_model.addJoint(0, pin.JointModelSpherical(), pin.SE3.Identity(), 'base_joint')
     self.nq = 7 #number of configuration variables
     self.nv = 6 #number of velocity variables
-    self.nx = self.nq + self.nv
-    self.ndx = 2*self.nv
+    self.nx = self.nq + self.nv # Total state dimension
+    self.ndx = 2*self.nv # Dimenstion of the state error vector
     self.kf_x = np.zeros(self.nx)
     self.kf_cov0 = np.eye(self.ndx)
     self.kf_cov = np.copy(self.kf_cov0)
@@ -135,6 +135,15 @@ class R3SO3EKF(object):
     self.kf_x[7:10] = posdot + posddot*dt
     self.kf_x[10:13] = w_next
     self.kf_cov = kf_F@self.kf_cov@kf_F.transpose() + self.kf_Q
+
+  def get_standard_deviation(self):
+    position_covariance = self.kf_cov[:3, :3]
+    orientation_covariance = self.kf_cov[3:6, 3:6]
+
+    pos_std_dev = np.sqrt(np.diag(position_covariance))
+    ori_std_dev = np.sqrt(np.diag(orientation_covariance))
+                          
+    return pos_std_dev, ori_std_dev
 
   def correct(self, pos, quat):
     if not self.initialized:

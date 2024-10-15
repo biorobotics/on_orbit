@@ -17,6 +17,8 @@ from mrv_controller import  MrvController
 np.set_printoptions(linewidth=np.inf)
 np.set_printoptions(suppress=True)
 
+use_ekf = True
+
 visualize = rospy.get_param('visualize')
 
 grid_type = rospy.get_param('grid_type')
@@ -144,6 +146,7 @@ for x in range(0,num_trial):
     probe_z_axis_plunge_velocity = rospy.get_param('probe_z_axis_plunge_velocity')
     use_variable_plunge_speed = rospy.get_param('use_variable_plunge_speed')
     use_scheduled_gains = rospy.get_param('use_scheduled_gains')
+    use_ekf = rospy.get_param('use_ekf')
     
     mrv_controller = MrvController(rospath + '/urdf/robot_cv_detached.urdf', 
                                         rospath + '/urdf/robot.urdf', 
@@ -155,7 +158,7 @@ for x in range(0,num_trial):
                                         time_steps_between_measurements, cw_a, cw_mu, cw_orbit_dir, do_noisy_state_estimation, 
                                         nozzle_opening_rad, peg_rad, client_velocity_noise_ang_amp, time_limit, 
                                         debug_with_test_traj, test_traj_id, lock_client, lock_mrv, probe_z_axis_plunge_velocity, use_variable_plunge_speed, 
-                                        use_scheduled_gains, use_cw=use_cw)
+                                        use_scheduled_gains, use_cw=use_cw , use_ekf=use_ekf)
 
     rng = np.random.default_rng(np.random.SeedSequence(12345).spawn(1)[-1])
 
@@ -210,11 +213,19 @@ for x in range(0,num_trial):
           fail_reason = status
           print('Fail at step %d' %(len(mrv_controller.mrv_client_sim.sim_ts) - 1))
           break
-
+      sim_vis_publisher.delete_filter_marker()
       if visualize:
         sw_base_pos, sw_base_rmat, sw_joint_angles, sw_base_v, sw_base_w, sw_joint_vels, sw_client_pos, sw_client_rmat, sw_client_v, sw_client_w = mrv_controller.get_state_in_pieces()
         traj_pos, traj_rmat = mrv_controller.get_traj()
+        if use_ekf:
+          particle_positions , high_weight_particle_position = mrv_controller.get_ekf_estimate()
+        else:
+          particle_positions , high_weight_particle_position = mrv_controller.get_particle_positions()
+        high_weight_particle_position = high_weight_particle_position.reshape(1,3)
         sim_vis_publisher.publish(sw_joint_angles, sw_base_pos, sw_base_rmat, sw_client_pos, sw_client_rmat, traj_pos, traj_rmat)
+        sim_vis_publisher.publish_filter_marker(particle_positions, is_red = True)
+        sim_vis_publisher.publish_filter_marker(high_weight_particle_position, is_red = False)
+
         rate.sleep()
 
     on_shutdown()
@@ -226,8 +237,9 @@ for x in range(0,num_trial):
 
     if not use_grid:
       break
-
+# sim_vis_publisher.delete_filter_marker()
 if visualize:
   while not rospy.is_shutdown():
     sim_vis_publisher.publish(sw_joint_angles, sw_base_pos, sw_base_rmat, sw_client_pos, sw_client_rmat, traj_pos, traj_rmat)
+
     rate.sleep()

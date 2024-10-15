@@ -4,9 +4,9 @@ delta_v: [0., 0., 0.0] #m/s, relative velocity between base of MRV and base of c
 initial_client_w: [0.0, 0.0, 0.] # in deg/s
 initial_mrv_w: [0., 0., 0.] # in deg/s
 
-do_save: False
+do_save: True
 use_cw: True #use orbital gravitational dynamics
-save_folder: 'experiment_logs/10_09_24/bad'
+save_folder: 'experiment_logs/10_14_24/ekf_test/'
 
 # This is the library used by Anoop before Andrew took over the code, which has a phase where contact is broken. 
 #traj_library_prefix: '/experiment_logs/01_30_24/ipopt_multicore/'
@@ -67,6 +67,9 @@ num_hardware_trials: 3
 
 # Whether to visualize the simulator 
 visualize: True
+
+# Whether to use ekf (alternative right now is a particle filter)
+use_ekf: True
 
 # Set to true to visualize trajectories before executing them on the hardware-in-the-loop system
 verify_trajectory_visually: False

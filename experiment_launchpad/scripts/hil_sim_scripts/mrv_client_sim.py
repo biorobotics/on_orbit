@@ -7,6 +7,7 @@ from scipy.optimize import linprog
 from itertools import product
 import cv2
 from R3_SO3_ekf import R3SO3EKF
+from R3_SO3_particle_filter import R3SO3ParticleFilter
 import time
 import pybullet
 import pybullet_data
@@ -30,7 +31,7 @@ class MRVClientSim(object):
   # If pose noise is True, we add noise to the client pose and use that as a measurement. Otherwise we generate image features
   # and add noise in image space.
   def __init__(self, mrv_cv_urdf_file, mrv_urdf_file, pybullet_mrv_urdf_file, pybullet_cv_urdf_file, joint_angle_lower_limits, joint_angle_upper_limits, joint_vel_limits, joint_acc_limits, 
-               joint_torque_limits, dt, cone_slope, time_steps_between_measurements, cw_a, cw_mu, cw_orbit_dir, do_noisy_state_estimation, lock_client, lock_mrv, use_cw=True):
+               joint_torque_limits, dt, cone_slope, time_steps_between_measurements, cw_a, cw_mu, cw_orbit_dir, do_noisy_state_estimation, lock_client, lock_mrv, use_cw=True , use_ekf = True):
     
     '''Input URDFs:
     These are all simply passed direclty to MRVCLientSim
@@ -41,9 +42,8 @@ class MRVClientSim(object):
       pybullet_mrv_urdf_file - currently using barebones_robot.urdf. 
       pybullet_cv_urdf_file - currently using cv.urdf.
     '''
-
     self.joint_torque_limits = joint_torque_limits
-    
+    self.use_filter = False
     self.max_diff = 0.
     self.pin_model = RobotWrapper.BuildFromURDF(mrv_cv_urdf_file).model
     self.pin_model.gravity.setZero()
@@ -126,6 +126,36 @@ class MRVClientSim(object):
 
     # self.ekf = SE3EKF()
     self.ekf = R3SO3EKF()
+    self.use_ekf = use_ekf
+  
+
+    '''Max for constant offset in position and orientation'''
+    self.pose_noise_pos_std = 0.02 #m
+    self.pose_noise_rot_std = 0.5*np.pi/180. #rad
+
+    # Initialize the particle filter
+    pos_std = np.array([self.pose_noise_pos_std, self.pose_noise_pos_std, self.pose_noise_pos_std])
+    rot_std = np.array([self.pose_noise_rot_std,self.pose_noise_rot_std,self.pose_noise_rot_std])
+    self.particle_filter = R3SO3ParticleFilter(pose_pos_std=pos_std, pose_rot_std=rot_std)
+    # For visualizing the particles lets maintain an array of the positions of the particles
+    self.particle_positions = np.zeros((self.particle_filter.num_particles, 3))
+    self.highest_weight_particle = np.zeros(3)
+
+    # Debugging ekf vs particle filter
+    self.noisy_position = []
+    self.noisy_orientation = []
+    self.gt_position = []
+    self.gt_orientation = []
+    self.ekf_position = []
+    self.ekf_orientation = []
+    self.ekf_cov_pos = []
+    self.ekf_cov_rot = []
+    self.pf_position = []
+    self.pf_orientation = []
+    self.pf_cov_pos = []
+    self.pf_cov_rot = []
+
+
     self.mrv_pin_model = RobotWrapper.BuildFromURDF(mrv_urdf_file, root_joint=pin.JointModelFreeFlyer()).model
     self.mrv_pin_model.gravity.setZero()
     self.mrv_pin_data = pin.Data(self.mrv_pin_model)
@@ -278,7 +308,8 @@ class MRVClientSim(object):
     what[2,0] = -w[1]
     what[2,1] = w[0]
     return what
-  
+
+
   def get_wrist_jacobian(self):
     return copy.deepcopy(pin.getFrameJacobian(self.mrv_pin_model, self.mrv_pin_data, self.mrv_wrist_fid, pin.ReferenceFrame.LOCAL))
 
@@ -868,6 +899,12 @@ class MRVClientSim(object):
     joint_velocities = self.get_pybullet_joint_velocities()
     self.joint_work = self.joint_work + joint_torques.transpose()@joint_velocities*self.dt
 
+  def get_particle_filter_positions(self):
+    return self.particle_positions , self.highest_weight_particle
+  
+  def get_ekf_estimate(self):
+    return self.ekf.kf_x[:3]
+  
   def update_kinematics(self):
     pin.forwardKinematics(self.pin_model, self.pin_data, self.x[:self.pin_model.nq], self.x[self.pin_model.nq:])
     pin.computeJointJacobians(self.pin_model, self.pin_data)
@@ -910,14 +947,22 @@ class MRVClientSim(object):
       vcom_wrt_cam = cam_rmat.transpose()@vcom
 
       # Predict
-      if self.ekf.initialized:
-        # Estimation wrt inertial frame
-        #self.ekf.predict(np.zeros(3), np.zeros(3), np.zeros(3), tau_client_in_base_frame, dt)
-
-        # Estimation wrt camera frame
-        f_client_in_base_frame = np.zeros(3)
-        tau_client_in_base_frame = np.zeros(3)
-        self.ekf.predict(cam_v - vcom_wrt_cam, cam_w, f_client_in_base_frame, tau_client_in_base_frame, dt)
+      if self.use_ekf:
+        if self.ekf.initialized:
+          # Estimation wrt inertial frame
+          #self.ekf.predict(np.zeros(3), np.zeros(3), np.zeros(3), tau_client_in_base_frame, dt)
+          # Estimation wrt camera frame
+          f_client_in_base_frame = np.zeros(3)
+          tau_client_in_base_frame = np.zeros(3)
+          self.ekf.predict(cam_v - vcom_wrt_cam, cam_w, f_client_in_base_frame, tau_client_in_base_frame, dt)
+      else:
+        # Predict with particle filter
+        if self.particle_filter.initialized:
+          f_client_in_base_frame = np.zeros(3)
+          tau_client_in_base_frame = np.zeros(3)
+          self.particle_filter.predict(cam_v - vcom_wrt_cam, cam_w, f_client_in_base_frame, tau_client_in_base_frame, dt)
+      
+      
 
       # Generate noisy measurement
       client_pos = self.x[self.cv_qidx:self.cv_qidx + 3]
@@ -929,9 +974,12 @@ class MRVClientSim(object):
 
       pos_std = np.array([self.pose_noise_pos_std, self.pose_noise_pos_std, self.pose_noise_pos_std])
       rot_std = np.array([self.pose_noise_rot_std,self.pose_noise_rot_std,self.pose_noise_rot_std])
+      # Add noise
       client_pos_meas_wrt_cam = client_pos_wrt_cam + self.rng.normal(np.zeros(3), pos_std)
       client_rmat_meas_wrt_cam = client_rmat_wrt_cam@R.from_euler('ZYX', self.rng.normal(np.zeros(3), rot_std)).as_matrix()
-
+      # Noiseless for ground truth
+      client_pos_meas_wrt_cam_gt = client_pos_wrt_cam
+      client_rmat_meas_wrt_cam_gt = client_rmat_wrt_cam
       if measurement_succeeded:
         # Estimation wrt inertial frame
         '''
@@ -965,28 +1013,121 @@ class MRVClientSim(object):
 
         client_pos_meas_wrt_com = client_pos_meas_wrt_cam - com_wrt_cam
 
-        if self.ekf.initialized:
-          if self.time_steps_since_measurement >= self.time_steps_between_measurements:
-            self.ekf.correct(client_pos_meas_wrt_com, R.from_matrix(client_rmat_meas_wrt_cam).as_quat())
-            self.time_steps_since_measurement = 0
-        else:
-          self.ekf.initialize(client_pos_meas_wrt_com, R.from_matrix(client_rmat_meas_wrt_cam).as_quat(), np.zeros(3), np.zeros(3))
+        # Noisless estimation for ground truth
+        client_pos_meas_gt = cam_pos + cam_rmat@client_pos_meas_wrt_cam_gt
+        client_rmat_meas_gt = cam_rmat@client_rmat_meas_wrt_cam_gt
+
+        client_pos_meas_wrt_com_gt = client_pos_meas_wrt_cam_gt - com_wrt_cam
+
+
+        self.noisy_position.append(client_pos_meas_wrt_com)
+        rotation = R.from_matrix(client_rmat_meas_wrt_cam).as_quat()
+        self.noisy_orientation.append(rotation)
+        self.gt_position.append(client_pos_meas_wrt_com_gt)
+        rotation = R.from_matrix(client_rmat_meas_wrt_cam_gt).as_quat()
+        self.gt_orientation.append(rotation)
+
+        if self.use_ekf:
+          if self.ekf.initialized:
+            if self.time_steps_since_measurement >= self.time_steps_between_measurements:
+              self.ekf.correct(client_pos_meas_wrt_com, R.from_matrix(client_rmat_meas_wrt_cam).as_quat())
+              self.time_steps_since_measurement = 0
+              # Logging the estimate and covariance
+              self.ekf_position.append(self.ekf.kf_x[:3])
+              self.ekf_orientation.append(self.ekf.kf_x[3:7])
+              pos_std_dev , ori_std_dev = self.ekf.get_standard_deviation()
+              self.ekf_cov_pos.append(pos_std_dev)
+              self.ekf_cov_rot.append(ori_std_dev)
+          else:
+            self.ekf.initialize(client_pos_meas_wrt_com, R.from_matrix(client_rmat_meas_wrt_cam).as_quat(), np.zeros(3), np.zeros(3))
+        else:        
+          # Estimation wrt camera frame for particle filter
+          if self.particle_filter.initialized:
+            if self.time_steps_since_measurement >= self.time_steps_between_measurements:
+              
+              pos_meas = client_pos_meas_wrt_com
+              quat_meas = R.from_matrix(client_rmat_meas_wrt_cam).as_quat()
+
+              self.particle_filter.update(pos_meas,quat_meas)
+              self.pos_est, self.quat_est, self.posdot_est, self.w_est, self.pos_max_weight, self.all_positions =self.particle_filter.get_estimate()
+              # Logging the estimate and covariance
+              self.pf_position.append(self.pos_est)
+              self.pf_orientation.append(self.quat_est)
+              pos_std_dev , ori_std_dev = self.particle_filter.get_standard_deviation()
+              self.pf_cov_pos.append(pos_std_dev)
+              self.pf_cov_rot.append(ori_std_dev)
+              self.time_steps_since_measurement = 0
+          else:
+              self.particle_filter.initialize(client_pos_meas_wrt_com, R.from_matrix(client_rmat_meas_wrt_cam).as_quat(), np.zeros(3), np.zeros(3))
+              pos_meas = client_pos_meas_wrt_com
+              quat_meas = R.from_matrix(client_rmat_meas_wrt_cam).as_quat()
+              self.particle_filter.update(pos_meas, quat_meas)
+              self.pos_est, self.quat_est, self.posdot_est, self.w_est, self.pos_max_weight, self.all_positions =self.particle_filter.get_estimate()
+
+
+
 
         self.time_steps_since_measurement += 1
+        if self.use_ekf:
+          client_pos_est_wrt_com = self.ekf.kf_x[:3]
+          client_pos_est = cam_pos + cam_rmat@(client_pos_est_wrt_com + com_wrt_cam)
+          client_rmat_est_wrt_cam = R.from_quat(self.ekf.kf_x[3:7]).as_matrix()
+          client_rmat_est = cam_rmat@client_rmat_est_wrt_cam
 
-        client_pos_est_wrt_com = self.ekf.kf_x[:3]
-        client_pos_est = cam_pos + cam_rmat@(client_pos_est_wrt_com + com_wrt_cam)
-        client_rmat_est_wrt_cam = R.from_quat(self.ekf.kf_x[3:7]).as_matrix()
-        client_rmat_est = cam_rmat@client_rmat_est_wrt_cam
+          client_v_est = client_rmat_est_wrt_cam.transpose()@(self.ekf.kf_x[7:10] + vcom_wrt_cam)
+          client_w_est = client_rmat_est_wrt_cam.transpose()@self.ekf.kf_x[10:13]
+        else:
+          client_pos_est_wrt_com = self.pos_est
+          client_pos_est = cam_pos + cam_rmat@(client_pos_est_wrt_com + com_wrt_cam)
+          client_rmat_est_wrt_cam = R.from_quat(self.quat_est).as_matrix()
+          client_rmat_est = cam_rmat@client_rmat_est_wrt_cam
 
-        client_v_est = client_rmat_est_wrt_cam.transpose()@(self.ekf.kf_x[7:10] + vcom_wrt_cam)
-        client_w_est = client_rmat_est_wrt_cam.transpose()@self.ekf.kf_x[10:13]
+          client_v_est = client_rmat_est_wrt_cam.transpose()@(self.posdot_est + vcom_wrt_cam)
+          client_w_est = client_rmat_est_wrt_cam.transpose()@self.w_est
+          # Update the positions of the particles for visualization
+          self.particle_positions = self.all_positions
+          self.highest_weight_particle = self.pos_max_weight
 
-        # Updated state
-        self.x_est[self.cv_qidx:self.cv_qidx + 3] = client_pos_est
-        self.x_est[self.cv_qidx + 3:self.cv_qidx + 7] = R.from_matrix(client_rmat_est).as_quat()
-        self.x_est[self.pin_model.nq + self.cv_vidx:self.pin_model.nq + self.cv_vidx + 3] = client_v_est
-        self.x_est[self.pin_model.nq + self.cv_vidx + 3:self.pin_model.nq + self.cv_vidx + 6] = client_w_est
+       
+        if self.use_filter:
+          # Updated state
+          self.x_est[self.cv_qidx:self.cv_qidx + 3] = client_pos_est
+          self.x_est[self.cv_qidx + 3:self.cv_qidx + 7] = R.from_matrix(client_rmat_est).as_quat()
+          self.x_est[self.pin_model.nq + self.cv_vidx:self.pin_model.nq + self.cv_vidx + 3] = client_v_est
+          self.x_est[self.pin_model.nq + self.cv_vidx + 3:self.pin_model.nq + self.cv_vidx + 6] = client_w_est
+        else:
+          # Use the noisy measurements directly
+          # The noisy measurements are already computed earlier
+          client_pos_meas_wrt_cam_noisy = client_pos_meas_wrt_cam  # Already noisy
+          client_rmat_meas_wrt_cam_noisy = client_rmat_meas_wrt_cam  # Already noisy
+
+          # Compute the position relative to the center of mass in the camera frame
+          client_pos_meas_wrt_com_noisy = client_pos_meas_wrt_cam_noisy - com_wrt_cam
+
+          # Estimated position relative to the center of mass
+          client_pos_est_wrt_com = client_pos_meas_wrt_com_noisy
+
+          # Convert the estimated position to the world frame
+          client_pos_est = cam_pos + cam_rmat @ (client_pos_est_wrt_com + com_wrt_cam)
+
+          # Estimated orientation relative to the camera frame
+          client_rmat_est_wrt_cam = client_rmat_meas_wrt_cam_noisy
+
+          # Convert the estimated orientation to the world frame
+          client_rmat_est = cam_rmat @ client_rmat_est_wrt_cam
+
+          # Since we don't have velocity measurements, set estimated velocities to zero
+          client_v_est = np.zeros(3)
+          client_w_est = np.zeros(3)
+
+          # Update the estimated state
+          self.x_est[self.cv_qidx:self.cv_qidx + 3] = client_pos_est
+          self.x_est[self.cv_qidx + 3:self.cv_qidx + 7] = R.from_matrix(client_rmat_est).as_quat()
+          self.x_est[self.pin_model.nq + self.cv_vidx:self.pin_model.nq + self.cv_vidx + 3] = client_v_est
+          self.x_est[self.pin_model.nq + self.cv_vidx + 3:self.pin_model.nq + self.cv_vidx + 6] = client_w_est
+
+          
+
 
         # Collect data to see if the estimator is consistent
         _Bp_MC = client_pos_wrt_cam - com_wrt_cam
@@ -1241,6 +1382,22 @@ class MRVClientSim(object):
     return req_joint_vels, req_joint_accs
 
   def save(self, save_path):
+    print('This did get called')
+    
+    np.save(save_path + '/noisy_position.npy', self.noisy_position)
+    np.save(save_path + '/noisy_orientation.npy', self.noisy_orientation)
+    np.save(save_path + '/gt_position.npy', self.gt_position)
+    np.save(save_path + '/gt_orientation.npy', self.gt_orientation)
+    np.save(save_path + '/ekf_position.npy', self.ekf_position)
+    np.save(save_path + '/ekf_orientation.npy', self.ekf_orientation)
+    np.save(save_path + '/ekf_cov_pos.npy', self.ekf_cov_pos)
+    np.save(save_path + '/ekf_cov_rot.npy', self.ekf_cov_rot)
+    np.save(save_path + '/pf_position.npy', self.pf_position)
+    np.save(save_path + '/pf_orientation.npy', self.pf_orientation)
+    np.save(save_path + '/pf_cov_pos.npy', self.pf_cov_pos)
+    np.save(save_path + '/pf_cov_rot.npy', self.pf_cov_rot)
+
+
     np.save(save_path + '/sw_is_in_throat_trj.npy', self.sw_is_in_throat_trj)
     np.save(save_path + '/sw_is_in_nozzle_trj.npy', self.sw_is_in_nozzle_trj)
     np.save(save_path + '/sw_peg_pos_trj.npy', self.sw_peg_pos_trj)
