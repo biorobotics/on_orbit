@@ -47,7 +47,7 @@ def plot_6_variables(sim_ts, noisy_pos, filtered_pos, gt_pos, noisy_ori, filtere
     for i in range(3):
         axs[i].plot(sim_ts, noisy_pos[:, pos_indices[i]], 'r--', label='Noisy')
         axs[i].plot(sim_ts, filtered_pos[:, pos_indices[i]], 'g-', label=filter_label)
-        axs[i].plot(sim_ts, gt_pos[:, pos_indices[i]], 'b:', label='Ground Truth')
+        axs[i].plot(sim_ts, gt_pos[:, pos_indices[i]], 'b-', label='Ground Truth')
         axs[i].set_title(pos_labels[i])
         axs[i].set_xlabel('Simulation Time')
         axs[i].set_ylabel('Position (m)')
@@ -67,10 +67,10 @@ def plot_6_variables(sim_ts, noisy_pos, filtered_pos, gt_pos, noisy_ori, filtere
     for i in range(3):
         axs[i+3].plot(sim_ts, noisy_ori[:, ori_indices[i]], 'r--', label='Noisy')
         axs[i+3].plot(sim_ts, filtered_ori[:, ori_indices[i]], 'g-', label=filter_label)
-        axs[i+3].plot(sim_ts, gt_ori[:, ori_indices[i]], 'b:', label='Ground Truth')
+        axs[i+3].plot(sim_ts, gt_ori[:, ori_indices[i]], 'b-', label='Ground Truth')
         axs[i+3].set_title(ori_labels[i])
         axs[i+3].set_xlabel('Simulation Time')
-        axs[i+3].set_ylabel('Orientation (degrees)')
+        axs[i+3].set_ylabel('Rodriguez Param')
         axs[i+3].legend()
         axs[i+3].grid(True)
 
@@ -104,10 +104,10 @@ def plot_ekf_pf_vs_gt(root_folder, ekf=True, num_particles=800):
     plot_6_variables(sim_ts, noisy_pos, filtered_pos, gt_pos, noisy_ori, filtered_ori, gt_ori, title, filter_label=filter_label)
 
 def main():
-    root_dir = "/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/10_14_24/ekf_test/pos__0.0_0.0_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.0_0.0_0.020241015-075710"  # Change this to your actual root directory
+    root_dir = "/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/10_14_24/pf_test/pos__0.0_0.0_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.0_0.0_0.020241015-100922"  # Change this to your actual root directory
 
     # Call the function to plot for EKF or PF
-    plot_ekf_pf_vs_gt(root_dir, ekf=True, num_particles=800)  # Toggle `ekf` to False for PF
+    plot_ekf_pf_vs_gt(root_dir, ekf=False, num_particles=800)  # Toggle `ekf` to False for PF
 
 if __name__ == "__main__":
     main()

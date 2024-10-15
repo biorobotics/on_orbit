@@ -43,7 +43,7 @@ class MRVClientSim(object):
       pybullet_cv_urdf_file - currently using cv.urdf.
     '''
     self.joint_torque_limits = joint_torque_limits
-    self.use_filter = False
+    self.use_filter = True
     self.max_diff = 0.
     self.pin_model = RobotWrapper.BuildFromURDF(mrv_cv_urdf_file).model
     self.pin_model.gravity.setZero()
@@ -1033,8 +1033,10 @@ class MRVClientSim(object):
               self.ekf.correct(client_pos_meas_wrt_com, R.from_matrix(client_rmat_meas_wrt_cam).as_quat())
               self.time_steps_since_measurement = 0
               # Logging the estimate and covariance
-              self.ekf_position.append(self.ekf.kf_x[:3])
-              self.ekf_orientation.append(self.ekf.kf_x[3:7])
+              self.ekf_position.append(self.ekf.kf_x[:3].copy())
+              print(self.ekf.kf_x[:3])
+              print(self.ekf.kf_x[3:7])
+              self.ekf_orientation.append(self.ekf.kf_x[3:7].copy())
               pos_std_dev , ori_std_dev = self.ekf.get_standard_deviation()
               self.ekf_cov_pos.append(pos_std_dev)
               self.ekf_cov_rot.append(ori_std_dev)
@@ -1051,8 +1053,8 @@ class MRVClientSim(object):
               self.particle_filter.update(pos_meas,quat_meas)
               self.pos_est, self.quat_est, self.posdot_est, self.w_est, self.pos_max_weight, self.all_positions =self.particle_filter.get_estimate()
               # Logging the estimate and covariance
-              self.pf_position.append(self.pos_est)
-              self.pf_orientation.append(self.quat_est)
+              self.pf_position.append(self.pos_est.copy())
+              self.pf_orientation.append(self.quat_est.copy())
               pos_std_dev , ori_std_dev = self.particle_filter.get_standard_deviation()
               self.pf_cov_pos.append(pos_std_dev)
               self.pf_cov_rot.append(ori_std_dev)

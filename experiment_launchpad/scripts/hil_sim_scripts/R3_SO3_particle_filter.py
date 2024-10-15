@@ -3,7 +3,7 @@ from scipy.spatial.transform import Rotation as R
 import pinocchio as pin
 from sksurgerycore.algorithms.averagequaternions import weighted_average_quaternions
 class R3SO3ParticleFilter(object):
-    def __init__(self,  pose_pos_std , pose_rot_std,num_particles=800):
+    def __init__(self,  pose_pos_std , pose_rot_std,num_particles=100):
 
         self.SO3_pin_model = pin.Model()
         self.SO3_pin_model.addJoint(0, pin.JointModelSpherical(), pin.SE3.Identity(), 'base_joint')
