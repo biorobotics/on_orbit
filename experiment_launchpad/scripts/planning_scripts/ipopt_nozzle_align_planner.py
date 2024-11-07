@@ -549,10 +549,8 @@ class IpoptNozzleAlignPlanner(object):
     self.generate_cost_code(cost_input, phase_idx, folder_name, regen)
 
     #END OF PHASES
-
     ipopt_lb = np.concatenate(ipopt_lb)
     ipopt_ub = np.concatenate(ipopt_ub)
-
     ipopt_cl = np.concatenate(ipopt_cl)
     ipopt_cu = np.concatenate(ipopt_cu)
 
@@ -612,6 +610,8 @@ class IpoptNozzleAlignPlanner(object):
     us = []
     for step in range(phase_starts[-1]):
       xs.append(soln[vars_per_step*step:vars_per_step*step + self.ipopt_nx])
+      # print("X:", xs[-1])
+      
       us.append(soln[vars_per_step*step + self.ipopt_nx:vars_per_step*(step + 1)])
 
     if save_path is not None:

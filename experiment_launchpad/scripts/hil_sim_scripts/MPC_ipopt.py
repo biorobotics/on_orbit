@@ -7,21 +7,28 @@ from actuation_cw_contact import ActuationModelCWContact
 import time
 from ref_traj_point import RefTrajPoint
 from test_trajectories import TestTrajectories
+import rospkg
 import copy
 import gc
 
 # Controllers
+from mrv_controller import MrvController
 from resolved_accel import ResolvedAccel
 from joint_space_tracking import JointSpaceTracking
 from planar_admittance import PlanarAdmittance
 from within_nozzle_admittance import WithinNozzleAdmittance
 
-class MrvController(object):
+# Planner
+from planning_scripts.ipopt_MPC_planner import MPCNozzleAlignPlanner
+
+
+class IpoptMPC(object):
   def __init__(self, mrv_cv_urdf_file, mrv_urdf_file, pybullet_mrv_urdf_file, pybullet_cv_urdf_file, mrv_joint_angle_lower_limits, mrv_joint_angle_upper_limits, mrv_joint_vel_limits, 
                mrv_joint_acc_limits, mrv_joint_torque_limits, dt, cone_slope, clip_joint_commands,
               time_steps_between_measurements, cw_a, cw_mu, cw_orbit_dir, do_noisy_state_estimation, nozzle_opening_rad, 
                peg_rad, velocity_noise_ang_amp, time_limit, debug_with_test_traj, test_traj_id, lock_client, lock_mrv, probe_z_axis_plunge_velocity, use_variable_plunge_speed, 
-               use_scheduled_gains, use_cw=True , use_ekf = True):  
+               use_scheduled_gains,delta_pos, delta_rot, delta_v, initial_client_w, initial_mrv_w, rng,
+                                                 dist_centering_waypoint_from_goal, use_cw=True , use_ekf = True):  
     self.mrv_cv_urdf_file = mrv_cv_urdf_file
     self.mrv_urdf_file = mrv_urdf_file
     self.pybullet_mrv_urdf_file = pybullet_mrv_urdf_file
@@ -32,6 +39,7 @@ class MrvController(object):
     self.mrv_joint_acc_limits = mrv_joint_acc_limits
     self.mrv_joint_torque_limits = mrv_joint_torque_limits
     self.dt = dt
+    self.ipopt_dt = 0.08
     self.cone_slope = cone_slope
     self.clip_joint_commands = clip_joint_commands
     self.time_steps_between_measurements = time_steps_between_measurements
@@ -47,10 +55,15 @@ class MrvController(object):
     self.check_joint_angle_limit_violation = False # whether to check joint limit violations
     self.lock_client = lock_client
     self.lock_mrv = lock_mrv
+    self.internal_idx = 0
+    self.plunging = False
+    self.first_solve = True
 
     self.init_time = time.time()
 
     self.use_ekf = use_ekf
+
+    self.one_run = True
 
     '''Input URDFs:
     These are all simply passed direclty to MRVCLientSim
@@ -60,9 +73,25 @@ class MrvController(object):
     pybullet_cv_urdf_file - currently using cv.urdf.
     '''
 
-    self.mrv_client_sim = MRVClientSim(self.mrv_cv_urdf_file, self.mrv_urdf_file, self.pybullet_mrv_urdf_file, self.pybullet_cv_urdf_file, self.mrv_joint_angle_lower_limits, self.mrv_joint_angle_upper_limits, 
-                               self.mrv_joint_vel_limits, self.mrv_joint_acc_limits, self.mrv_joint_torque_limits, self.dt, self.cone_slope, self.time_steps_between_measurements, 
-                               self.cw_a, self.cw_mu, self.cw_orbit_dir, self.lock_client, self.lock_mrv, self.use_cw , use_ekf= self.use_ekf)
+    self.mrv_client_sim = MRVClientSim(self.mrv_cv_urdf_file, 
+                                       self.mrv_urdf_file, 
+                                       self.pybullet_mrv_urdf_file, 
+                                       self.pybullet_cv_urdf_file, 
+                                       self.mrv_joint_angle_lower_limits, 
+                                       self.mrv_joint_angle_upper_limits, 
+                                       self.mrv_joint_vel_limits, 
+                                       self.mrv_joint_acc_limits, 
+                                       self.mrv_joint_torque_limits, 
+                                       self.dt, 
+                                       self.cone_slope, 
+                                       self.time_steps_between_measurements, 
+                                       self.cw_a, 
+                                       self.cw_mu, 
+                                       self.cw_orbit_dir, 
+                                       self.lock_client, 
+                                       self.lock_mrv, 
+                                       self.use_cw , 
+                                       use_ekf= self.use_ekf)
 
     pin.forwardKinematics(self.mrv_client_sim.pin_model, self.mrv_client_sim.pin_data, pin.neutral(self.mrv_client_sim.pin_model))
     pin.updateFramePlacement(self.mrv_client_sim.pin_model, self.mrv_client_sim.pin_data, self.mrv_client_sim.nozzle_fid)
@@ -104,9 +133,74 @@ class MrvController(object):
 
     # The last trajectory point used to generate a control
     self.last_traj_point = []
-
     self.last_joint_vels_cmd = np.zeros(self.mrv_client_sim.num_rotary)
+
+    # Online planner
+    '''
+    This is an ipopt planner that will be called at each time step to generate a trajectory from the current state to the goal.
+    '''
+    initial_client_rmat = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    control_cost_weight = 0.0001
+    phase_lengths_sec = np.array([4,11.5 - (2*self.ipopt_dt) ,2*self.ipopt_dt,self.ipopt_dt])
     
+    self.path = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit'
+    mrv_joint_vel_lim_ipopt = 0.75*self.mrv_joint_vel_limits
+    mrv_joint_acc_lim_ipopt = 0.75*self.mrv_joint_acc_limits
+    # Print all the parameters
+    print("Initializing MPCNozzleAlignPlanner with the following parameters:")
+    print("URDF Path (robot_cv_detached):", self.path + '/urdf/robot_cv_detached.urdf')
+    print("URDF Path (robot):", self.path + '/urdf/robot.urdf')
+    print("dt:", self.ipopt_dt)
+    print("Joint Angle Lower Limits:", self.mrv_joint_angle_lower_limits)
+    print("Joint Angle Upper Limits:", self.mrv_joint_angle_upper_limits)
+    print("Joint Torque Limits:", self.mrv_joint_torque_limits)
+    print("Joint Velocity Limits:", mrv_joint_vel_lim_ipopt)
+    print("Joint Acceleration Limits:", mrv_joint_acc_lim_ipopt)
+    print("Control Cost Weight:", control_cost_weight)
+    print("Phase Lengths (sec):", phase_lengths_sec)
+    print("CW a:", self.cw_a)
+    print("CW mu:", self.cw_mu)
+    print("CW Orbit Direction:", self.cw_orbit_dir)
+    print("Initial Client Rotation Matrix:", initial_client_rmat)
+    print("Cone Slope:", self.cone_slope)
+    print("Use CW:", self.use_cw)
+    print("Meshes Path:", self.path + '/meshes/')
+    # quit()
+
+    self.elapsed_ipopt_steps = 0
+    self.ipopt_planner = MPCNozzleAlignPlanner(self.path + '/urdf/robot_cv_detached.urdf', \
+                                    self.path + '/urdf/robot.urdf', \
+                                    self.ipopt_dt, \
+                                    self.mrv_joint_angle_lower_limits, \
+                                    self.mrv_joint_angle_upper_limits, \
+                                    self.mrv_joint_torque_limits, \
+                                    mrv_joint_vel_lim_ipopt, \
+                                    mrv_joint_acc_lim_ipopt, \
+                                    control_cost_weight, phase_lengths_sec, \
+                                    self.cw_a, self.cw_mu, self.cw_orbit_dir, initial_client_rmat, \
+                                    self.cone_slope, self.use_cw, self.path + '/meshes/')
+    
+    self.all_q_from_sim = []
+    self.all_v_from_sim = []
+    self.all_q_from_ipopt = []
+    self.all_v_from_ipopt = []
+    
+    # Trajectory storage for saving and replay
+    self.ref_trj_idx = 0
+    self.ref_ee_pos_trj = []
+    self.ref_ee_rmat_trj = []
+    self.ref_ee_v_trj = []
+    self.ref_ee_w_trj = []
+    self.ref_ee_vdot_trj = []
+    self.ref_ee_wdot_trj = []
+    self.ref_joint_angles_trj = []
+    self.ref_joint_vels_trj = []
+    self.ref_joint_accs_trj = []
+    self.ref_forces_trj = []
+    self.ref_x_trj = []
+    self.ref_u_trj = []
+    self.ref_t_trj = []
+
     # Controllers
     self.resolved_accel = ResolvedAccel(use_scheduled_gains)
     self.joint_space_tracking = JointSpaceTracking(self.mrv_client_sim)
@@ -118,7 +212,7 @@ class MrvController(object):
     1 - joint-space control only
     2 - Planar admitttance controller that generates it's own local "trajectory"
     3 - 3D admittance controller to be used when you're already within the nozzle and do not have a reference trajectory
-    4 - Use controller 0 outside the nozzle and controller 3 within the nozzle
+    4 - Use controller 0 outside the nozzle and controller 3 within after alignement
     '''
     self.controller_type = 4
 
@@ -156,11 +250,7 @@ class MrvController(object):
     '''Do not change this manually. Instead, use disable_joint_control()'''
     self.joint_control_enabled = True
 
-    # Start the EKF with several steps to converge
-    wrench_peg_peg = np.zeros(6)
-    for _ in range(50):
-      self.mrv_client_sim.update_state_estimate(wrench_peg_peg)
-
+    
   def get_state_in_pieces(self):
     mrv_client_sim = self.mrv_client_sim
 
@@ -178,6 +268,14 @@ class MrvController(object):
 
     return sw_base_pos, sw_base_rmat, sw_joint_angles, sw_base_v, sw_base_w, sw_joint_vels, sw_client_pos, sw_client_rmat, sw_client_v, sw_client_w
   
+  # def get_initial_sw_client_rmat(self,delta_pos, delta_rot, delta_v, initial_client_w, initial_mrv_w, rng,
+  #                                                dist_centering_waypoint_from_goal):
+  #   self.reset_wrt_capture_box(delta_pos, delta_rot, delta_v, initial_client_w, initial_mrv_w, rng,
+  #                                                dist_centering_waypoint_from_goal)
+  #   mrv_client_sim = self.mrv_client_sim
+  #   sw_client_rmat = R.from_quat(mrv_client_sim.x[mrv_client_sim.cv_qidx + 3:mrv_client_sim.cv_qidx + 7]).as_matrix()
+  #   return sw_client_rmat
+  
   def get_traj(self):
     return self.last_traj_point.p, self.last_traj_point.rmat
 
@@ -187,104 +285,102 @@ class MrvController(object):
     x_interp[self.pin_model.nq:] = (1 - alpha)*x1[self.pin_model.nq:] + alpha*x2[self.pin_model.nq:]
     return x_interp
 
-  def get_reference_from_load_path(self, load_path, impact_dyn):
-    ref_xs = np.load(load_path + '/xs.npy')
-    ref_us = np.load(load_path + '/us.npy')
-    phase_starts = np.load(load_path + '/phase_starts.npy')
-    dts = np.load(load_path + '/dts.npy')
-    x0 = ref_xs[0]
+  def get_reference_from_ipopt(self, x0, elapsed_steps, impact_dyn):
+    # Solve the optimization problem using the IPOPT planner
+    # if not hasattr(self, 'prev_xs') :
+    xs, us, dts, phase_starts, solved, obj_value = self.ipopt_planner.plan(x0, elapsed_steps, max_iter=1500)
 
-    if impact_dyn:
-      impact_nozzle_idx = 3
-      impact_hole_idx = 4
-      about_to_impact_nozzle_idx = impact_nozzle_idx - 1
-      about_to_impact_hole_idx = impact_hole_idx - 1
-      contact_nozzle_idx = impact_nozzle_idx + 1
-      contact_hole_idx = impact_hole_idx + 1
+    # if not hasattr(self, 'prev_xs'):
+    #     first_solve = True
+    # else:
+    #     first_solve = False
 
-      about_to_impact_nozzle_step = phase_starts[about_to_impact_nozzle_idx]
-      about_to_impact_hole_step = phase_starts[about_to_impact_hole_idx]
+    # if not first_solve:
+    #   solved = False
 
-      impact_nozzle_step = phase_starts[impact_nozzle_idx]
-      impact_hole_step = phase_starts[impact_hole_idx]
+    if hasattr(self, 'prev_obj_value') and self.prev_obj_value is not None:
+        if obj_value > 2.5 * self.prev_obj_value or obj_value > 1:
+            print(f"Current objective value ({obj_value}) is signficantly higher({self.prev_obj_value}). Rejecting solution.")
+            solved = False  # Reject the solution if the objective value increased too much
 
-      contact_nozzle_step = phase_starts[contact_nozzle_idx]
-      contact_hole_step = phase_starts[contact_hole_idx]
 
-      impact_nozzle_impulse = ref_us[impact_nozzle_step, -3:]
-      impact_hole_impulse = ref_us[impact_hole_step, -3:]
+    if solved:
 
-      ref_xs = np.concatenate((ref_xs[:impact_nozzle_step], ref_xs[contact_nozzle_step:impact_hole_step], ref_xs[contact_hole_step:]), 0)
-      ref_us = np.concatenate((ref_us[:impact_nozzle_step], ref_us[contact_nozzle_step:impact_hole_step], ref_us[contact_hole_step:]), 0)
-      phase_starts = np.concatenate((phase_starts[:impact_nozzle_idx], phase_starts[contact_nozzle_idx:impact_hole_idx] - 1, phase_starts[contact_hole_idx:] - 2))
-      dts = np.concatenate((dts[:impact_nozzle_idx], dts[contact_nozzle_idx:impact_hole_idx], dts[contact_hole_idx:]))
+      self.prev_xs = xs
+      self.prev_us = us
+      self.prev_dts = dts
+      self.prev_idx = 0
+      self.prev_obj_value = obj_value
+
+      idx0 = self.prev_idx
+      idx1 = self.prev_idx + 1
+      x0 = xs[idx0]
+      x1 = xs[idx1]
+      u0 = us[idx0]
+      u1 = us[idx1]
+      ipopt_dt = dts[0]
+      
     else:
-      impact_nozzle_impulse = np.zeros(3)
-      impact_hole_impulse = np.zeros(3)
+      print("IPOPT failed to solve the optimization problem.")
+      # Check if previous solution exists
+      if hasattr(self, 'prev_xs') and hasattr(self, 'prev_us'):
+          # Advance the index by one
+          self.prev_idx += 1
+          if self.prev_idx >= len(self.prev_xs):
+            self.prev_idx = len(self.prev_xs) - 1
 
-    # TODO: I will need to improve my interpolation method I think in the MPC code because something im doing is causing alot of upfront cost
-    t = 0
-    ts = []
-    for dt, phase_start, phase_end in zip(dts, phase_starts[:-1], phase_starts[1:]):
-      for step in range(phase_start, phase_end):
-        ts.append(t)
-        t = t + dt
+          idx0 = self.prev_idx
+          idx1 = self.prev_idx + 1
 
-    steps = ts[-1]/self.dt
-    interp_xs = []
-    interp_us = []
-    interp_ts = []
+          if idx1 > len(self.prev_xs):
+            idx1 = idx0
+          
+          x0 = self.prev_xs[idx0]
+          print("x0:", x0)
+          x1 = self.prev_xs[idx1]
+          print("x1:", x1)
+          u0 = self.prev_us[idx0]
+          u1 = self.prev_us[idx1]
+          ipopt_dt = self.prev_dts[0]
+      else:
+          raise Exception("No solution was generated.")
 
-    did_impact_nozzle = False
-    did_impact_hole = False
-    for step in range(int(steps)):
-      t = step*self.dt
-      interp_ts.append(t)
-      pre_step = bisect.bisect_right(ts, t) - 1
-      if pre_step == len(ref_xs) - 1:
-        break
-      alpha = (t - ts[pre_step])/(ts[pre_step + 1] - ts[pre_step])
-      pre_x = ref_xs[pre_step]
-      post_x = ref_xs[pre_step + 1]
-      x_interp = self.interp_x(pre_x, post_x, alpha)
-      interp_xs.append(x_interp)
+    # Calculate elapsed time and reference time steps
+    elapsed_time = elapsed_steps * ipopt_dt
+    num_controller_steps = int(ipopt_dt / self.dt)
+    ref_ts = [elapsed_time + i * self.dt for i in range(num_controller_steps + 1)]
 
-      pre_u = ref_us[pre_step]
-      post_u = ref_us[pre_step + 1]
-      interp_us.append(alpha*post_u + (1 - alpha)*pre_u)
 
-      if impact_dyn and (pre_step == about_to_impact_nozzle_step or pre_step == about_to_impact_hole_step):
-        interp_us[-1][-3:] = pre_u[-3:]
+    # Interpolate between x0 and x1 and u0 and u1
+    ref_xs = []
+    ref_us = []
+    ref_ts = []
+    for i in range(num_controller_steps):
+        t = i * self.dt
+        alpha = t / ipopt_dt if ipopt_dt != 0 else 0
+        x_interp = self.interp_x(x0, x1, alpha)
+        u_interp = (1 - alpha) * u0 + alpha * u1
+        ref_xs.append(x_interp)
+        ref_us.append(u_interp)
+        ref_ts.append(t)
+        
 
-      if impact_dyn and not did_impact_nozzle and pre_step == impact_nozzle_step:
-        interp_us[-1][-3:] += impact_nozzle_impulse/self.dt
-        did_impact_nozzle = True
-
-      if impact_dyn and not did_impact_hole and pre_step == impact_hole_step:
-        interp_us[-1][-3:] += impact_hole_impulse/self.dt
-        did_impact_hole = True
-
-    ref_xs = interp_xs
-    ref_us = interp_us
-    ref_ts = interp_ts
-
+    # Initialize the actuation model
     mrv_client_sim = self.mrv_client_sim
-
     self.pin_model = mrv_client_sim.pin_model
     self.pin_data = pin.Data(self.pin_model)
 
-    actuation = ActuationModelCWContact(self.pin_model, self.mrv_client_sim.mrv_pin_model, self.cw_a, self.cw_mu, self.cw_orbit_dir, np.eye(3), self.use_cw)
+    actuation = ActuationModelCWContact(
+        self.pin_model,
+        self.mrv_client_sim.mrv_pin_model,
+        self.cw_a,
+        self.cw_mu,
+        self.cw_orbit_dir,
+        np.eye(3),
+        self.use_cw
+    )
 
-    v0 = x0[self.pin_model.nq:]
-    initial_client_w = v0[self.cv_vidx + 3:self.cv_vidx + 6]
-    initial_client_w_xy = np.copy(initial_client_w)[:2]
-
-    theta = np.arctan2(initial_client_w_xy[1], initial_client_w_xy[0]) - np.pi/2
-    if theta < 0:
-      theta += 2*np.pi
-    plane_idx = int(theta/(np.pi/4))
-    nozzle_geom_fid = self.pin_model.getFrameId('nozzle_geom' + str(plane_idx))
-
+    # Prepare lists to store the reference trajectories
     ref_ee_pos_trj = []
     ref_ee_rmat_trj = []
     ref_ee_v_trj = []
@@ -296,82 +392,111 @@ class MrvController(object):
     ref_joint_accs_trj = []
     ref_forces_trj = []
 
-    local_force_params = False
+    # Process each interpolated state
+    self.q_from_ipopt = []
+    self.v_from_ipopt = []
+    for trj_idx, (x, u) in enumerate(zip(ref_xs, ref_us)):
+        q = x[:self.pin_model.nq]
+        v = x[self.pin_model.nq:]
 
-    for trj_idx, (x, joint_cmd) in enumerate(zip(ref_xs, ref_us)):
-      q = x[:self.pin_model.nq]
-      v = x[self.pin_model.nq:]
-      if local_force_params:
-        pin.forwardKinematics(self.pin_model, self.pin_data, q)
-        pin.updateFramePlacement(self.pin_model, self.pin_data, nozzle_geom_fid)
-        force = -joint_cmd[-3]*self.pin_data.oMf[nozzle_geom_fid].rotation[:, 0] + self.pin_data.oMf[self.mrv_client_sim.hole_fid].rotation[:, :2]@joint_cmd[-2:]
-        u_for_actuation = np.concatenate((joint_cmd[:-3], force))
-        tau = actuation.calc(x, u_for_actuation)
-      else:
-        tau = actuation.calc(x, joint_cmd)
-        force = joint_cmd[-3:]
-      vdot = pin.aba(self.pin_model, self.pin_data, q, v, tau)
-  
-      pin.forwardKinematics(self.pin_model, self.pin_data, q, v, vdot)
-      pin.updateFramePlacement(self.pin_model, self.pin_data, self.mrv_client_sim.peg_fid)
-      pin.updateFramePlacement(self.pin_model, self.pin_data, nozzle_geom_fid)
-      pin.updateFramePlacement(self.pin_model, self.pin_data, self.mrv_client_sim.hole_fid)
+        # Calculate joint torques and forces using the actuation model
+        tau = actuation.calc(x, u)
+        vdot = pin.aba(self.pin_model, self.pin_data, q, v, tau)
 
-      tip_pos = self.pin_data.oMf[self.mrv_client_sim.peg_fid].translation
-      tip_rmat = self.pin_data.oMf[self.mrv_client_sim.peg_fid].rotation
-      tip_twist = pin.getFrameVelocity(self.pin_model, self.pin_data, self.mrv_client_sim.peg_fid, pin.ReferenceFrame.LOCAL_WORLD_ALIGNED).vector
+        # Update kinematics and frame placements
+        pin.forwardKinematics(self.pin_model, self.pin_data, q, v, vdot)
+        pin.updateFramePlacement(self.pin_model, self.pin_data, self.mrv_client_sim.peg_fid)
+        pin.updateFramePlacement(self.pin_model, self.pin_data, self.mrv_client_sim.client_fid)
 
-      tip_v = tip_twist[:3]
-      tip_w = tip_twist[3:]
-      tip_acc = pin.getFrameAcceleration(self.pin_model, self.pin_data, self.mrv_client_sim.peg_fid, pin.ReferenceFrame.LOCAL_WORLD_ALIGNED).vector
-      tip_vdot = tip_acc[:3]
-      tip_wdot = tip_acc[3:]
+        tip_pos = self.pin_data.oMf[self.mrv_client_sim.peg_fid].translation
+        tip_rmat = self.pin_data.oMf[self.mrv_client_sim.peg_fid].rotation
+        tip_twist = pin.getFrameVelocity(self.pin_model, self.pin_data, self.mrv_client_sim.peg_fid, pin.ReferenceFrame.LOCAL_WORLD_ALIGNED).vector
 
-      client_pos = q[self.cv_qidx:self.cv_qidx + 3]
-      client_quat = q[self.cv_qidx + 3:self.cv_qidx + 7]
-      client_rmat = R.from_quat(client_quat).as_matrix()
-      client_v = v[self.cv_vidx:self.cv_vidx + 3]
-      client_w = v[self.cv_vidx + 3:self.cv_vidx + 6]
-      client_vdot = vdot[self.cv_vidx:self.cv_vidx + 3]
-      client_wdot = vdot[self.cv_vidx + 3:self.cv_vidx + 6]
+        tip_v = tip_twist[:3]
+        tip_w = tip_twist[3:]
+        tip_acc = pin.getFrameAcceleration(self.pin_model, self.pin_data, self.mrv_client_sim.peg_fid, pin.ReferenceFrame.LOCAL_WORLD_ALIGNED).vector
+        tip_vdot = tip_acc[:3]
+        tip_wdot = tip_acc[3:]
 
-      ref_ee_pos_trj.append(client_rmat.transpose()@(tip_pos - client_pos))
-      ref_ee_rmat_trj.append(client_rmat.transpose()@tip_rmat)
-      ref_ee_v_trj.append(client_rmat.transpose()@tip_v - \
-                          client_v - \
-                          np.cross(client_w, ref_ee_pos_trj[-1]))
-      ref_ee_w_trj.append(client_rmat.transpose()@tip_w - \
-                          client_w)
-      ref_ee_vdot_trj.append(client_rmat.transpose()@tip_vdot - \
-                             np.cross(client_w, client_rmat.transpose()@tip_v) - \
-                             client_vdot - \
-                             np.cross(client_w, ref_ee_v_trj[-1]) - \
-                             np.cross(client_wdot, ref_ee_pos_trj[-1]))
-      ref_ee_wdot_trj.append(client_rmat.transpose()@tip_wdot - \
-                             np.cross(client_w, client_rmat.transpose()@tip_w) - \
-                             client_wdot)
+        client_pos = q[self.cv_qidx:self.cv_qidx + 3]
+        client_quat = q[self.cv_qidx + 3:self.cv_qidx + 7]
+        client_rmat = R.from_quat(client_quat).as_matrix()
+        client_v = v[self.cv_vidx:self.cv_vidx + 3]
+        client_w = v[self.cv_vidx + 3:self.cv_vidx + 6]
+        client_vdot = vdot[self.cv_vidx:self.cv_vidx + 3]
+        client_wdot = vdot[self.cv_vidx + 3:self.cv_vidx + 6]        
 
-      ref_forces_trj.append(client_rmat.transpose()@force)
+        # End-effector positions and rotations relative to client frame
+        ee_frame_id = self.mrv_client_sim.peg_fid
+        client_frame_id = self.mrv_client_sim.client_fid
+        R3SO3_world_ee = self.pin_data.oMf[ee_frame_id]
+        R3SO3_world_client = self.pin_data.oMf[client_frame_id]
+        client_rmat = R3SO3_world_client.rotation
+        client_pos = R3SO3_world_client.translation
+        ee_pos_world = R3SO3_world_ee.translation
+        ee_rmat_world = R3SO3_world_ee.rotation
 
-      ref_joint_angles_trj.append(np.copy(q[mrv_client_sim.mrv_qidx + 7:mrv_client_sim.mrv_qidx + mrv_client_sim.mrv_nq]))
-      ref_joint_vels_trj.append(np.copy(v[mrv_client_sim.mrv_vidx + 6:mrv_client_sim.mrv_vidx + mrv_client_sim.mrv_nv]))
-      ref_joint_accs_trj.append(np.copy(vdot[mrv_client_sim.mrv_vidx + 6:mrv_client_sim.mrv_vidx + mrv_client_sim.mrv_nv]))
+        # Relative end-effector position and rotation matrix
+        ref_ee_pos = client_rmat.T @ (ee_pos_world - client_pos)
+        ref_ee_rmat = client_rmat.T @ ee_rmat_world
 
-    return ref_ee_pos_trj, \
-           ref_ee_rmat_trj, \
-           ref_ee_v_trj, \
-           ref_ee_w_trj, \
-           ref_ee_vdot_trj, \
-           ref_ee_wdot_trj, \
-           ref_joint_angles_trj, \
-           ref_joint_vels_trj, \
-           ref_joint_accs_trj, \
-           ref_forces_trj, \
-           np.copy(ref_xs), \
-           np.copy(ref_us), \
-           np.copy(ref_ts)
+        # Relative velocities and accelerations
+        ee_twist = pin.getFrameVelocity(self.pin_model, self.pin_data, ee_frame_id, pin.LOCAL_WORLD_ALIGNED).vector
+        ee_acc = pin.getFrameAcceleration(self.pin_model, self.pin_data, ee_frame_id, pin.LOCAL_WORLD_ALIGNED).vector
+        client_v = v[self.cv_vidx:self.cv_vidx + 3]
+        client_w = v[self.cv_vidx + 3:self.cv_vidx + 6]
+        client_vdot = vdot[self.cv_vidx:self.cv_vidx + 3]
+        client_wdot = vdot[self.cv_vidx + 3:self.cv_vidx + 6]
+        ref_ee_v = client_rmat.T @ ee_twist[:3] - client_v - np.cross(client_w, ref_ee_pos)
+        ref_ee_w = client_rmat.T @ ee_twist[3:] - client_w
+        ref_ee_vdot = client_rmat.T @ ee_acc[:3] - client_vdot - np.cross(client_w, ref_ee_v) - np.cross(client_wdot, ref_ee_pos)
+        ref_ee_wdot = client_rmat.T @ ee_acc[3:] - client_wdot - np.cross(client_w, ref_ee_w)
 
-  def reset_wrt_capture_box(self, load_paths, weights, delta_pos, delta_rot, delta_v, initial_client_w, initial_mrv_w, rng, dist_centering_waypoint_from_goal):
+        # Joint data and reference force
+        mrv_qidx = self.mrv_client_sim.mrv_qidx
+        mrv_vidx = self.mrv_client_sim.mrv_vidx
+        mrv_nq = self.mrv_client_sim.mrv_nq
+        mrv_nv = self.mrv_client_sim.mrv_nv
+        ref_joint_angles = q[mrv_qidx + 7:mrv_qidx + mrv_nq]
+        ref_joint_vels = v[mrv_vidx + 6:mrv_vidx + mrv_nv]
+        ref_joint_accs = vdot[mrv_vidx + 6:mrv_vidx + mrv_nv]
+        ref_force = u[-3:]
+
+        # Append to trajectories
+        ref_ee_pos_trj.append(ref_ee_pos)
+        ref_ee_rmat_trj.append(ref_ee_rmat)
+        ref_ee_v_trj.append(ref_ee_v)
+        ref_ee_w_trj.append(ref_ee_w)
+        ref_ee_vdot_trj.append(ref_ee_vdot)
+        ref_ee_wdot_trj.append(ref_ee_wdot)
+        ref_joint_angles_trj.append(ref_joint_angles)
+        ref_joint_vels_trj.append(ref_joint_vels)
+        ref_joint_accs_trj.append(ref_joint_accs)
+        ref_forces_trj.append(client_rmat.T @ ref_force)
+
+        self.q_from_ipopt.append(np.copy(q))
+        self.v_from_ipopt.append(np.copy(v))
+
+
+    return (
+        ref_ee_pos_trj,
+        ref_ee_rmat_trj,
+        ref_ee_v_trj,
+        ref_ee_w_trj,
+        ref_ee_vdot_trj,
+        ref_ee_wdot_trj,
+        ref_joint_angles_trj,
+        ref_joint_vels_trj,
+        ref_joint_accs_trj,
+        ref_forces_trj,
+        ref_xs,
+        ref_us,
+        ref_ts
+    )
+
+
+
+  def reset_wrt_capture_box(self, delta_pos, delta_rot, delta_v, initial_client_w, initial_mrv_w, rng, dist_centering_waypoint_from_goal):
     '''delta_pos is change in position relative to front of capture box'''
 
     mrv_client_sim = self.mrv_client_sim
@@ -418,8 +543,8 @@ class MrvController(object):
 
     initial_mrv_v = R.from_quat(initial_mrv_quat).as_matrix().transpose()@R.from_quat(initial_client_quat).as_matrix()@delta_v
 
-    if load_paths is not None: 
-      self.reset_trajectory_library(load_paths,weights)
+    # if load_paths is not None: 
+    #   self.reset_trajectory_library(load_paths,weights)
 
     self.mrv_client_sim = MRVClientSim(self.mrv_cv_urdf_file, self.mrv_urdf_file, self.pybullet_mrv_urdf_file, self.pybullet_cv_urdf_file, self.mrv_joint_angle_lower_limits, self.mrv_joint_angle_upper_limits, 
                                self.mrv_joint_vel_limits, self.mrv_joint_acc_limits, self.mrv_joint_torque_limits, self.dt, self.cone_slope, self.time_steps_between_measurements, 
@@ -446,122 +571,16 @@ class MrvController(object):
     self.joint_torque_meas_trj = []
     self.joint_torque_meas_d_trj = []
 
-    if load_paths is not None:
-      self.resolved_accel.reset_admittance_traj(self.mrv_client_sim, self.ref_ee_v_trj[0],self.ref_ee_w_trj[0])
-    else:
-      self.resolved_accel.reset_admittance_traj(self.mrv_client_sim, np.zeros(3),np.zeros(3))
+
+    self.resolved_accel.reset_admittance_traj(self.mrv_client_sim, np.zeros(3),np.zeros(3))
+    
 
     self.joint_space_tracking.reset_admittance_traj(self.mrv_client_sim)
     self.planar_admittance.reset_admittance_traj(self.mrv_client_sim)
 
     if self.controller_type == 3: 
       self.within_nozzle_admittance.reset_admittance_traj(self.mrv_client_sim) #call this once your inside the nozzle if self.controller_type == 4
-
-  def reset_trajectory_library(self, load_paths, weights):
-
-    impact_dyn = False
-
-    self.load_paths = load_paths
-    self.load_path_weights = weights
-    
-    ref_ee_pos_trj_list = []
-    ref_ee_rmat_trj_list = []
-    ref_ee_v_trj_list = []
-    ref_ee_w_trj_list = []
-    ref_ee_vdot_trj_list = []
-    ref_ee_wdot_trj_list = []
-    ref_joint_angles_trj_list = []
-    ref_joint_vels_trj_list = []
-    ref_joint_accs_trj_list = []
-    ref_forces_trj_list = []
-    ref_x_trj_list = []
-    ref_u_trj_list = []
-    ref_t_trj_list = []
-
-    for load_path in load_paths:
-      ref_ee_pos_trj, \
-      ref_ee_rmat_trj, \
-      ref_ee_v_trj, \
-      ref_ee_w_trj, \
-      ref_ee_vdot_trj, \
-      ref_ee_wdot_trj, \
-      ref_joint_angles_trj, \
-      ref_joint_vels_trj, \
-      ref_joint_accs_trj, \
-      ref_forces_trj, \
-      ref_x_trj, \
-      ref_u_trj, \
-      ref_t_trj, = self.get_reference_from_load_path(load_path, impact_dyn)
-
-      ref_ee_pos_trj_list.append(ref_ee_pos_trj)
-      ref_ee_rmat_trj_list.append(ref_ee_rmat_trj)
-      ref_ee_v_trj_list.append(ref_ee_v_trj)
-      ref_ee_w_trj_list.append(ref_ee_w_trj)
-      ref_ee_vdot_trj_list.append(ref_ee_vdot_trj)
-      ref_ee_wdot_trj_list.append(ref_ee_wdot_trj)
-      ref_joint_angles_trj_list.append(ref_joint_angles_trj)
-      ref_joint_vels_trj_list.append(ref_joint_vels_trj)
-      ref_joint_accs_trj_list.append(ref_joint_accs_trj)
-      ref_forces_trj_list.append(ref_forces_trj)
-      ref_x_trj_list.append(ref_x_trj)
-      ref_u_trj_list.append(ref_u_trj)
-      ref_t_trj_list.append(ref_t_trj)
-
-    # Interpolate between reference trajectories
-    max_steps = np.amax([len(ref_ee_pos_trj) for ref_ee_pos_trj in ref_ee_pos_trj_list])
-    self.ref_ee_pos_trj = []
-    self.ref_ee_rmat_trj = []
-    self.ref_ee_v_trj = []
-    self.ref_ee_w_trj = []
-    self.ref_ee_vdot_trj = []
-    self.ref_ee_wdot_trj = []
-    self.ref_joint_angles_trj = []
-    self.ref_joint_vels_trj = []
-    self.ref_joint_accs_trj = []
-    self.ref_forces_trj = []
-    self.ref_x_trj = []
-    self.ref_u_trj = []
-    self.ref_t_trj = []
-
-    get_trj_elem = lambda trj_idx, trj: trj[trj_idx] if trj_idx < len(trj) else trj[-1]
-
-    for step in range(max_steps):
-      self.ref_ee_pos_trj.append(sum([weight*get_trj_elem(step, trj) for weight, trj in zip(weights, ref_ee_pos_trj_list)]))
-
-      # Weighted average of reference ee rotation matrices needs special handling
-      ref_ee_R = R.concatenate([R.from_matrix(get_trj_elem(step, trj)) for trj in ref_ee_rmat_trj_list])
-      self.ref_ee_rmat_trj.append(R.mean(ref_ee_R, weights).as_matrix())
-
-      self.ref_ee_v_trj.append(sum([weight*get_trj_elem(step, trj) for weight, trj in zip(weights, ref_ee_v_trj_list)]))
-      self.ref_ee_w_trj.append(sum([weight*get_trj_elem(step, trj) for weight, trj in zip(weights, ref_ee_w_trj_list)]))
-      self.ref_ee_vdot_trj.append(sum([weight*get_trj_elem(step, trj) for weight, trj in zip(weights, ref_ee_vdot_trj_list)]))
-      self.ref_ee_wdot_trj.append(sum([weight*get_trj_elem(step, trj) for weight, trj in zip(weights, ref_ee_wdot_trj_list)]))
-
-      self.ref_forces_trj.append(sum([weight*get_trj_elem(step, trj) for weight, trj in zip(weights, ref_forces_trj_list)]))
-
-      self.ref_joint_angles_trj.append(sum([weight*get_trj_elem(step, trj) for weight, trj in zip(weights, ref_joint_angles_trj_list)]))
-      self.ref_joint_vels_trj.append(sum([weight*get_trj_elem(step, trj) for weight, trj in zip(weights, ref_joint_vels_trj_list)]))
-      self.ref_joint_accs_trj.append(sum([weight*get_trj_elem(step, trj) for weight, trj in zip(weights, ref_joint_accs_trj_list)]))
-
-      # Weighted average of reference x needs special handling
-      ref_base_R = R.concatenate([R.from_quat(get_trj_elem(step, trj)[self.mrv_qidx + 3:self.mrv_qidx + 7]) for trj in ref_x_trj_list])
-      ref_base_quat = R.mean(ref_base_R, weights).as_quat()
-
-      ref_client_R = R.concatenate([R.from_quat(get_trj_elem(step, trj)[self.cv_qidx + 3:self.cv_qidx + 7]) for trj in ref_x_trj_list])
-      ref_client_quat = R.mean(ref_client_R, weights).as_quat()
-
-      ref_x = np.zeros(self.pin_model.nq + self.pin_model.nv)
-      ref_x[self.mrv_qidx:self.mrv_qidx + 3] = sum([weight*get_trj_elem(step, trj)[self.mrv_qidx:self.mrv_qidx + 3] for weight, trj in zip(weights, ref_x_trj_list)])
-      ref_x[self.mrv_qidx + 3:self.mrv_qidx + 7] = ref_base_quat
-      ref_x[self.mrv_qidx + 7:self.mrv_qidx + self.mrv_client_sim.mrv_pin_model.nq] = self.ref_joint_angles_trj[step]
-      ref_x[self.cv_qidx:self.cv_qidx + 3] = sum([weight*get_trj_elem(step, trj)[self.cv_qidx:self.cv_qidx + 3] for weight, trj in zip(weights, ref_x_trj_list)])
-      ref_x[self.cv_qidx + 3:self.cv_qidx + 7] = ref_client_quat
-      ref_x[self.pin_model.nq:] = sum([weight*get_trj_elem(step, trj)[self.pin_model.nq:] for weight, trj in zip(weights, ref_x_trj_list)])
-
-      self.ref_x_trj.append(ref_x)
-      self.ref_u_trj.append(sum([weight*get_trj_elem(step, trj) for weight, trj in zip(weights, ref_u_trj_list)]))
-      self.ref_t_trj.append(sum([weight*get_trj_elem(step, trj) for weight, trj in zip(weights, ref_t_trj_list)]))
-
+  
   def get_peg_and_nozzle_info(self):
     return self.mrv_client_sim.get_peg_and_nozzle_info()
   
@@ -657,20 +676,73 @@ class MrvController(object):
     
     target_wrench = np.zeros(6)
 
-    if self.ref_trj_idx >= len(self.ref_ee_pos_trj):
-      ref_ee_pos = self.ref_ee_pos_trj[self.ref_trj_idx - 1]
-      ref_ee_rmat = self.ref_ee_rmat_trj[self.ref_trj_idx - 1]
-      ref_joint_angles = self.ref_joint_angles_trj[self.ref_trj_idx - 1]
+    
+    if self.ref_trj_idx >= len(self.ref_ee_pos_trj) and not self.plunging:
+      if self.do_noisy_state_estimation:
+        x0 = np.copy(self.mrv_client_sim.x_est)
+      else:
+        x0 = np.copy(self.mrv_client_sim.x)
+      # with open('/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/x0.txt', 'w') as f:
+      #   np.savetxt(f, x0)
+      #   # np.savetxt(f, self.elapsed_ipopt_steps)
+      #   print("elapsed_ipopt_steps", self.elapsed_ipopt_steps)
+      #   quit()
+      
+      (
+        ref_ee_pos_trj,
+        ref_ee_rmat_trj,
+        ref_ee_v_trj,
+        ref_ee_w_trj,
+        ref_ee_vdot_trj,
+        ref_ee_wdot_trj,
+        ref_joint_angles_trj,
+        ref_joint_vels_trj,
+        ref_joint_accs_trj,
+        ref_forces_trj,
+        ref_x_trj,
+        ref_u_trj,
+        ref_ts_trj,
+      ) = self.get_reference_from_ipopt(x0, self.elapsed_ipopt_steps, impact_dyn=False)
 
-      ref_ee_v = np.zeros(3)
-      ref_ee_w = np.zeros(3)
+      self.ref_trj_idx = 0
+      self.elapsed_ipopt_steps += 1
 
-      ref_ee_vdot = np.zeros(3)
-      ref_ee_wdot = np.zeros(3)
+      # # Store the udpdated trajectories
+      self.ref_ee_pos_trj = ref_ee_pos_trj
+      self.ref_ee_rmat_trj = ref_ee_rmat_trj
+      self.ref_ee_v_trj = ref_ee_v_trj
+      self.ref_ee_w_trj = ref_ee_w_trj
+      self.ref_ee_vdot_trj = ref_ee_vdot_trj
+      self.ref_ee_wdot_trj = ref_ee_wdot_trj
+      self.ref_joint_angles_trj = ref_joint_angles_trj
+      self.ref_joint_vels_trj = ref_joint_vels_trj
+      self.ref_joint_accs_trj = ref_joint_accs_trj
+      self.ref_forces_trj = ref_forces_trj
+      self.ref_x_trj = ref_x_trj
+      self.ref_u_trj = ref_u_trj
+      self.ref_t_trj = ref_ts_trj
 
-      ref_joint_vels = np.zeros(self.num_rotary)
-      ref_joint_accs = np.zeros(self.num_rotary)
-    else:
+      # Update the lists that store the reference trajectories
+      # self.ref_ee_pos_trj.extend(ref_ee_pos_trj)
+      # self.ref_ee_rmat_trj.extend(ref_ee_rmat_trj)
+      # self.ref_ee_v_trj.extend(ref_ee_v_trj)
+      # self.ref_ee_w_trj.extend(ref_ee_w_trj)
+      # self.ref_ee_vdot_trj.extend(ref_ee_vdot_trj)
+      # self.ref_ee_wdot_trj.extend(ref_ee_wdot_trj)
+      # self.ref_joint_angles_trj.extend(ref_joint_angles_trj)
+      # self.ref_joint_vels_trj.extend(ref_joint_vels_trj)
+      # self.ref_joint_accs_trj.extend(ref_joint_accs_trj)
+      # self.ref_forces_trj.extend(ref_forces_trj)
+      # self.ref_x_trj.extend(ref_x_trj)
+      # self.ref_u_trj.extend(ref_u_trj)
+      # self.ref_t_trj.extend(ref_ts_trj)
+
+      # ref_forces = self.ref_forces_trj[self.ref_trj_idx]
+      # ref_x = self.ref_x_trj[self.ref_trj_idx]
+      # ref_u = self.ref_u_trj[self.ref_trj_idx]
+      # ref_t = self.ref_t_trj[self.ref_trj_idx]
+
+
       ref_ee_pos = self.ref_ee_pos_trj[self.ref_trj_idx]
       ref_ee_rmat = self.ref_ee_rmat_trj[self.ref_trj_idx]
       ref_joint_angles = self.ref_joint_angles_trj[self.ref_trj_idx]
@@ -684,11 +756,85 @@ class MrvController(object):
       ref_joint_vels = self.ref_joint_vels_trj[self.ref_trj_idx]
       ref_joint_accs = self.ref_joint_accs_trj[self.ref_trj_idx]
 
-      # Target wrench is expressed in the peg frame
-      target_wrench[:3] = sw_peg_rmat.transpose()@client_rmat_est@self.ref_forces_trj[self.ref_trj_idx]
+      ref_forces = self.ref_forces_trj[self.ref_trj_idx]
+      ref_x = self.ref_x_trj[self.ref_trj_idx]
+      ref_u = self.ref_u_trj[self.ref_trj_idx]
+      ref_t = self.ref_t_trj[self.ref_trj_idx]
 
+      target_wrench[:3] = sw_peg_rmat.T @ client_rmat_est @ self.ref_forces_trj[self.ref_trj_idx]
       self.ref_trj_idx += 1
 
+
+    
+    elif self.ref_trj_idx < len(self.ref_ee_pos_trj) and not self.plunging:
+      print("Using reference trajectory")
+      print("ref_ee_pos" , self.ref_ee_pos_trj[self.ref_trj_idx])
+      ref_ee_pos = self.ref_ee_pos_trj[self.ref_trj_idx]
+      ref_ee_rmat = self.ref_ee_rmat_trj[self.ref_trj_idx]
+      ref_joint_angles = self.ref_joint_angles_trj[self.ref_trj_idx]
+
+      ref_ee_v = self.ref_ee_v_trj[self.ref_trj_idx]
+      ref_ee_w = self.ref_ee_w_trj[self.ref_trj_idx]
+
+      ref_ee_vdot = self.ref_ee_vdot_trj[self.ref_trj_idx]
+      ref_ee_wdot = self.ref_ee_wdot_trj[self.ref_trj_idx]
+
+      ref_joint_vels = self.ref_joint_vels_trj[self.ref_trj_idx]
+      ref_joint_accs = self.ref_joint_accs_trj[self.ref_trj_idx]
+
+      ref_forces = self.ref_forces_trj[self.ref_trj_idx]
+      ref_x = self.ref_x_trj[self.ref_trj_idx]
+      ref_u = self.ref_u_trj[self.ref_trj_idx]
+      ref_t = self.ref_t_trj[self.ref_trj_idx]
+
+      # Target wrench is expressed in the peg frame
+      target_wrench[:3] = sw_peg_rmat.T @ client_rmat_est @ self.ref_forces_trj[self.ref_trj_idx]
+      self.ref_trj_idx += 1
+
+      if self.one_run:
+        self.one_run = False
+      else:
+        self.save('/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_04_24/interp_7_cm')
+    
+    
+    else:
+      # This is where we are after we start plunging 
+      ref_ee_pos = self.ref_ee_pos_trj[-1]
+      ref_ee_rmat = self.ref_ee_rmat_trj[-1]
+      ref_joint_angles = self.ref_joint_angles_trj[-1]
+
+      ref_ee_v = np.zeros(3)
+      ref_ee_w = np.zeros(3)
+
+      ref_ee_vdot = np.zeros(3)
+      ref_ee_wdot = np.zeros(3)
+
+      ref_joint_vels = np.zeros(self.num_rotary)
+      ref_joint_accs = np.zeros(self.num_rotary)
+
+      # Target wrench remains the same as the last
+      target_wrench[:3] = sw_peg_rmat.T @ client_rmat_est @ self.ref_forces_trj[-1]
+
+      ref_forces = self.ref_forces_trj[-1]
+      ref_x = self.ref_x_trj[-1]
+      ref_t = self.ref_t_trj[-1] + self.dt
+
+
+    # # Update the lists that store the reference trajectories
+    # self.ref_ee_pos_trj.append(ref_ee_pos)
+    # self.ref_ee_rmat_trj.append(ref_ee_rmat)
+    # self.ref_ee_v_trj.append(ref_ee_v)
+    # self.ref_ee_w_trj.append(ref_ee_w)
+    # self.ref_ee_vdot_trj.append(ref_ee_vdot)
+    # self.ref_ee_wdot_trj.append(ref_ee_wdot)
+    # self.ref_joint_angles_trj.append(ref_joint_angles)
+    # self.ref_joint_vels_trj.append(ref_joint_vels)
+    # self.ref_joint_accs_trj.append(ref_joint_accs)
+    # self.ref_forces_trj.append(ref_forces)
+    # self.ref_x_trj.append(ref_x)
+    # self.ref_u_trj.append(ref_u)
+    # self.ref_t_trj.append(ref_t)
+    
     q_mrv = mrv_client_sim.get_mrv_config()
     v_mrv = mrv_client_sim.get_mrv_config_dot()
 
@@ -736,7 +882,7 @@ class MrvController(object):
     ref_traj_point.omega = ref_w_d
     ref_traj_point.omega_dot = ref_wdot_d
 
-    ref_traj_point.wrench = target_wrench
+    ref_traj_point.wrench = target_wrench 
 
     if self.debug_with_test_traj: 
       test_traj = TestTrajectories(self.test_traj_id,self.init_mrv_tip_pos,self.init_mrv_joint_angles)
@@ -767,6 +913,7 @@ class MrvController(object):
       #print(f'ref_traj_point: {ref_traj_point}')
       joint_acc_cmd = self.resolved_accel.compute_control(ref_traj_point, mrv_client_sim, wrench_peg_peg, self.dt, mrv_config, mrv_config_dot)
 
+    # TODO: This is where the control step is actually implemented, we need to make sure that this is using the upate from MPC and not
     elif self.controller_type == 1:
       # We don't plan to use joint-space tracking again, so I'm not fixing this issue at this time.
       raise Exception("Joint space tracking is using the incorrect Jacobian and wrench transformations. Fix before using")
@@ -790,12 +937,16 @@ class MrvController(object):
         if not self.within_nozzle_admittance.admittance_traj_reset:
           print("Resetting admittance trajectory")
           self.within_nozzle_admittance.reset_admittance_traj(mrv_client_sim)
-          
+        
+        self.plunging = True
+        print("We plunging babbbbby!")
+        print("Distance to throat opening: ", mrv_client_sim.dist_to_throat_opening())
         joint_acc_cmd = self.within_nozzle_admittance.compute_control(ref_traj_point, mrv_client_sim, wrench_peg_peg, self.dt, mrv_config, mrv_config_dot)
       else:
-        print("Trajectory idx: ", self.ref_trj_idx)
-        print("Distance to throat opening: ", mrv_client_sim.dist_to_throat_opening())
         joint_acc_cmd = self.resolved_accel.compute_control(ref_traj_point, mrv_client_sim, wrench_peg_peg, self.dt, mrv_config, mrv_config_dot)
+        self.internal_idx += 1
+        print("We are at the following time step within the trajectory: ", self.internal_idx)
+        print("Distance to throat opening: ", mrv_client_sim.dist_to_throat_opening()) 
     else:
       raise Exception('Invalid controller_type')
     
@@ -917,6 +1068,18 @@ class MrvController(object):
       joint_cmd = None
 
     if use_contact_sim:
+      q_from_sim = self.mrv_client_sim.x[:self.pin_model.nq]
+      v_from_sim = self.mrv_client_sim.x[self.pin_model.nq:]
+      # Extract components from IPOPT output
+      q_from_ipopt = self.q_from_ipopt
+      v_from_ipopt = self.v_from_ipopt
+
+      # Save all the states from simulation and from IPOPT for comparison
+      # self.all_q_from_sim.append(np.copy(q_from_sim))
+      # self.all_v_from_sim.append(np.copy(v_from_sim))
+      # self.all_q_from_ipopt.append(q_from_ipopt[self.ref_trj_idx-1])
+      # self.all_v_from_ipopt.append(v_from_ipopt[self.ref_trj_idx-1])
+      print('Called step')
       mrv_client_sim.step(joint_cmd,None)
     else:
       mrv_client_sim.step(joint_cmd,wrench_peg_peg)
@@ -955,8 +1118,10 @@ class MrvController(object):
 
     np.save(save_path + '/run_time.npy', self.total_time)
 
-    np.save(save_path + '/load_paths.npy', self.load_paths)
-    np.save(save_path + '/load_path_weights.npy', self.load_path_weights)
+    np.save(save_path + '/ipopt_qs', self.all_q_from_ipopt)
+    np.save(save_path + '/ipopt_vs', self.all_v_from_ipopt)
+    np.save(save_path + '/sim_qs', self.all_q_from_sim)
+    np.save(save_path + '/sim_vs', self.all_v_from_sim)
 
     np.save(save_path + '/use_ekf.npy', self.use_ekf)
 

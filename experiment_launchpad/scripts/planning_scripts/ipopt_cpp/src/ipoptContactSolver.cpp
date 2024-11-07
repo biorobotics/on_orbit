@@ -68,7 +68,8 @@ ContactNLP::ContactNLP(int nx, int nu, VectorXlRef_const phase_starts,
                        cl(cl), 
                        cu(cu), 
                        warm_start(warm_start), 
-                       success_after_iter(success_after_iter) 
+                       success_after_iter(success_after_iter),
+                       obj_value(0.0) 
   {
   vars_per_step = nx + nu;
   num_decision_vars = vars_per_step*phase_starts(phase_starts.size() - 1);
@@ -350,19 +351,22 @@ bool ContactNLP::eval_h(
 
 /** This method is called when the algorithm is complete so the TNLP can store/write the solution */
 void ContactNLP::finalize_solution(
-   Ipopt::SolverReturn               status,
-   Ipopt::Index                      n,
-   const Ipopt::Number*              x,
-   const Ipopt::Number*              z_L,
-   const Ipopt::Number*              z_U,
-   Ipopt::Index                      m,
-   const Ipopt::Number*              g,
-   const Ipopt::Number*              lambda,
-   Ipopt::Number                     obj_value,
-   const Ipopt::IpoptData*           ip_data,
-   Ipopt::IpoptCalculatedQuantities* ip_cq
+  Ipopt::SolverReturn               status,
+  Ipopt::Index                      n,
+  const Ipopt::Number*              x,
+  const Ipopt::Number*              z_L,
+  const Ipopt::Number*              z_U,
+  Ipopt::Index                      m,
+  const Ipopt::Number*              g,
+  const Ipopt::Number*              lambda,
+  Ipopt::Number                     obj_value,
+  const Ipopt::IpoptData*           ip_data,
+  Ipopt::IpoptCalculatedQuantities* ip_cq
 ) {
   soln = Map<const VectorXd>(x, n);
+
+  // Store the objective value
+  this->obj_value = obj_value;
 }
 
 bool ContactNLP::intermediate_callback(
@@ -401,14 +405,14 @@ bool ContactNLP::intermediate_callback(
    * Stop after finding the first feasible point. Comment the below code to solve to optimility.
    */
 
-  else if (mode != Ipopt::AlgorithmMode::RestorationPhaseMode) 
-  {
-    double max_vio = ip_cq->unscaled_curr_nlp_constraint_violation(Ipopt::ENormType::NORM_MAX);
-    if (max_vio < 1e-4) {
-      std::cout << "Found feasible point. Max constraint violation is " << max_vio << ". Stopping" << std::endl;
-      return false;
-    }
-  }
+  // else if (mode != Ipopt::AlgorithmMode::RestorationPhaseMode) 
+  // {
+  //   double max_vio = ip_cq->unscaled_curr_nlp_constraint_violation(Ipopt::ENormType::NORM_MAX);
+  //   if (max_vio < 1e-4) {
+  //     std::cout << "Found feasible point. Max constraint violation is " << max_vio << ". Stopping" << std::endl;
+  //     return false;
+  //   }
+  // }
   
 
   return true;

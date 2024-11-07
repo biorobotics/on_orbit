@@ -75,9 +75,9 @@ class CasadiExternalFunction {
       work = (work_t)dlsym(handle, (function_name + "_work").c_str());
       if(dlerror()) dlerror(); // No such function, reset error flags
       if (work && work(&sz_arg, &sz_res, &sz_iw, &sz_w)) exit(1);
-      printf("Work vector sizes:\n");
-      printf("sz_arg = %lld, sz_res = %lld, sz_iw = %lld, sz_w = %lld\n\n",
-             sz_arg, sz_res, sz_iw, sz_w);
+      //printf("Work vector sizes:\n");
+      //printf("sz_arg = %lld, sz_res = %lld, sz_iw = %lld, sz_w = %lld\n\n",
+             //sz_arg, sz_res, sz_iw, sz_w);
 
       /* Input sparsities */
       sparsity_in = (sparsity_t)dlsym(handle, (function_name + "_sparsity_in").c_str());
@@ -93,10 +93,10 @@ class CasadiExternalFunction {
         // Retrieve the sparsity pattern - CasADi uses column compressed storage (CCS)
         const casadi_int *sp_i;
         if (i<n_in) {
-          printf("Input %lld\n", i);
+          //printf("Input %lld\n", i);
           sp_i = sparsity_in(i);
         } else {
-          printf("Output %lld\n", i-n_in);
+          //printf("Output %lld\n", i-n_in);
           sp_i = sparsity_out(i-n_in);
         }
         if (sp_i==0) exit(1);
@@ -107,17 +107,17 @@ class CasadiExternalFunction {
         nnz = sp_i[ncol]; /* Number of nonzeros */
 
         /* Print the pattern */
-        printf("  Dimension: %lld-by-%lld (%lld nonzeros)\n", nrow, ncol, nnz);
-        printf("  Nonzeros: {");
+        //printf("  Dimension: %lld-by-%lld (%lld nonzeros)\n", nrow, ncol, nnz);
+        //printf("  Nonzeros: {");
         casadi_int rr,cc,el;
         for(cc=0; cc<ncol; ++cc){                    /* loop over columns */
           for(el=colind[cc]; el<colind[cc+1]; ++el){ /* loop over the nonzeros entries of the column */
-            if(el!=0) printf(", ");                  /* Separate the entries */
+            if(el!=0); //printf(", ");                  /* Separate the entries */
             rr = row[el];                            /* Get the row */
-            printf("{%lld,%lld}",rr,cc);                 /* Print the nonzero */
+            //printf("{%lld,%lld}",rr,cc);                 /* Print the nonzero */
           }
         }
-        printf("}\n\n");
+        //printf("}\n\n");
       }
 
       /* Function for numerical evaluation */

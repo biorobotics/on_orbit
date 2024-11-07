@@ -24,6 +24,7 @@ PYBIND11_MODULE(code_gen_caller_bindings, m) {
       .def(py::init<int, int, VectorXlRef_const, VectorXlRef_const, VectorXdRef_const, VectorXdRef_const, VectorXdRef_const, VectorXdRef_const, VectorXdRef_const, int, int, int>())
       .def("solve", &IPOPTContactSolver::solve)
       .def("get_num_iter", &IPOPTContactSolver::get_num_iter)
+      .def("get_obj_value", &IPOPTContactSolver::get_obj_value)
       .def("get_iter_durations", &IPOPTContactSolver::get_iter_durations)
       ;
 }

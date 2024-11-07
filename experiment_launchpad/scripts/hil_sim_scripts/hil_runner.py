@@ -296,7 +296,7 @@ class HILRunner(object):
     ee_mrv_arm_path_pub = self.ee_mrv_arm_path_pub
 
     move_out_time = 20 # s
-    move_out_speed = 0.015 # m/s
+    move_out_speed = 0.03 # m/s
     move_out_steps = int(move_out_time/self.dt)
 
     # Ensure that the arms are stationary

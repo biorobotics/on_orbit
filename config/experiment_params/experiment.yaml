@@ -1,4 +1,4 @@
-delta_pos: [0.0, 0.0, -0.05] #m, position of tip of peg wrt centering waypoint
+delta_pos: [0.00, 0.0, -0.05] #m, position of tip of peg wrt centering waypoint
 delta_rot: [0., 0., 0.] #deg, axis angle vector 
 delta_v: [0., 0., 0.0] #m/s, relative velocity between base of MRV and base of client 
 initial_client_w: [0.0, 0.0, 0.] # in deg/s
@@ -6,7 +6,7 @@ initial_mrv_w: [0., 0., 0.] # in deg/s
 
 do_save: True
 use_cw: True #use orbital gravitational dynamics
-save_folder: 'experiment_logs/10_14_24/pf_test/'
+save_folder: 'experiment_logs/11_02_24/first_plan_visualized/'
 
 # This is the library used by Anoop before Andrew took over the code, which has a phase where contact is broken. 
 #traj_library_prefix: '/experiment_logs/01_30_24/ipopt_multicore/'
@@ -27,7 +27,8 @@ save_folder: 'experiment_logs/10_14_24/pf_test/'
 #traj_library_prefix: '/experiment_logs/06_07_24/lib_contact_free_nozzle_align/'
 #traj_library_prefix: '/experiment_logs/06_14_24/WithPlunge/'
 # traj_library_prefix: '/experiment_logs/09_10_24/test_lib/no_contact/'
-traj_library_prefix: '/experiment_logs/10_03_24/insertion_traj/'
+traj_library_prefix: '/experiment_logs/10_28_24/MPC_ipopt_test/'
+# traj_library_prefix: '/experiment_logs/10_25_24/torque_comparisons_traj/'
 
 # Whether to clip joint-level acceleration and velocities based on limits specified in limits.yaml
 clip_joint_commands: True
@@ -63,16 +64,19 @@ do_vision_delay: True
 vision_measurement_rate: 10 #Hz
 
 # Number of times to run the experiment on the hardware platform
-num_hardware_trials: 3
+num_hardware_trials: 1
+
+# Number of software trials to run
+num_software_trials: 1
 
 # Whether to visualize the simulator 
 visualize: True
 
 # Whether to use ekf (alternative right now is a particle filter)
-use_ekf: False
+use_ekf: True
 
 # Set to true to visualize trajectories before executing them on the hardware-in-the-loop system
-verify_trajectory_visually: False
+verify_trajectory_visually: True
 
 # Constants used to perform gravity compensation for the F/T sensor
 # peg_mass: 0.186515
@@ -96,17 +100,17 @@ peg_com: 0.125000
 
 dist_nozzle_opening_from_goal: 0.4585 # Based on our nozzle CAD
 dist_capture_box_from_nozzle_opening: 0.02 # Distance from front of capture box Based on actual CV nozzle where distance of nozzle opening to goal is 0.4765 m
-dist_centering_waypoint_from_goal: 0.4785 # dist_nozzle_opening_from_goal + dist_capture_box_from_nozzle_opening + 2*(ur16 repeatability + ur5 repeatability) + peg radius
+dist_centering_waypoint_from_goal: 0.4865 # dist_nozzle_opening_from_goal + dist_capture_box_from_nozzle_opening + 2*(ur16 repeatability + ur5 repeatability) + peg radius
 
 
 # Home angles for the mrv and client (Leading value is the carriage position in meters) we had success with these
-# mrv_hil_home_angles: [0.9833, -3.960961405430929, -1.4082898509553452, -2.2703065872192383, -2.5293804607787074, 3.837097644805908, -0.5784843603717249]
-# client_hil_home_angles: [1.95, 3.597770929336548, -1.479796477859356, 1.9633901754962366, -0.4715559047511597, -4.211390558873312, 0.7859301567077637]
+mrv_hil_home_angles: [0.9833, -3.960961405430929, -1.4082898509553452, -2.2703065872192383, -2.5293804607787074, 3.837097644805908, -0.5784843603717249]
+client_hil_home_angles: [1.95, 3.597770929336548, -1.479796477859356, 1.9633901754962366, -0.4715559047511597, -4.211390558873312, 0.7859301567077637]
 
 # Home angles for the mrv and client (Leading value is the carriage position in meters) these are not ieal and are meant to represent low manipulability problems
 # mrv_hil_home_angles: [1.0304, -3.730152193699972, -1.5173798736980935, -2.591668128967285, -2.085297246972555, 4.175539016723633, -0.8275006453143519]
 # client_hil_home_angles: [1.95, 3.597770929336548, -1.479796477859356, 1.9633901754962366, -0.4715559047511597, -4.211390558873312, 0.7859301567077637]
 
 # Hopefully these are even worse
-mrv_hil_home_angles: [1.0303,-4.67274243036379, -2.2527739010252894, -2.5812673568725586, -0.8909596365741272, 3.208245277404785, -0.6612713972674769]
-client_hil_home_angles: [1.579, 3.4029457569122314, -0.6160081785968323, 1.3825386206256312, -0.7452431482127686, -4.448075596486227, 0.7859586477279663]
+# mrv_hil_home_angles: [1.0303,-4.67274243036379, -2.2527739010252894, -2.5812673568725586, -0.8909596365741272, 3.208245277404785, -0.6612713972674769]
+# client_hil_home_angles: [1.579, 3.4029457569122314, -0.6160081785968323, 1.3825386206256312, -0.7452431482127686, -4.448075596486227, 0.7859586477279663]

@@ -15,7 +15,8 @@ experiment_logs/*
 scripts/learning_acados/*.txt
 *.so
 experiment_launchpad/scripts/planning_scripts/ipopt_cpp/build/*
-experiment_launchpad/scripts/planning_scripts/codegen_for_ipopt
+experiment_launchpad/scripts/planning_scripts/codegen_for_ipopt*
+experiment_launchpad/scripts/hil_sim_scripts/codegen_for_ipopt*
 experiment_launchpad/scripts/planning_scripts/c_generated_code*
 *.dot
 *.data

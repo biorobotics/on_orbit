@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.spatial.transform import Rotation as R
 
 def load_runtime(folder, ekf=True):
     '''Load runtime from run_time.npy.'''
@@ -19,10 +20,12 @@ def load_data(folder, file_name):
     except FileNotFoundError:
         print(f"File {file_name} not found in {folder}.")
         return None
+    
 
-def wrap_to_180(angles):
-    '''Wrap angles to the range [-180, 180].'''
-    return (angles + 180) % 360 - 180
+
+def quat_to_rotvec(quaternions):
+    rotation = R.from_quat(quaternions)
+    return rotation.as_rotvec()  
 
 def trim_data_to_match_length(*arrays):
     '''Trim all input arrays to match the length of the shortest array.'''
@@ -47,30 +50,41 @@ def plot_6_variables(sim_ts, noisy_pos, filtered_pos, gt_pos, noisy_ori, filtere
     for i in range(3):
         axs[i].plot(sim_ts, noisy_pos[:, pos_indices[i]], 'r--', label='Noisy')
         axs[i].plot(sim_ts, filtered_pos[:, pos_indices[i]], 'g-', label=filter_label)
-        axs[i].plot(sim_ts, gt_pos[:, pos_indices[i]], 'b-', label='Ground Truth')
+        axs[i].plot(sim_ts, gt_pos[:, pos_indices[i]], 'y-', label='Ground Truth')
         axs[i].set_title(pos_labels[i])
         axs[i].set_xlabel('Simulation Time')
         axs[i].set_ylabel('Position (m)')
         axs[i].legend()
         axs[i].grid(True)
 
-    # Wrap orientations to [-180, 180]
-    filtered_ori = wrap_to_180(filtered_ori)
-    gt_ori = wrap_to_180(gt_ori)
-    noisy_ori = wrap_to_180(noisy_ori)
-
     # Orientation labels and indices
     ori_labels = ['Roll', 'Pitch', 'Yaw']
     ori_indices = [0, 1, 2]
 
-    # Plot orientations
     for i in range(3):
-        axs[i+3].plot(sim_ts, noisy_ori[:, ori_indices[i]], 'r--', label='Noisy')
-        axs[i+3].plot(sim_ts, filtered_ori[:, ori_indices[i]], 'g-', label=filter_label)
-        axs[i+3].plot(sim_ts, gt_ori[:, ori_indices[i]], 'b-', label='Ground Truth')
+        # Align initial values before unwrapping
+        initial_diff = noisy_ori[0, ori_indices[i]] - gt_ori[0, ori_indices[i]]
+
+        if initial_diff > np.pi:
+            noisy_ori[:, ori_indices[i]] -= 2 * np.pi
+        elif initial_diff < -np.pi:
+            noisy_ori[:, ori_indices[i]] += 2 * np.pi
+
+        # Repeat for filtered data
+        initial_diff_filtered = filtered_ori[0, ori_indices[i]] - gt_ori[0, ori_indices[i]]
+
+        if initial_diff_filtered > np.pi:
+            filtered_ori[:, ori_indices[i]] -= 2 * np.pi
+        elif initial_diff_filtered < -np.pi:
+            filtered_ori[:, ori_indices[i]] += 2 * np.pi
+
+        # Now apply unwrapping consistently
+        axs[i+3].plot(sim_ts, np.unwrap(noisy_ori[:, ori_indices[i]]), 'r--', label='Noisy')
+        axs[i+3].plot(sim_ts, np.unwrap(filtered_ori[:, ori_indices[i]]), 'g-', label=filter_label)
+        axs[i+3].plot(sim_ts, np.unwrap(gt_ori[:, ori_indices[i]]), 'y-', label='Ground Truth')
         axs[i+3].set_title(ori_labels[i])
         axs[i+3].set_xlabel('Simulation Time')
-        axs[i+3].set_ylabel('Rodriguez Param')
+        axs[i+3].set_ylabel('Rotation Vector')
         axs[i+3].legend()
         axs[i+3].grid(True)
 
@@ -83,10 +97,15 @@ def plot_ekf_pf_vs_gt(root_folder, ekf=True, num_particles=800):
     noisy_ori = load_data(root_folder, 'noisy_orientation.npy')
     gt_pos = load_data(root_folder, 'gt_position.npy')
     gt_ori = load_data(root_folder, 'gt_orientation.npy')
-    filtered_pos = load_data(root_folder, 'ekf_position.npy' if ekf else 'pf_position.npy')
-    filtered_ori = load_data(root_folder, 'ekf_orientation.npy' if ekf else 'pf_orientation.npy')
+    filtered_pos = load_data(root_folder, 'ekf_position.npy' if ekf else 'pf_position_ft.npy')
+    filtered_ori = load_data(root_folder, 'ekf_orientation.npy' if ekf else 'pf_orientation_ft.npy')
     sim_ts = load_data(root_folder, 'sim_ts.npy')
     run_time = load_runtime(root_folder, ekf=ekf)
+
+    # Convert quaternions to Rodriguez parameters
+    noisy_ori = quat_to_rotvec(noisy_ori)
+    filtered_ori = quat_to_rotvec(filtered_ori)
+    gt_ori = quat_to_rotvec(gt_ori)
 
     # Trim all arrays to the shortest length
     sim_ts, noisy_pos, filtered_pos, gt_pos, noisy_ori, filtered_ori, gt_ori = trim_data_to_match_length(
@@ -104,7 +123,7 @@ def plot_ekf_pf_vs_gt(root_folder, ekf=True, num_particles=800):
     plot_6_variables(sim_ts, noisy_pos, filtered_pos, gt_pos, noisy_ori, filtered_ori, gt_ori, title, filter_label=filter_label)
 
 def main():
-    root_dir = "/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/10_14_24/pf_test/pos__0.0_0.0_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.0_0.0_0.020241015-100922"  # Change this to your actual root directory
+    root_dir = "/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/10_22_24/ft_integrated/pos__0.0_0.0_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.0_0.003490658503988659_0.020241022-153855" 
 
     # Call the function to plot for EKF or PF
     plot_ekf_pf_vs_gt(root_dir, ekf=False, num_particles=800)  # Toggle `ekf` to False for PF

@@ -11,7 +11,8 @@ def print_npy_file(file_path):
 
 def main():
     # Specify the path to the .npy file you want to print
-    file_path = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/10_14_24/ekf_test/pos__0.0_0.0_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.0_0.0_0.020241015-084015/ekf_position.npy'
+    root = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_1_24/little_pop_at_beginning'
+    file_path = root + '/ref_x_trj.npy'
     
     # Call the function to print the contents of the .npy file
     print_npy_file(file_path)

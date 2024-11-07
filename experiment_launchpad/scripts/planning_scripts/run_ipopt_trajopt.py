@@ -4,11 +4,12 @@ from ipopt_trajopt import IpoptTrajopt
 import numpy as np
 import time
 
-date = '10_03_24'
-folder_tag = 'insertion_traj'
+date = '10_28_24'
+folder_tag = 'MPC_ipopt_test'
 save_path_prefix = 'experiment_logs/' + date + '/' + folder_tag
-do_save = True
-nozzle_align = True  # Set to True to algin ee tip with nozzle frame
+do_save = False
+nozzle_align = False # Set to True to algin ee tip with nozzle frame
+test_MPC = True  
 
 ipopt_traj_opt = IpoptTrajopt(save_path_prefix,do_save)
 
@@ -28,7 +29,7 @@ max_ang_vel_for_contact_avoidance = 100#deg/s
 
 # # One point. Note that (0,0,0) is the front/center of the capture box, and the box is 20cm wide, 20cm high, and 10 cm deep
 # # Center of capture box is (0,0,-0.05)
-x_range = -np.array([0.00])
+x_range =  np.array([0.07])
 y_range = -np.array([0.00])
 z_range = -np.array([0.05])
 
@@ -92,7 +93,7 @@ for grid_idx in range(init_grid_idx, final_grid_idx):
     #   raise Exception("Should not be using contact in current testing.")
       use_contact = True
 
-  success = ipopt_traj_opt.plan(delta_pos,delta_rot,initial_client_w,use_contact,nozzle_align)
+  success = ipopt_traj_opt.plan(delta_pos,delta_rot,initial_client_w,use_contact,nozzle_align,test_MPC)
 
   if not success:
      print("Planner failed.")

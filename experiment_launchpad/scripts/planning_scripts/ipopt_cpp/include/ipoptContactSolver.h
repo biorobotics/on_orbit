@@ -92,9 +92,9 @@ class CasadiExternalFunction2 {
       work = (work_t)dlsym(handle, (function_name + "_work").c_str());
       if(dlerror()) dlerror(); // No such function, reset error flags
       if (work && work(&sz_arg, &sz_res, &sz_iw, &sz_w)) exit(1);
-      printf("Work vector sizes:\n");
-      printf("sz_arg = %lld, sz_res = %lld, sz_iw = %lld, sz_w = %lld\n\n",
-             sz_arg, sz_res, sz_iw, sz_w);
+      // printf("Work vector sizes:\n");
+      // printf("sz_arg = %lld, sz_res = %lld, sz_iw = %lld, sz_w = %lld\n\n",
+      //        sz_arg, sz_res, sz_iw, sz_w);
 
       /* Input sparsities */
       sparsity_in = (sparsity_t)dlsym(handle, (function_name + "_sparsity_in").c_str());
@@ -110,10 +110,10 @@ class CasadiExternalFunction2 {
         // Retrieve the sparsity pattern - CasADi uses column compressed storage (CCS)
         const casadi_int *sp_i;
         if (i<n_in) {
-          printf("Input %lld\n", i);
+          // printf("Input %lld\n", i);
           sp_i = sparsity_in(i);
         } else {
-          printf("Output %lld\n", i-n_in);
+          // printf("Output %lld\n", i-n_in);
           sp_i = sparsity_out(i-n_in);
         }
         if (sp_i==0) exit(1);
@@ -124,17 +124,17 @@ class CasadiExternalFunction2 {
         nnz = sp_i[ncol]; /* Ipopt::Number of nonzeros */
 
         /* Print the pattern */
-        printf("  Dimension: %lld-by-%lld (%lld nonzeros)\n", nrow, ncol, nnz);
-        printf("  Nonzeros: {");
-        casadi_int rr,cc,el;
-        for(cc=0; cc<ncol; ++cc){                    /* loop over columns */
-          for(el=colind[cc]; el<colind[cc+1]; ++el){ /* loop over the nonzeros entries of the column */
-            if(el!=0) printf(", ");                  /* Separate the entries */
-            rr = row[el];                            /* Get the row */
-            printf("{%lld,%lld}",rr,cc);                 /* Print the nonzero */
-          }
-        }
-        printf("}\n\n");
+        // printf("  Dimension: %lld-by-%lld (%lld nonzeros)\n", nrow, ncol, nnz);
+        // printf("  Nonzeros: {");
+        // casadi_int rr,cc,el;
+        // for(cc=0; cc<ncol; ++cc){                    /* loop over columns */
+        //   for(el=colind[cc]; el<colind[cc+1]; ++el){ /* loop over the nonzeros entries of the column */
+        //     if(el!=0) printf(", ");                  /* Separate the entries */
+        //     rr = row[el];                            /* Get the row */
+        //     printf("{%lld,%lld}",rr,cc);                 /* Print the nonzero */
+        //   }
+        // }
+        // printf("}\n\n");
       }
 
       /* Function for numerical evaluation */
@@ -250,7 +250,6 @@ class ContactNLP : public Ipopt::TNLP {
        Ipopt::Number* g_l,
        Ipopt::Number* g_u
     );
-
     /** Method to return the starting point for the algorithm */
     virtual bool get_starting_point(
        Ipopt::Index   n,
@@ -362,6 +361,10 @@ class ContactNLP : public Ipopt::TNLP {
       return num_iter;
     }
 
+    double get_obj_value() const {
+      return obj_value;
+    }
+
     const std::vector<double>& get_iter_durations() {
       return iter_durations;
     }
@@ -374,6 +377,7 @@ class ContactNLP : public Ipopt::TNLP {
     int J_nnz;
     int H_nnz;
     int num_constraints;
+    double obj_value;
     VectorXl phase_starts;
     VectorXl constraint_sizes;
     VectorXd lb;
@@ -417,6 +421,10 @@ class IPOPTContactSolver {
     }
     VectorXd get_iter_durations() {
       return Map<const VectorXd>(nlp->get_iter_durations().data(), nlp->get_iter_durations().size());
+    }
+
+    double get_obj_value() const {
+      return nlp->get_obj_value();
     }
   private:
     Ipopt::SmartPtr<ContactNLP> nlp;
