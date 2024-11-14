@@ -78,7 +78,7 @@ def export_implicit_midpoint_model(cpin_model, plane_idx, dyn_input, dt, use_cw,
                             v_ipopt[mrv_vidx + 6:mrv_vidx + mrv_nv], \
                             client_SE3.rotation@v_ipopt[cv_vidx:cv_vidx + 3], \
                             JSO3_to_rp(q[cv_qidx + 3:cv_qidx + 7])@v[cv_vidx + 3:cv_vidx + 6])
-
+ 
     q_dynamics_expr = qdot_ipopt - (q1_ipopt - q0_ipopt)/dt
 
     if use_cw:
@@ -131,5 +131,10 @@ def export_implicit_midpoint_model(cpin_model, plane_idx, dyn_input, dt, use_cw,
 
     tau = ca.vertcat(ca.SX.zeros(6), u[:num_rotary], client_force_local, ca.SX.zeros(3)) + Jcon.T@u[num_rotary:num_rotary + 3]
     v_dynamics_expr = (tau - cpin.rnea(cpin_model, cpin_data, q, v, (v1_ipopt - v0_ipopt)/dt))*dt
+    # print('v_dyn:', v_dynamics_expr.size())
+    # quit()
+
+    print(u.shape)
+    quit()
 
     return ca.vertcat(q_dynamics_expr, v_dynamics_expr)

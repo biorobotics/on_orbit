@@ -58,6 +58,7 @@ class IpoptMPC(object):
     self.internal_idx = 0
     self.plunging = False
     self.first_solve = True
+    self.run_times = []
 
     self.init_time = time.time()
 
@@ -92,7 +93,8 @@ class IpoptMPC(object):
                                        self.lock_mrv, 
                                        self.use_cw , 
                                        use_ekf= self.use_ekf)
-
+    # print(self.mrv_cv_urdf_file)
+    # quit()
     pin.forwardKinematics(self.mrv_client_sim.pin_model, self.mrv_client_sim.pin_data, pin.neutral(self.mrv_client_sim.pin_model))
     pin.updateFramePlacement(self.mrv_client_sim.pin_model, self.mrv_client_sim.pin_data, self.mrv_client_sim.nozzle_fid)
     pin.updateFramePlacement(self.mrv_client_sim.pin_model, self.mrv_client_sim.pin_data, self.mrv_client_sim.goal_fid)
@@ -180,6 +182,23 @@ class IpoptMPC(object):
                                     self.cw_a, self.cw_mu, self.cw_orbit_dir, initial_client_rmat, \
                                     self.cone_slope, self.use_cw, self.path + '/meshes/')
     
+    self.ref_ee_pos_trj_cum = []
+    self.ref_ee_rmat_trj_cum = []
+    self.ref_ee_v_trj_cum = []
+    self.ref_ee_w_trj_cum = []
+    self.ref_ee_vdot_trj_cum = []
+    self.ref_ee_wdot_trj_cum = []
+    self.ref_joint_angles_trj_cum = []
+    self.ref_joint_vels_trj_cum = []
+    self.ref_joint_accs_trj_cum = []
+    self.ref_forces_trj_cum = []
+    self.ref_x_trj_cum = []
+    self.ref_u_trj_cum = []
+    self.ref_t_trj_cum = []
+
+
+
+
     self.all_q_from_sim = []
     self.all_v_from_sim = []
     self.all_q_from_ipopt = []
@@ -288,7 +307,9 @@ class IpoptMPC(object):
   def get_reference_from_ipopt(self, x0, elapsed_steps, impact_dyn):
     # Solve the optimization problem using the IPOPT planner
     # if not hasattr(self, 'prev_xs') :
+    time_before_solve = time.time()
     xs, us, dts, phase_starts, solved, obj_value = self.ipopt_planner.plan(x0, elapsed_steps, max_iter=1500)
+    self.run_times.append(time.time() - time_before_solve)
 
     # if not hasattr(self, 'prev_xs'):
     #     first_solve = True
@@ -794,7 +815,7 @@ class IpoptMPC(object):
       if self.one_run:
         self.one_run = False
       else:
-        self.save('/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_04_24/interp_7_cm')
+        self.save('/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_11_24/charecterizing_time')
     
     
     else:
@@ -820,20 +841,20 @@ class IpoptMPC(object):
       ref_t = self.ref_t_trj[-1] + self.dt
 
 
-    # # Update the lists that store the reference trajectories
-    # self.ref_ee_pos_trj.append(ref_ee_pos)
-    # self.ref_ee_rmat_trj.append(ref_ee_rmat)
-    # self.ref_ee_v_trj.append(ref_ee_v)
-    # self.ref_ee_w_trj.append(ref_ee_w)
-    # self.ref_ee_vdot_trj.append(ref_ee_vdot)
-    # self.ref_ee_wdot_trj.append(ref_ee_wdot)
-    # self.ref_joint_angles_trj.append(ref_joint_angles)
-    # self.ref_joint_vels_trj.append(ref_joint_vels)
-    # self.ref_joint_accs_trj.append(ref_joint_accs)
-    # self.ref_forces_trj.append(ref_forces)
-    # self.ref_x_trj.append(ref_x)
-    # self.ref_u_trj.append(ref_u)
-    # self.ref_t_trj.append(ref_t)
+    # Update the lists that store the reference trajectories
+    self.ref_ee_pos_trj_cum.append(ref_ee_pos)
+    self.ref_ee_rmat_trj_cum.append(ref_ee_rmat)
+    self.ref_ee_v_trj_cum.append(ref_ee_v)
+    self.ref_ee_w_trj_cum.append(ref_ee_w)
+    self.ref_ee_vdot_trj_cum.append(ref_ee_vdot)
+    self.ref_ee_wdot_trj_cum.append(ref_ee_wdot)
+    self.ref_joint_angles_trj_cum.append(ref_joint_angles)
+    self.ref_joint_vels_trj_cum.append(ref_joint_vels)
+    self.ref_joint_accs_trj_cum.append(ref_joint_accs)
+    self.ref_forces_trj_cum.append(ref_forces)
+    self.ref_x_trj_cum.append(ref_x)
+    self.ref_u_trj_cum.append(ref_u)
+    self.ref_t_trj_cum.append(ref_t)
     
     q_mrv = mrv_client_sim.get_mrv_config()
     v_mrv = mrv_client_sim.get_mrv_config_dot()
@@ -1129,19 +1150,21 @@ class IpoptMPC(object):
     np.save(save_path + '/joint_torque_meas_d_trj.npy', self.joint_torque_meas_d_trj)
 
     np.save(save_path + '/ref_ee_pos_trj_world.npy', self.ref_ee_pos_trj_world)
-    np.save(save_path + '/ref_ee_pos_trj.npy', self.ref_ee_pos_trj)
-    np.save(save_path + '/ref_ee_rmat_trj.npy', self.ref_ee_rmat_trj)
-    np.save(save_path + '/ref_ee_v_trj.npy', self.ref_ee_v_trj)
-    np.save(save_path + '/ref_ee_w_trj.npy', self.ref_ee_w_trj)
-    np.save(save_path + '/ref_ee_vdot_trj.npy', self.ref_ee_vdot_trj)
-    np.save(save_path + '/ref_ee_wdot_trj.npy', self.ref_ee_wdot_trj)
-    np.save(save_path + '/ref_joint_angles_trj.npy', self.ref_joint_angles_trj)
-    np.save(save_path + '/ref_joint_vels_trj.npy', self.ref_joint_vels_trj)
-    np.save(save_path + '/ref_joint_accs_trj.npy', self.ref_joint_accs_trj)
-    np.save(save_path + '/ref_forces_trj.npy', self.ref_forces_trj)
-    np.save(save_path + '/ref_x_trj.npy', self.ref_x_trj)
-    np.save(save_path + '/ref_u_trj.npy', self.ref_u_trj)
-    np.save(save_path + '/ref_t_trj.npy', self.ref_t_trj)
+    np.save(save_path + '/ref_ee_pos_trj.npy', self.ref_ee_pos_trj_cum)
+    np.save(save_path + '/ref_ee_rmat_trj.npy', self.ref_ee_rmat_trj_cum)
+    np.save(save_path + '/ref_ee_v_trj.npy', self.ref_ee_v_trj_cum)
+    np.save(save_path + '/ref_ee_w_trj.npy', self.ref_ee_w_trj_cum)
+    np.save(save_path + '/ref_ee_vdot_trj.npy', self.ref_ee_vdot_trj_cum)
+    np.save(save_path + '/ref_ee_wdot_trj.npy', self.ref_ee_wdot_trj_cum)
+    np.save(save_path + '/ref_joint_angles_trj.npy', self.ref_joint_angles_trj_cum)
+    np.save(save_path + '/ref_joint_vels_trj.npy', self.ref_joint_vels_trj_cum)
+    np.save(save_path + '/ref_joint_accs_trj.npy', self.ref_joint_accs_trj_cum)
+    np.save(save_path + '/ref_forces_trj.npy', self.ref_forces_trj_cum)
+    np.save(save_path + '/ref_x_trj.npy', self.ref_x_trj_cum)
+    np.save(save_path + '/ref_u_trj.npy', self.ref_u_trj_cum)
+    np.save(save_path + '/ref_t_trj.npy', self.ref_t_trj_cum)
 
     np.save(save_path + '/flop_counts.npy', self.flop_counts)
     np.save(save_path + '/times.npy', self.times)
+
+    np.save(save_path + '/MPC_run_time.npy', self.run_times)

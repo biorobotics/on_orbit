@@ -8,8 +8,8 @@ date = '10_28_24'
 folder_tag = 'MPC_ipopt_test'
 save_path_prefix = 'experiment_logs/' + date + '/' + folder_tag
 do_save = False
-nozzle_align = False # Set to True to algin ee tip with nozzle frame
-test_MPC = True  
+nozzle_align = True # Set to True to algin ee tip with nozzle frame
+test_MPC = False  
 
 ipopt_traj_opt = IpoptTrajopt(save_path_prefix,do_save)
 

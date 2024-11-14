@@ -121,52 +121,8 @@ class IpoptTrajopt():
                                        probe_z_axis_plunge_velocity=0.005, use_variable_plunge_speed=True, 
                                        use_scheduled_gains=True, use_cw=self.use_cw)
     
-    with open('/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/mrv_controller_params.txt', 'w') as f:
-      f.write(f'{self.rospath}/urdf/robot_cv_detached.urdf\n')
-      f.write(f'{self.rospath}/urdf/robot.urdf\n')
-      f.write(f'{self.rospath}/urdf/robot.urdf\n')
-      f.write(f'{self.rospath}/urdf/cv.urdf\n')
-      f.write(f'mrv_joint_angle_lower_limits: {self.mrv_joint_angle_lower_limits}\n')
-      f.write(f'mrv_joint_angle_upper_limits: {self.mrv_joint_angle_upper_limits}\n')
-      f.write(f'mrv_joint_vel_limits: {self.mrv_joint_vel_limits}\n')
-      f.write(f'mrv_joint_acc_limits: {self.mrv_joint_acc_limits}\n')
-      f.write(f'mrv_joint_torque_limits: {self.mrv_joint_torque_limits}\n')
-      f.write(f'dt: 0.01\n')
-      f.write(f'cone_slope: {self.cone_slope}\n')
-      f.write(f'clip_joint_commands: {clip_joint_commands}\n')
-      f.write(f'time_steps_between_measurements: {time_steps_between_measurements}\n')
-      f.write(f'cw_a: {self.cw_a}\n')
-      f.write(f'cw_mu: {self.cw_mu}\n')
-      f.write(f'cw_orbit_dir: {self.cw_orbit_dir}\n')
-      f.write(f'do_noisy_state_estimation: {do_noisy_state_estimation}\n')
-      f.write(f'nozzle_opening_rad: {self.nozzle_opening_rad}\n')
-      f.write(f'peg_rad: {self.peg_rad}\n')
-      f.write(f'client_velocity_noise_ang_amp: {client_velocity_noise_ang_amp}\n')
-      f.write(f'time_limit: {time_limit}\n')
-      f.write(f'debug_with_test_traj: {debug_with_test_traj}\n')
-      f.write(f'test_traj_id: {test_traj_id}\n')
-      f.write(f'lock_client: {lock_client}\n')
-      f.write(f'lock_mrv: {lock_mrv}\n')
-      f.write(f'probe_z_axis_plunge_velocity: 0.005\n')
-      f.write(f'use_variable_plunge_speed: True\n')
-      f.write(f'use_scheduled_gains: True\n')
-      f.write(f'use_cw: {self.use_cw}\n')
-    
 
-
-    
     mrv_controller.reset_wrt_capture_box(None, None, delta_pos, delta_rot, delta_v, initial_client_w, initial_mrv_w, rng, self.dist_centering_waypoint_from_goal)
-    with open('/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/mrv_controller_reset_params.txt', 'w') as f:
-      f.write(f'None\n')
-      f.write(f'None\n')
-      f.write(f'delta_pos: {delta_pos}\n')
-      f.write(f'delta_rot: {delta_rot}\n')
-      f.write(f'delta_v: {delta_v}\n')
-      f.write(f'initial_client_w: {initial_client_w}\n')
-      f.write(f'initial_mrv_w: {initial_mrv_w}\n')
-      f.write(f'rng: {rng}\n')
-      f.write(f'dist_centering_waypoint_from_goal: {self.dist_centering_waypoint_from_goal}\n')
-    #quit()
     if self.do_save:
         os.makedirs(save_path)
     else:
@@ -251,25 +207,6 @@ class IpoptTrajopt():
 
       # Try to keep number of time steps to around 150-200 
       phase_lengths_sec = np.array([phase_scaling*phase1_sec, phase_scaling*phase2_sec, phase_scaling*2*dt, dt])
-      print("Initializing MPCNozzleAlignPlanner with the following parameters:")
-      print("URDF Path (robot_cv_detached):", self.rospath + '/urdf/robot_cv_detached.urdf')
-      print("URDF Path (robot):", self.rospath + '/urdf/robot.urdf')
-      print("dt:", dt)
-      print("Joint Angle Lower Limits:", self.mrv_joint_angle_lower_limits)
-      print("Joint Angle Upper Limits:", self.mrv_joint_angle_upper_limits)
-      print("Joint Torque Limits:", self.mrv_joint_torque_limits)
-      print("Joint Velocity Limits:", self.mrv_joint_vel_limits)
-      print("Joint Acceleration Limits:", self.mrv_joint_acc_limits)
-      print("Control Cost Weight:", control_cost_weight)
-      print("Phase Lengths (sec):", phase_lengths_sec)
-      print("CW a:", self.cw_a)
-      print("CW mu:", self.cw_mu)
-      print("CW Orbit Direction:", self.cw_orbit_dir)
-      print("Initial Client Rotation Matrix:", initial_client_rmat)
-      print("Cone Slope:", self.cone_slope)
-      print("Use CW:", self.use_cw)
-      print("Meshes Path:", self.rospath + '/meshes/')
-      #quit()
       planner = MPCNozzleAlignPlanner(self.rospath + '/urdf/robot_cv_detached.urdf', \
                                       self.rospath + '/urdf/robot.urdf', \
                                       dt, \
@@ -284,10 +221,7 @@ class IpoptTrajopt():
       
       
       
-      elapsed_steps = 0
-      with open('/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/x0_ipopt.txt', 'w') as f:
-        np.savetxt(f, x0)
-      # exit()      
+      elapsed_steps = 0  
       xs, us, dts, phase_starts, success, _ = planner.plan(x0,
                                                       elapsed_steps,
                                                       save_path=save_path, 

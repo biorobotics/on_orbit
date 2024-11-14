@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-load_path = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_1_24/to_optimality/'
+load_path = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_11_24/charecterizing_time/'
 
 ipopt_ee_pos = np.load(load_path + 'ref_ee_pos_trj.npy', allow_pickle=True)
 sim_ee_pos = np.load(load_path + 'sw_peg_pos_trj.npy', allow_pickle=True)

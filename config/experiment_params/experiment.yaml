@@ -57,10 +57,10 @@ use_scheduled_gains: True # See resolved_accel.py
 time_limit: 500
 
 # Set to true to simulate sensor noise in the client state
-do_noisy_state_estimation: True
+do_noisy_state_estimation: False
 
 # Set to true to simulate delay in client pose due to slower vision feedback rate
-do_vision_delay: True
+do_vision_delay: False
 vision_measurement_rate: 10 #Hz
 
 # Number of times to run the experiment on the hardware platform

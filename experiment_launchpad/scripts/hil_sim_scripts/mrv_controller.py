@@ -157,9 +157,9 @@ class MrvController(object):
     self.joint_control_enabled = True
 
     # Start the EKF with several steps to converge
-    wrench_peg_peg = np.zeros(6)
-    for _ in range(50):
-      self.mrv_client_sim.update_state_estimate(wrench_peg_peg)
+    # wrench_peg_peg = np.zeros(6)
+    # for _ in range(50):
+    #   self.mrv_client_sim.update_state_estimate(wrench_peg_peg)
 
   def get_state_in_pieces(self):
     mrv_client_sim = self.mrv_client_sim

@@ -11,8 +11,8 @@ def print_npy_file(file_path):
 
 def main():
     # Specify the path to the .npy file you want to print
-    root = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_1_24/little_pop_at_beginning'
-    file_path = root + '/ref_x_trj.npy'
+    root = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_11_24/charecterizing_time'
+    file_path = root + '/MPC_run_time.npy'
     
     # Call the function to print the contents of the .npy file
     print_npy_file(file_path)
