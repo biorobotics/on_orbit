@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 import numpy as np
-import rospy
 import os
 
-def get_trajlib_load_paths(rospath):
+def get_trajlib_load_paths(trajlibrary_path):
   deg_per_s_folder_names = True
   ws = []
   dps = []
   load_paths = []
   # TODO: Implement this in a way that doesnt require rospy to be initialized so that we can use for our venv TVLQR testing
-  prefixes = [rospath + rospy.get_param('traj_library_prefix')]
+  prefixes = [trajlibrary_path]
 
   for prefix in prefixes:
     folders = os.listdir(prefix)

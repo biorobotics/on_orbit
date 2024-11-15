@@ -154,7 +154,7 @@ waypoint2_tf_msg.child_frame_id = 'Waypoint 2'
 # load_path = rospath + '/experiment_logs/04_16_24/cb_center_with_contact/pos__0.0_0.0_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.25_0.0_0.0/control/20240416-133317'
 #load_path = rospath + '/experiment_logs/04_16_24/cb_center_with_contact/pos__0.0_0.0_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.45000000000000007_0.0_0.0/control/20240416-133452'
 #load_path = '/home/biorobotics/Documents/sr_ws/src/on_orbit/experiment_logs/05_06_24/test_lib/pos_0.0_0.0_0.0_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_client_w_0.0_0.0_0.0/control/20240506-200254'
-load_path = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_1_24/'
+load_path = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_15_24/pos__0.0_0.0_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.0_0.0_0.020241115-123934'
 
 replay_from_xs = False
 replay_from_init_xs = True

@@ -1,4 +1,5 @@
 import casadi as ca
+import time
 import pinocchio as pin
 from pinocchio import casadi as cpin
 from pinocchio.robot_wrapper import RobotWrapper
@@ -230,23 +231,33 @@ class TVLQRController(object):
         x_nom_k0 = self.rp_xs[k0]
         x_nom_k1 = self.rp_xs[k1]
         x_nom_interp = (1 - alpha) * x_nom_k0 + alpha * x_nom_k1
+        x_nom_interp_pin = to_pin(x_nom_interp, self.pin_model)
 
 
-        # Convert state to rodrigues parameters
-        x_rp = from_pin(x_k, self.cpin_model)
-        d_x_rp = x_rp - x_nom_interp
+        # Get rotation differences from pinnochio
+        d_x_pin = pin.difference(self.pin_model, x_nom_interp_pin[:self.pin_model.nq], x_k[:self.pin_model.nq])
+        rot_vec_mrv = d_x_pin[3:6]
+        rot_vec_client = d_x_pin[16:19]
+        length_vec_mrv = np.linalg.norm(rot_vec_mrv)
+        length_vec_client = np.linalg.norm(rot_vec_client)
+        rod_diff_mrv = rot_vec_mrv/length_vec_mrv * np.tan(length_vec_mrv/2)
+        rod_diff_client = rot_vec_client/length_vec_client * np.tan(length_vec_client/2)
+
+        d_x_rp = np.hstack([d_x_pin[:3], rod_diff_mrv, d_x_pin[6:16], rod_diff_client,self.pin_xs[k_cntrl][self.pin_model.nq:]-x_k[self.pin_model.nq:]]) 
 
         # Compute the control input
-        u_k = u_nom_interp - K_k @ d_x_rp
+        u_k = u_nom_interp + K_k @ d_x_rp
         u_k = np.clip(u_k, -150, 150)
 
-        tau = np.hstack([np.zeros(3), u_k])
+        #tau = np.hstack([np.zeros(3), u_k])
+        tau = np.hstack([np.zeros(6), u_k[:7]])
         q_pin = x_k[:self.cpin_model.nq]
         v_pin = x_k[self.cpin_model.nq:]
         mrv_q = q_pin[self.mrv_qidx:self.mrv_qidx + self.mrv_nq]
         mrv_v = v_pin[self.mrv_vidx:self.mrv_vidx + self.mrv_nv]
         acc = pin.aba(self.mrv_pin_model, self.mrv_pin_data, mrv_q, mrv_v, tau)
         joint_acc = acc[6:]
+        # time.sleep(0.1)
 
         if torques:
             return u_k[:7]
@@ -259,7 +270,7 @@ if __name__ == "__main__":
     urdf_file_mrv = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/urdf/robot.urdf'
     x_ref_traj = np.load('/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/10_03_24/insertion_traj/pos_0.1_0.1_-0.1_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_client_w_0.0_0.0_0.0/control/20241003-133845/xs.npy')
     u_ref_traj = np.load('/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/10_03_24/insertion_traj/pos_0.1_0.1_-0.1_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_client_w_0.0_0.0_0.0/control/20241003-133845/us.npy')
-    dt_traj = 0.0775
+    dt_traj = 0.01
     dt_cntrl = 0.01
     cw_a = 6793137
     cw_mu = 3.986e+14
@@ -270,9 +281,9 @@ if __name__ == "__main__":
     # cProfile.run('controller.backward_solve_ricatti()', filename='/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/profiles/tvlqr_controller.prof')
     controller.backward_solve_ricatti()
     x_k = controller.pin_xs[9]
-    x_k[8] += 0.04
+    x_k[8] += 0.00
     u_k = controller.us[9]
-    k = 9 * .0775 / .01
+    k = 9
     start_time = time.time()
     u_k_controller = controller.compute_control(x_k, k, torques=True)
     print('Time taken:', time.time() - start_time)

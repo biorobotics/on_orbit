@@ -1435,7 +1435,7 @@ class MRVClientSim(object):
 
   def save(self, save_path):
     np.save(save_path + '/noise_value.npy', self.noise_value)
-
+    
     np.save(save_path + '/pybullet_torques.npy', self.joint_torques)
     
     np.save(save_path + '/noisy_position.npy', self.noisy_position)
@@ -1495,3 +1495,4 @@ class MRVClientSim(object):
     np.save(save_path + '/kinetic_energy_trj.npy', self.kinetic_energy_trj)
     np.save(save_path + '/joint_work_trj.npy', self.joint_work_trj)
     np.save(save_path + '/sim_ts.npy', self.sim_ts)
+    print('Saved data to', save_path)

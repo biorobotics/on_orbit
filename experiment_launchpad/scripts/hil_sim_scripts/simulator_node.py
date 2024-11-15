@@ -172,6 +172,17 @@ def main():
             load_paths_for_interpolation, weights = interp_trajectories_on_init_client_state(
                 load_paths, initial_client_w, ws, delta_pos, dps)
 
+            print("load_paths_for_interpolation:", load_paths_for_interpolation, "size:", len(load_paths_for_interpolation))
+            print("weights:", weights, "size:", len(weights))
+            print("delta_pos:", delta_pos, "size:", delta_pos.shape)
+            print("delta_rot:", delta_rot, "size:", delta_rot.shape)
+            print("delta_v:", delta_v, "size:", delta_v.shape)
+            print("initial_client_w:", initial_client_w, "size:", initial_client_w.shape)
+            print("initial_mrv_w:", initial_mrv_w, "size:", initial_mrv_w.shape)
+            print("rng:", rng)
+            print("dist_centering_waypoint_from_goal:", dist_centering_waypoint_from_goal)
+            exit()
+
             mrv_controller.reset_wrt_capture_box(
                 load_paths_for_interpolation,
                 weights, delta_pos, delta_rot, delta_v, initial_client_w, initial_mrv_w, rng,

@@ -5,20 +5,21 @@ import cProfile
 import time
 from scipy.spatial.transform import Rotation as R
 from get_grid import get_grid
+from trajlib_util_tvlqr import get_trajlib_load_paths, interp_trajectories_on_initial_client_w, interp_trajectories_on_delta_pos, interp_trajectories_on_init_client_state
 
 import os
 import gc
 import atexit
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from hil_sim_scripts.MPC_ipopt import IpoptMPC
+from hil_sim_scripts.mrv_tvlqr_plunge_controller import TVLQR_PLUNGE_controller
 
 # Global variables for on_shutdown
 mrv_controller = None
 success = False
 fail_reason = 'None'
-save_path = ''
-do_save = False
+# save_path = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_15_24/'
+do_save = True
 
 def on_shutdown():
     global mrv_controller, success, fail_reason, save_path, do_save
@@ -52,14 +53,14 @@ def main():
     initial_grid_idx = 0  # Use zero-indexing
     use_grid = False
 
-    dist_centering_waypoint_from_goal = 0.481024428  # meters
+    dist_centering_waypoint_from_goal = 0.4865  # meters
 
     do_noisy_state_estimation = True
     do_vision_delay = True
     num_trial = 1
 
     dt = 0.01
-    path = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/'
+    path = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit'
 
     cone_slope = 3.1510649771783403
 
@@ -79,9 +80,10 @@ def main():
     peg_rad = 0.008
     nozzle_opening_rad = 0.142
 
+    traj_library_prefix = '/experiment_logs/10_28_24/MPC_ipopt_test/'
     use_cw = True
 
-    do_save = False 
+
 
     atexit.register(on_shutdown)
 
@@ -139,11 +141,14 @@ def main():
             use_variable_plunge_speed = True
             use_scheduled_gains = True
             use_ekf = True
-
+            load_paths, ws, dps = get_trajlib_load_paths(path + traj_library_prefix)
+            load_paths_for_interpolation, weights = interp_trajectories_on_init_client_state(
+                        load_paths, initial_client_w, ws, delta_pos, dps)
+                       
             rng = np.random.default_rng(rng_sequences[x])
 
             # Initialize the controller
-            mrv_controller = IpoptMPC(
+            mrv_controller = TVLQR_PLUNGE_controller(
                 path + '/urdf/robot_cv_detached.urdf',
                 path + '/urdf/robot.urdf',
                 path + '/urdf/robot.urdf',
@@ -155,13 +160,10 @@ def main():
                 nozzle_opening_rad, peg_rad, client_velocity_noise_ang_amp, time_limit,
                 debug_with_test_traj, test_traj_id, lock_client, lock_mrv, probe_z_axis_plunge_velocity,
                 use_variable_plunge_speed,
-                use_scheduled_gains, delta_pos, 
-                delta_rot, delta_v, initial_client_w, 
-                initial_mrv_w, rng,
-                dist_centering_waypoint_from_goal,use_cw=use_cw, use_ekf=use_ekf)
-
+                use_scheduled_gains,
+                use_cw=use_cw, use_ekf=use_ekf)
             
-            mrv_controller.reset_wrt_capture_box(delta_pos, delta_rot, delta_v, initial_client_w, initial_mrv_w, rng, dist_centering_waypoint_from_goal)
+            mrv_controller.reset_wrt_capture_box( load_paths_for_interpolation, weights, delta_pos, delta_rot, delta_v, initial_client_w, initial_mrv_w, rng, dist_centering_waypoint_from_goal)
             
 
             # Get initial state information
@@ -171,7 +173,7 @@ def main():
             timestr = time.strftime("%Y%m%d-%H%M%S")
 
             # Save folder
-            save_folder = '/path/to/save_folder'
+            save_folder = 'experiment_logs/11_15_24'
             save_path_str = save_folder + '/' + '_'.join([
                 'pos_', str(delta_pos[0]), str(delta_pos[1]), str(delta_pos[2]), 'rot', str(delta_rot[0]),
                 str(delta_rot[1]), str(delta_rot[2]), 'delta_v', str(delta_v[0]), str(delta_v[1]),
@@ -208,6 +210,8 @@ def main():
                         break
 
             gc.enable()
+            print('we got here')
+            print(do_save)
             if do_save:
                 print('Saving data')
                 print('success: ', success)
