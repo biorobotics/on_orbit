@@ -3,8 +3,12 @@
   <xacro:include filename="$(find on_orbit)/urdf/hardware/ur/ur10e_macro.xacro"/>
   <xacro:ur10e_robot prefix="ur_3_" calibration_file="$(find on_orbit)/config/holo_params/ur_3_calibration.yaml"/>
   <xacro:property name="dist_tool_to_ft_sensor" value="0.03175" />
+  <xacro:property name="dist_tool_to_ft_sensor" value="0.03175" />
 
   <!--Peg-->
+  <xacro:property name="peg_rad" value="0.008"/>
+  <xacro:property name="peg_mass" value="0.130"/>
+  <xacro:property name="peg_com" value="0.125"/>
   <xacro:property name="peg_rad" value="0.008"/>
   <xacro:property name="peg_mass" value="0.130"/>
   <xacro:property name="peg_com" value="0.125"/>

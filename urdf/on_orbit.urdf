@@ -395,6 +395,7 @@
     <parent link="ur_3_tool0"/>
     <child link="ft_sensor"/>
     <origin rpy="0 0 -0.53996123733" xyz="0 0 0.03175"/>
+    <origin rpy="0 0 -0.53996123733" xyz="0 0 0.03175"/>
   </joint>
   <!--
     Base UR robot series xacro macro.
