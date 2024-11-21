@@ -166,10 +166,10 @@ for x in range(0,num_trial):
     #  load_paths_for_interpolation,weights = interp_trajectories_on_delta_pos(load_paths,delta_pos,dps)
 
     load_paths_for_interpolation,weights = interp_trajectories_on_init_client_state(load_paths,initial_client_w,ws,delta_pos,dps)
-
+    
     mrv_controller.reset_wrt_capture_box(load_paths_for_interpolation, 
                                   weights, delta_pos, delta_rot, delta_v, initial_client_w, initial_mrv_w, rng, dist_centering_waypoint_from_goal)
-
+    mrv_controller.mrv_client_sim.prime_ekf(num_iterations=150)
     sw_peg_pos, sw_peg_rmat, sw_peg_twist, sw_nozzle_pos, sw_nozzle_rmat, sw_nozzle_twist = mrv_controller.get_peg_and_nozzle_info()
     sw_base_pos, sw_base_rmat, sw_joint_angles, sw_base_v, sw_base_w, sw_joint_vels, sw_client_pos, sw_client_rmat, sw_client_v, sw_client_w = mrv_controller.get_state_in_pieces()
 
@@ -195,6 +195,7 @@ for x in range(0,num_trial):
     # mrv_controller.disable_joint_control()
 
     start_time = time.time()
+    
     while not rospy.is_shutdown():
       # do_step = time.time() > start_time + 2
       do_step = True

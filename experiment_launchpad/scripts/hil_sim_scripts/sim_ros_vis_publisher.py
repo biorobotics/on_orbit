@@ -39,6 +39,27 @@ class SimROSVisPublisher(object):
     self.traj_tf_msg.header.frame_id = 'world'
     self.traj_tf_msg.child_frame_id = 'traj'
 
+    self.filter_marker_pub = rospy.Publisher('/on_orbit/filter_marker', Marker, queue_size=1000)
+    self.filter_marker = Marker()
+    self.filter_marker.type = Marker.SPHERE
+    self.filter_marker.action = Marker.ADD
+    self.filter_marker.pose.position.x = 0
+    self.filter_marker.pose.position.y = 0
+    self.filter_marker.pose.position.z = 0
+    self.filter_marker.pose.orientation.w = 1
+    self.filter_marker.pose.orientation.x = 0
+    self.filter_marker.pose.orientation.y = 0
+    self.filter_marker.pose.orientation.z = 0
+    self.filter_marker.scale.x = 0.01
+    self.filter_marker.scale.y = 0.01
+    self.filter_marker.scale.z = 0.01
+    self.filter_marker.color.a = 1.0
+    self.filter_marker.color.r = 1.0
+    self.filter_marker.color.g = 0.0
+    self.filter_marker.color.b = 0.0
+    self.filter_marker.header.frame_id = 'world'
+    self.filter_marker.ns = 'filter_marker'
+
   def publish(self, sw_joint_angles, sw_base_pos, sw_base_rmat, sw_client_pos, sw_client_rmat, traj_pos, traj_rmat):
     for i, angle in enumerate(sw_joint_angles):
       self.sw_joints_msg.position[i] = sw_joint_angles[i]
@@ -86,6 +107,34 @@ class SimROSVisPublisher(object):
 
     self.traj_tf_msg.header.stamp = rospy.Time.now()
     self.tf_br.sendTransform(self.traj_tf_msg)
+
+  def delete_filter_marker(self):
+      delete_marker = Marker()
+      delete_marker.action = Marker.DELETEALL
+      delete_marker.header.frame_id = 'world'
+      self.filter_marker_pub.publish(delete_marker)
+
+  def publish_filter_marker(self, positions, is_red = True):
+    for i , pos in enumerate(positions):
+            self.filter_marker.id = i
+            self.filter_marker.pose.position.x = pos[0]
+            self.filter_marker.pose.position.y = pos[1]
+            self.filter_marker.pose.position.z = pos[2]
+            self.filter_marker.header.stamp = rospy.Time.now()
+            
+            if is_red:
+                self.filter_marker.color.r = 1.0
+                self.filter_marker.color.g = 0.0
+                self.filter_marker.color.b = 0.0
+            else:
+                # Blue
+                self.filter_marker.color.r = 0.0
+                self.filter_marker.color.g = 0.0
+                self.filter_marker.color.b = 1.0
+            
+            self.filter_marker_pub.publish(self.filter_marker)
+
+
     
 
 

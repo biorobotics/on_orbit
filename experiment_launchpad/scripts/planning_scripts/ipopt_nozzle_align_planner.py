@@ -18,7 +18,7 @@ from inf_def import inf
 
 from stay_below_nozzle_constraint import export_stay_below_nozzle_constraint
 from relative_frame_velocity_constraint import export_relative_velocity_constraint
-from align_frames_constraint import export_algin_frames_constraint
+from align_frames_constraint import export_align_frames_constraint
 from relative_frame_acceleration_constraint import export_relative_acceleration_constraint
 from stay_in_cone_approx_planes_constraint import export_stay_in_cone_approx_planes_constraint
 from peg_direction_constraint import export_peg_direction_constraint
@@ -286,7 +286,8 @@ class IpoptNozzleAlignPlanner(object):
       os.replace(filename[:-2] + '.so', folder_name + '/' + filename[:-2] + '.so')
 
   def plan(self, x0, ecm_sim, ecm_sim_reset_args, save_path=None, max_iter=250, count_flop_per_iter=False, count_total_flop=False, stop_after_iter=-1, prop_time=0.):
-    regen = True
+    # regen = True
+    regen=True
 
     if prop_time != 0.:
       raise Exception("prop_time is not supported in this planner.")
@@ -330,7 +331,7 @@ class IpoptNozzleAlignPlanner(object):
     print("Initial guess:", x0)
     print("Final guess:", xf)
     
-
+    ## PHASE LENGTHS ##
     phase_lengths_sec = np.array([self.phase_lengths_sec[0], \
                                   self.phase_lengths_sec[1],\
                                   self.phase_lengths_sec[2],\
@@ -371,7 +372,6 @@ class IpoptNozzleAlignPlanner(object):
     constraint_sizes = []
 
     #### PHASE 0: STAY-BELOW-NOZZLE-OPENING-PLANE ####
-    regen = True
     phase_idx = 0
 
     # Nonlinear constraints:
@@ -455,9 +455,21 @@ class IpoptNozzleAlignPlanner(object):
     h2_expr, h2_lb, h2_ub = export_peg_direction_constraint(self.cpin_model, constraint_input, self.cone_slope)
 
 
-    upper_tol = np.zeros(6)
-    lower_tol = np.array([0,0,-inf,0,0,0])
-    h3_expr, h3_lb, h3_ub = export_algin_frames_constraint(self.cpin_model, x_sym, 'ee_tip', 'nozzle', upper_tol, lower_tol)
+    # Start with loose tolerances to guide the optimization towards the correct solution
+    position_upper_tol = np.array([0.1, 0.1, 0.3])
+    position_lower_tol = -position_upper_tol
+
+    # The angles should be within 2 degrees in the z axis and 5 degrees in the x and y axes
+    rotation_upper_tol = np.array([0.2, 0.2, 0.2])
+    rotation_lower_tol = -rotation_upper_tol
+
+    upper_tol = np.concatenate((position_upper_tol, rotation_upper_tol))
+    lower_tol = np.concatenate((position_lower_tol, rotation_lower_tol))
+
+    pos_diff = np.array([0,0,0.3])
+    
+    
+    h3_expr, h3_lb, h3_ub = export_align_frames_constraint(self.cpin_model, x_sym, 'ee_tip', 'nozzle', upper_tol, lower_tol, pos_diff = pos_diff)
 
 
     h_expr = ca.vertcat(dynamics_expr, h1_expr, h2_expr, h3_expr)
@@ -488,21 +500,33 @@ class IpoptNozzleAlignPlanner(object):
    
     ### PHASE 3: Enforce Velocity Constraints #### 
     phase_idx += 1
+
+    # Start with loose tolerances to guide the optimization towards the correct solution
+    position_upper_tol = np.array([0.01, 0.01, 0.001])
+    position_lower_tol = -position_upper_tol
+
+    # The angles should be within 2 degrees in the z axis and 5 degrees in the x and y axes
+    rotation_upper_tol = np.array([0.1, 0.1, 0.1])
+    rotation_lower_tol = -rotation_upper_tol
+
+    upper_tol = np.concatenate((position_upper_tol, rotation_upper_tol))
+    lower_tol = np.concatenate((position_lower_tol, rotation_lower_tol))
+
+    pos_diff = np.array([0,0,0.3])
     
-    # Align the ee_tip and the nozzle frame
-    h1_expr, h1_lb, h1_ub = export_algin_frames_constraint(self.cpin_model, x_sym, 'ee_tip', 'nozzle')
+    h1_expr, h1_lb, h1_ub = export_align_frames_constraint(self.cpin_model, x_sym, 'ee_tip', 'nozzle', upper_tol, lower_tol, pos_diff = pos_diff)
 
-    vel_diff = np.array([0, 0, 0.005, 0, 0, 0])
+    
     # Enforce that the ee tip velocity is 0mm/s in the z direction relative to the client frame
-    h2_expr, h2_lb, h2_ub = export_relative_velocity_constraint(self.cpin_model, constraint_input, 'ee_tip', 'client', vel_diff= vel_diff)
+    # h2_expr, h2_lb, h2_ub = export_relative_velocity_constraint(self.cpin_model, constraint_input, 'ee_tip', 'client', vel_diff= vel_diff)
 
-    # # Enforce that the ee tip has no angular velocity
-    # vel_dif = np.array([0, 0, 0, 0, 0, 0])
-    # enforce = np.array([False, False, False, True, True, True])
-    # h3_expr, h3_lb, h3_ub = export_relative_velocity_constraint(self.cpin_model, constraint_input, 'ee_tip', 'client',vel_dif, enforce)
+    # Enforce that the ee tip has no angular velocity
+    vel_diff = np.array([0, 0, 0.005, 0, 0, 0])
+    enforce = np.array([False, False, False, True, True, True])
+    h2_expr, h2_lb, h2_ub = export_relative_velocity_constraint(self.cpin_model, constraint_input, 'ee_tip', 'client', vel_diff= vel_diff, enforce = enforce)
 
     h_expr = ca.vertcat(h1_expr, h2_expr)
-    h_lb = np.concatenate(( h1_lb, h2_lb))
+    h_lb = np.concatenate((h1_lb, h2_lb))
     h_ub = np.concatenate((h1_ub, h2_ub))
 
     constraint_sizes.append(h_expr.shape[0])
@@ -525,10 +549,8 @@ class IpoptNozzleAlignPlanner(object):
     self.generate_cost_code(cost_input, phase_idx, folder_name, regen)
 
     #END OF PHASES
-
     ipopt_lb = np.concatenate(ipopt_lb)
     ipopt_ub = np.concatenate(ipopt_ub)
-
     ipopt_cl = np.concatenate(ipopt_cl)
     ipopt_cu = np.concatenate(ipopt_cu)
 
@@ -553,7 +575,6 @@ class IpoptNozzleAlignPlanner(object):
     np.savetxt('ipopt_cu.txt', ipopt_cu)
     np.savetxt('warm_start.txt', warm_start)
     np.save(folder_name + '/constraint_sizes.npy', constraint_sizes)
-
     print("Creating IPOPTContactSolver")
     solver = IPOPTContactSolver(self.ipopt_nx, self.nu, 
                                 phase_starts, constraint_sizes, 
@@ -588,6 +609,8 @@ class IpoptNozzleAlignPlanner(object):
     us = []
     for step in range(phase_starts[-1]):
       xs.append(soln[vars_per_step*step:vars_per_step*step + self.ipopt_nx])
+      # print("X:", xs[-1])
+      
       us.append(soln[vars_per_step*step + self.ipopt_nx:vars_per_step*(step + 1)])
 
     if save_path is not None:

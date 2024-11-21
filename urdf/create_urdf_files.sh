@@ -6,6 +6,9 @@ PACKAGE_PATH=$(rospack find on_orbit)
 echo -n "Creating robot_cv_detached.urdf"
 xacro $PACKAGE_PATH/urdf/simulation/satellite/robot_cv_detached.xacro -o robot_cv_detached.urdf
 
+echo -n "Create single_arm.urdf"
+xacro $PACKAGE_PATH/urdf/hardware/ur/ur_1_ur10e.xacro -o single_arm.urdf
+
 echo -n "Creating robot.urdf"
 xacro $PACKAGE_PATH/urdf/simulation/satellite/robot.xacro -o robot.urdf
 

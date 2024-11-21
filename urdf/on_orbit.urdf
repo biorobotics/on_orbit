@@ -358,18 +358,18 @@
   </joint>
   <link name="ur_3_ee">
     <visual>
-      <origin rpy="0 0 0" xyz="0 0 -0.2714"/>
+      <origin rpy="0 0 0" xyz="0 0 -0.2735"/>
       <geometry>
-        <cylinder length="0.5428" radius="0.008"/>
+        <cylinder length="0.547" radius="0.008"/>
       </geometry>
       <material name="white">
         <color rgba="1.0 1.0 1.0 1.0"/>
       </material>
     </visual>
     <collision>
-      <origin rpy="0 0 0" xyz="0 0 -0.2714"/>
+      <origin rpy="0 0 0" xyz="0 0 -0.2735"/>
       <geometry>
-        <cylinder length="0.5428" radius="0.008"/>
+        <cylinder length="0.547" radius="0.008"/>
       </geometry>
     </collision>
     <inertial>
@@ -382,18 +382,19 @@
   <joint name="ur_3_ee_to_peg_center" type="fixed">
     <parent link="ur_3_ee"/>
     <child link="peg_center"/>
-    <origin rpy="0 0 0" xyz="0 0 -0.2714"/>
+    <origin rpy="0 0 0" xyz="0 0 -0.2735"/>
   </joint>
   <joint name="ur_3_tool0_to_ee" type="fixed">
     <parent link="ur_3_tool0"/>
     <child link="ur_3_ee"/>
-    <origin rpy="0 0 0" xyz="0 0 0.5428"/>
+    <origin rpy="0 0 0" xyz="0 0 0.547"/>
   </joint>
   <!-- ur_3 has the FT sensor-->
   <link name="ft_sensor"/>
   <joint name="ur_3_tool0_to_ft_sensor" type="fixed">
     <parent link="ur_3_tool0"/>
     <child link="ft_sensor"/>
+    <origin rpy="0 0 -0.53996123733" xyz="0 0 0.03175"/>
     <origin rpy="0 0 -0.53996123733" xyz="0 0 0.03175"/>
   </joint>
   <!--

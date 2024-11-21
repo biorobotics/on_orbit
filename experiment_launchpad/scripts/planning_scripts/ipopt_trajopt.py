@@ -3,6 +3,8 @@
 from ipopt_contact_planner import IpoptContactPlanner          # For slide-to-hole
 from ipopt_contact_free_planner import IpoptContactFreePlanner # For contact-free
 from ipopt_nozzle_align_planner import IpoptNozzleAlignPlanner  # For aligning with nozzle frame
+from ipopt_contact_align_planner import IpoptContactAlignPlanner  # For slide-and-align planning
+from ipopt_MPC_planner import MPCNozzleAlignPlanner  # Testing functionality for MPC
 
 import numpy as np
 import time
@@ -19,6 +21,7 @@ sys.path.append('/home/medusar/bspin/on_orbit/catkin_ws/devel/lib/python3/dist-p
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'hil_sim_scripts')))
 from hil_sim_scripts.mrv_controller import MrvController
 
+
 class IpoptTrajopt():
   
   def __init__(self,save_path_prefix,do_save):
@@ -28,8 +31,9 @@ class IpoptTrajopt():
     np.set_printoptions(linewidth=np.inf)
     np.set_printoptions(suppress=True)
 
-    self.dist_centering_waypoint_from_goal = 0.481024428 
-    self.dist_capture_box_from_nozzle_opening = 0.38632442762
+    self.dist_centering_waypoint_from_goal = 0.4865 
+    # self.dist_centering_waypoint_from_goal = 0.4785
+    self.dist_capture_box_from_nozzle_opening = 0.02
 
     self.save_path_prefix = save_path_prefix
 
@@ -38,7 +42,7 @@ class IpoptTrajopt():
     
     # Confirm this is equal to tan(pi/2 - slope_angle) where slope angle is found in sim_nozzle_geom
     # We narrow the cone by 1 degree so that it avoids getting too close to the edge of the nozzle
-    self.cone_slope = np.tan(np.pi/2. - 1.0*0.49514949)
+    self.cone_slope = np.tan(np.pi/2. - 1.0*0.3073)
 
     robustness_factor = 0.75
     #mrv_joint_angle_lower_limits = np.array([-np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf])
@@ -60,11 +64,12 @@ class IpoptTrajopt():
     self.cw_orbit_dir = 'x'
 
     self.peg_rad = 0.008
-    self.nozzle_opening_rad = 0.04874
+    # self.nozzle_opening_rad = 0.147
+    self.nozzle_opening_rad = 0.142
 
     self.use_cw = True
 
-  def plan(self,delta_pos,delta_rot,initial_client_w,use_contact,nozzle_align=False):
+  def plan(self,delta_pos,delta_rot,initial_client_w,use_contact,nozzle_align=False , test_MPC=False):
     '''
     Inputs:
       delta_pos: length 3 numpy array for initial position of probe tip from front/center of capture box. 
@@ -116,14 +121,15 @@ class IpoptTrajopt():
                                        probe_z_axis_plunge_velocity=0.005, use_variable_plunge_speed=True, 
                                        use_scheduled_gains=True, use_cw=self.use_cw)
     
-    mrv_controller.reset_wrt_capture_box(None, None, delta_pos, delta_rot, delta_v, initial_client_w, initial_mrv_w, rng, self.dist_centering_waypoint_from_goal)
 
+    mrv_controller.reset_wrt_capture_box(None, None, delta_pos, delta_rot, delta_v, initial_client_w, initial_mrv_w, rng, self.dist_centering_waypoint_from_goal)
     if self.do_save:
         os.makedirs(save_path)
     else:
         save_path = None
 
     x0 = np.copy(mrv_controller.mrv_client_sim.x)
+    print("Initial state:" , x0)
 
     ecm_bezier_sim = None 
 
@@ -131,7 +137,7 @@ class IpoptTrajopt():
 
     control_cost_weight = 0.0001
 
-    if use_contact:
+    if use_contact and not nozzle_align:
 
       phase_lengths_sec = np.array([5,5,7,7])
       dt = 0.2
@@ -156,8 +162,75 @@ class IpoptTrajopt():
                                                       count_total_flop=False, 
                                                       stop_after_iter=stop_after_iter, 
                                                       prop_time=prop_time,
+                                                      max_iter = 2000)
+    
+    elif use_contact and nozzle_align:
+      
+      phase_lengths_sec = np.array([5,5,7,4,0.4])
+      dt = 0.2
+
+      planner = IpoptContactAlignPlanner(self.rospath + '/urdf/robot_cv_detached.urdf', \
+                                    self.rospath + '/urdf/robot.urdf', \
+                                    dt, \
+                                    self.mrv_joint_angle_lower_limits, \
+                                    self.mrv_joint_angle_upper_limits, \
+                                    self.mrv_joint_torque_limits, \
+                                    self.mrv_joint_vel_limits, \
+                                    self.mrv_joint_acc_limits, \
+                                    control_cost_weight, phase_lengths_sec, \
+                                    self.cw_a, self.cw_mu, self.cw_orbit_dir, initial_client_rmat, \
+                                    self.cone_slope, self.use_cw, self.rospath + '/meshes/')
+      
+      xs, us, dts, phase_starts, success = planner.plan(x0,
+                                                      ecm_bezier_sim,
+                                                      [delta_pos, delta_rot, delta_v, initial_client_w, initial_mrv_w, None],
+                                                      save_path=save_path,
+                                                      count_flop_per_iter=False,
+                                                      count_total_flop=False,
+                                                      stop_after_iter=stop_after_iter,
+                                                      prop_time=prop_time,
                                                       max_iter = 1000)
-    elif nozzle_align: # Aligning ee_tip with the nozzle frame and a z velocity of 1m/s
+    elif test_MPC:
+      phase_scaling = 1
+      num_nodes = 200
+      phase1_sec = 4
+      phase2_sec = 11
+      phase3_sec = 0.5
+
+      total_sec = (phase1_sec + phase2_sec + phase3_sec)*phase_scaling
+      dt = total_sec/num_nodes #try to keep number of time steps to around 150-200
+      #dt = 0.01
+      dt = 0.08
+      print("dt: ", dt)
+      if dt > 0.3: 
+        print("Warning: dt is greater than 0.3 due to a large trajectory time.")
+
+      # Try to keep number of time steps to around 150-200 
+      phase_lengths_sec = np.array([phase_scaling*phase1_sec, phase_scaling*phase2_sec, phase_scaling*2*dt, dt])
+      planner = MPCNozzleAlignPlanner(self.rospath + '/urdf/robot_cv_detached.urdf', \
+                                      self.rospath + '/urdf/robot.urdf', \
+                                      dt, \
+                                      self.mrv_joint_angle_lower_limits, \
+                                      self.mrv_joint_angle_upper_limits, \
+                                      self.mrv_joint_torque_limits, \
+                                      self.mrv_joint_vel_limits, \
+                                      self.mrv_joint_acc_limits, \
+                                      control_cost_weight, phase_lengths_sec, \
+                                      self.cw_a, self.cw_mu, self.cw_orbit_dir, initial_client_rmat, \
+                                      self.cone_slope, self.use_cw, self.rospath + '/meshes/')
+      
+      
+      
+      elapsed_steps = 0  
+      xs, us, dts, phase_starts, success, _ = planner.plan(x0,
+                                                      elapsed_steps,
+                                                      save_path=save_path, 
+                                                      count_flop_per_iter=False, 
+                                                      count_total_flop=False,  
+                                                      stop_after_iter=stop_after_iter, 
+                                                      prop_time=prop_time,
+                                                      max_iter = 1500) 
+    elif nozzle_align:
 
       phase_scaling = 1
       num_nodes = 200
@@ -169,7 +242,6 @@ class IpoptTrajopt():
       dt = total_sec/num_nodes #try to keep number of time steps to around 150-200
       # dt = 0.01
       print("dt: ", dt)
-
       if dt > 0.3: 
         print("Warning: dt is greater than 0.3 due to a large trajectory time.")
 
@@ -196,11 +268,10 @@ class IpoptTrajopt():
                                                       count_total_flop=False,  
                                                       stop_after_iter=stop_after_iter, 
                                                       prop_time=prop_time,
-                                                      max_iter = 3000)
+                                                      max_iter = 1500) 
 
     
     else:
-
       # Phases:
       # 0 - stay below nozzle opening plane
       # 1 - stay in nozzle cone 
@@ -208,9 +279,9 @@ class IpoptTrajopt():
       # 3 - insert
       phase_scaling = 1
       num_nodes = 150
-      phase1_sec = 5
-      phase2_sec = 10
-      phase3_sec = 10
+      phase1_sec = 4
+      phase2_sec = 15
+      phase3_sec = 4
       total_sec = (phase1_sec + phase2_sec + phase3_sec)*phase_scaling
       dt = total_sec/num_nodes #try to keep number of time steps to around 150-200
       print("dt: ", dt)
@@ -219,7 +290,7 @@ class IpoptTrajopt():
         print("Warning: dt is greater than 0.3 due to a large trajectory time.")
 
       if np.linalg.norm(initial_client_w) < 1e-6:
-        pause_in_nozzle = True
+        pause_in_nozzle = False
       else:
         pause_in_nozzle = False
 

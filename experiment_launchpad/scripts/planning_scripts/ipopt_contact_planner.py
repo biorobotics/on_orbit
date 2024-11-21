@@ -264,6 +264,7 @@ class IpoptContactPlanner(object):
       os.replace(filename[:-2] + '.so', folder_name + '/' + filename[:-2] + '.so')
 
   def plan(self, x0, ecm_sim, ecm_sim_reset_args, save_path=None, max_iter=250, count_flop_per_iter=False, count_total_flop=False, stop_after_iter=-1, prop_time=0.):
+    # regen=True
     regen = True
 
     if prop_time != 0.:
@@ -365,7 +366,7 @@ class IpoptContactPlanner(object):
     #### PHASE 3: STAY-IN-CONTACT-WITH-NOZZLE
     #### PHASE 4: IMPACT-HOLE (dummy)
     #### PHASE 5: STAY IN HOLE
-    #### PHASE 6: INSERT
+    #### PHASE 6: INSERT (dummy)
 
     # It's helpful to keep the overall number of timesteps (between 130-200) the same, so change dt if you're increasing/decreasing total length
     nondummy_phase_lengths_sec = self.phase_lengths_sec

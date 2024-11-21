@@ -134,7 +134,7 @@
   <joint name="nozzle_to_tube_geom0" type="fixed">
     <parent link="nozzle"/>
     <child link="tube_geom0"/>
-    <origin rpy="0 0 0" xyz="0.0127 0.0 0.45075"/>
+    <origin rpy="0 0 0" xyz="0.0127 0.0 0.45125"/>
   </joint>
   <link name="tube_geom1">
     <!--
@@ -163,7 +163,7 @@
   <joint name="nozzle_to_tube_geom1" type="fixed">
     <parent link="nozzle"/>
     <child link="tube_geom1"/>
-    <origin rpy="0 0 0.7853981633974483" xyz="0.008980256121069154 0.008980256121069152 0.45075"/>
+    <origin rpy="0 0 0.7853981633974483" xyz="0.008980256121069154 0.008980256121069152 0.45125"/>
   </joint>
   <link name="tube_geom2">
     <!--
@@ -192,7 +192,7 @@
   <joint name="nozzle_to_tube_geom2" type="fixed">
     <parent link="nozzle"/>
     <child link="tube_geom2"/>
-    <origin rpy="0 0 1.5707963267948966" xyz="7.776507174585693e-19 0.0127 0.45075"/>
+    <origin rpy="0 0 1.5707963267948966" xyz="7.776507174585693e-19 0.0127 0.45125"/>
   </joint>
   <link name="tube_geom3">
     <!--
@@ -221,7 +221,7 @@
   <joint name="nozzle_to_tube_geom3" type="fixed">
     <parent link="nozzle"/>
     <child link="tube_geom3"/>
-    <origin rpy="0 0 2.356194490192345" xyz="-0.008980256121069152 0.008980256121069154 0.45075"/>
+    <origin rpy="0 0 2.356194490192345" xyz="-0.008980256121069152 0.008980256121069154 0.45125"/>
   </joint>
   <link name="tube_geom4">
     <!--
@@ -250,7 +250,7 @@
   <joint name="nozzle_to_tube_geom4" type="fixed">
     <parent link="nozzle"/>
     <child link="tube_geom4"/>
-    <origin rpy="0 0 3.141592653589793" xyz="-0.0127 1.5553014349171385e-18 0.45075"/>
+    <origin rpy="0 0 3.141592653589793" xyz="-0.0127 1.5553014349171385e-18 0.45125"/>
   </joint>
   <link name="tube_geom5">
     <!--
@@ -279,7 +279,7 @@
   <joint name="nozzle_to_tube_geom5" type="fixed">
     <parent link="nozzle"/>
     <child link="tube_geom5"/>
-    <origin rpy="0 0 3.9269908169872414" xyz="-0.008980256121069155 -0.008980256121069152 0.45075"/>
+    <origin rpy="0 0 3.9269908169872414" xyz="-0.008980256121069155 -0.008980256121069152 0.45125"/>
   </joint>
   <link name="tube_geom6">
     <!--
@@ -308,7 +308,7 @@
   <joint name="nozzle_to_tube_geom6" type="fixed">
     <parent link="nozzle"/>
     <child link="tube_geom6"/>
-    <origin rpy="0 0 4.71238898038469" xyz="-2.3329521523757078e-18 -0.0127 0.45075"/>
+    <origin rpy="0 0 4.71238898038469" xyz="-2.3329521523757078e-18 -0.0127 0.45125"/>
   </joint>
   <link name="tube_geom7">
     <!--
@@ -337,7 +337,7 @@
   <joint name="nozzle_to_tube_geom7" type="fixed">
     <parent link="nozzle"/>
     <child link="tube_geom7"/>
-    <origin rpy="0 0 5.497787143782138" xyz="0.00898025612106915 -0.008980256121069155 0.45075"/>
+    <origin rpy="0 0 5.497787143782138" xyz="0.00898025612106915 -0.008980256121069155 0.45125"/>
   </joint>
   <link name="nozzle_geom0">
     <!-- <visual>
@@ -357,14 +357,14 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <box size="0.005 0.125 0.4551"/>
+        <box size="0.005 0.125 0.44712"/>
       </geometry>
     </collision>
   </link>
   <joint name="nozzle_to_nozzle_geom0" type="fixed">
     <parent link="nozzle"/>
     <child link="nozzle_geom0"/>
-    <origin rpy="0 -0.3073 0" xyz="0.079 0.0 0.2184025683012885"/>
+    <origin rpy="0 -0.285672797 0" xyz="0.0765 0.0 0.21590863670784355"/>
   </joint>
   <link name="nozzle_rim0">
     <inertial>
@@ -376,7 +376,7 @@
   <joint name="nozzle_to_nozzle_rim0" type="fixed">
     <parent link="nozzle"/>
     <child link="nozzle_rim0"/>
-    <origin rpy="0 -0.3073 0" xyz="0.142 0.0 0"/>
+    <origin rpy="0 -0.285672797 0" xyz="0.13699999999999998 0.0 0"/>
   </joint>
   <link name="nozzle_geom1">
     <!-- <visual>
@@ -396,14 +396,14 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <box size="0.005 0.125 0.4551"/>
+        <box size="0.005 0.125 0.44712"/>
       </geometry>
     </collision>
   </link>
   <joint name="nozzle_to_nozzle_geom1" type="fixed">
     <parent link="nozzle"/>
     <child link="nozzle_geom1"/>
-    <origin rpy="0 -0.3073 0.7853981633974483" xyz="0.05586143571373726 0.05586143571373725 0.2184025683012885"/>
+    <origin rpy="0 -0.285672797 0.7853981633974483" xyz="0.05409366876077089 0.05409366876077088 0.21590863670784355"/>
   </joint>
   <link name="nozzle_rim1">
     <inertial>
@@ -415,7 +415,7 @@
   <joint name="nozzle_to_nozzle_rim1" type="fixed">
     <parent link="nozzle"/>
     <child link="nozzle_rim1"/>
-    <origin rpy="0 -0.3073 0.7853981633974483" xyz="0.10040916292848974 0.10040916292848973 0"/>
+    <origin rpy="0 -0.285672797 0.7853981633974483" xyz="0.096873629022557 0.09687362902255699 0"/>
   </joint>
   <link name="nozzle_geom2">
     <!-- <visual>
@@ -435,14 +435,14 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <box size="0.005 0.125 0.4551"/>
+        <box size="0.005 0.125 0.44712"/>
       </geometry>
     </collision>
   </link>
   <joint name="nozzle_to_nozzle_geom2" type="fixed">
     <parent link="nozzle"/>
     <child link="nozzle_geom2"/>
-    <origin rpy="0 -0.3073 1.5707963267948966" xyz="4.837354856632045e-18 0.079 0.2184025683012885"/>
+    <origin rpy="0 -0.285672797 1.5707963267948966" xyz="4.684274006738626e-18 0.0765 0.21590863670784355"/>
   </joint>
   <link name="nozzle_rim2">
     <inertial>
@@ -454,7 +454,7 @@
   <joint name="nozzle_to_nozzle_rim2" type="fixed">
     <parent link="nozzle"/>
     <child link="nozzle_rim2"/>
-    <origin rpy="0 -0.3073 1.5707963267948966" xyz="8.694992273946207e-18 0.142 0"/>
+    <origin rpy="0 -0.285672797 1.5707963267948966" xyz="8.388830574159368e-18 0.13699999999999998 0"/>
   </joint>
   <link name="nozzle_geom3">
     <!-- <visual>
@@ -474,14 +474,14 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <box size="0.005 0.125 0.4551"/>
+        <box size="0.005 0.125 0.44712"/>
       </geometry>
     </collision>
   </link>
   <joint name="nozzle_to_nozzle_geom3" type="fixed">
     <parent link="nozzle"/>
     <child link="nozzle_geom3"/>
-    <origin rpy="0 -0.3073 2.356194490192345" xyz="-0.05586143571373725 0.05586143571373726 0.2184025683012885"/>
+    <origin rpy="0 -0.285672797 2.356194490192345" xyz="-0.05409366876077088 0.05409366876077089 0.21590863670784355"/>
   </joint>
   <link name="nozzle_rim3">
     <inertial>
@@ -493,7 +493,7 @@
   <joint name="nozzle_to_nozzle_rim3" type="fixed">
     <parent link="nozzle"/>
     <child link="nozzle_rim3"/>
-    <origin rpy="0 -0.3073 2.356194490192345" xyz="-0.10040916292848973 0.10040916292848974 0"/>
+    <origin rpy="0 -0.285672797 2.356194490192345" xyz="-0.09687362902255699 0.096873629022557 0"/>
   </joint>
   <link name="nozzle_geom4">
     <!-- <visual>
@@ -513,14 +513,14 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <box size="0.005 0.125 0.4551"/>
+        <box size="0.005 0.125 0.44712"/>
       </geometry>
     </collision>
   </link>
   <joint name="nozzle_to_nozzle_geom4" type="fixed">
     <parent link="nozzle"/>
     <child link="nozzle_geom4"/>
-    <origin rpy="0 -0.3073 3.141592653589793" xyz="-0.079 9.67470971326409e-18 0.2184025683012885"/>
+    <origin rpy="0 -0.285672797 3.141592653589793" xyz="-0.0765 9.368548013477251e-18 0.21590863670784355"/>
   </joint>
   <link name="nozzle_rim4">
     <inertial>
@@ -532,7 +532,7 @@
   <joint name="nozzle_to_nozzle_rim4" type="fixed">
     <parent link="nozzle"/>
     <child link="nozzle_rim4"/>
-    <origin rpy="0 -0.3073 3.141592653589793" xyz="-0.142 1.7389984547892414e-17 0"/>
+    <origin rpy="0 -0.285672797 3.141592653589793" xyz="-0.13699999999999998 1.6777661148318736e-17 0"/>
   </joint>
   <link name="nozzle_geom5">
     <!-- <visual>
@@ -552,14 +552,14 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <box size="0.005 0.125 0.4551"/>
+        <box size="0.005 0.125 0.44712"/>
       </geometry>
     </collision>
   </link>
   <joint name="nozzle_to_nozzle_geom5" type="fixed">
     <parent link="nozzle"/>
     <child link="nozzle_geom5"/>
-    <origin rpy="0 -0.3073 3.9269908169872414" xyz="-0.055861435713737265 -0.05586143571373725 0.2184025683012885"/>
+    <origin rpy="0 -0.285672797 3.9269908169872414" xyz="-0.054093668760770895 -0.05409366876077088 0.21590863670784355"/>
   </joint>
   <link name="nozzle_rim5">
     <inertial>
@@ -571,7 +571,7 @@
   <joint name="nozzle_to_nozzle_rim5" type="fixed">
     <parent link="nozzle"/>
     <child link="nozzle_rim5"/>
-    <origin rpy="0 -0.3073 3.9269908169872414" xyz="-0.10040916292848977 -0.10040916292848973 0"/>
+    <origin rpy="0 -0.285672797 3.9269908169872414" xyz="-0.09687362902255701 -0.09687362902255699 0"/>
   </joint>
   <link name="nozzle_geom6">
     <!-- <visual>
@@ -591,14 +591,14 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <box size="0.005 0.125 0.4551"/>
+        <box size="0.005 0.125 0.44712"/>
       </geometry>
     </collision>
   </link>
   <joint name="nozzle_to_nozzle_geom6" type="fixed">
     <parent link="nozzle"/>
     <child link="nozzle_geom6"/>
-    <origin rpy="0 -0.3073 4.71238898038469" xyz="-1.4512064569896134e-17 -0.079 0.2184025683012885"/>
+    <origin rpy="0 -0.285672797 4.71238898038469" xyz="-1.4052822020215878e-17 -0.0765 0.21590863670784355"/>
   </joint>
   <link name="nozzle_rim6">
     <inertial>
@@ -610,7 +610,7 @@
   <joint name="nozzle_to_nozzle_rim6" type="fixed">
     <parent link="nozzle"/>
     <child link="nozzle_rim6"/>
-    <origin rpy="0 -0.3073 4.71238898038469" xyz="-2.6084976821838618e-17 -0.142 0"/>
+    <origin rpy="0 -0.285672797 4.71238898038469" xyz="-2.5166491722478105e-17 -0.13699999999999998 0"/>
   </joint>
   <link name="nozzle_geom7">
     <!-- <visual>
@@ -630,14 +630,14 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <box size="0.005 0.125 0.4551"/>
+        <box size="0.005 0.125 0.44712"/>
       </geometry>
     </collision>
   </link>
   <joint name="nozzle_to_nozzle_geom7" type="fixed">
     <parent link="nozzle"/>
     <child link="nozzle_geom7"/>
-    <origin rpy="0 -0.3073 5.497787143782138" xyz="0.055861435713737244 -0.055861435713737265 0.2184025683012885"/>
+    <origin rpy="0 -0.285672797 5.497787143782138" xyz="0.054093668760770874 -0.054093668760770895 0.21590863670784355"/>
   </joint>
   <link name="nozzle_rim7">
     <inertial>
@@ -649,6 +649,6 @@
   <joint name="nozzle_to_nozzle_rim7" type="fixed">
     <parent link="nozzle"/>
     <child link="nozzle_rim7"/>
-    <origin rpy="0 -0.3073 5.497787143782138" xyz="0.10040916292848971 -0.10040916292848977 0"/>
+    <origin rpy="0 -0.285672797 5.497787143782138" xyz="0.09687362902255697 -0.09687362902255701 0"/>
   </joint>
 </robot>

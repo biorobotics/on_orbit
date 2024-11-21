@@ -6,7 +6,9 @@
   <node name="replay_node" pkg="on_orbit" type="replay_sim_node.py" output="screen"/>
   <node name="trail_node" pkg="on_orbit" type="trail_node.py" output="screen"/>
   <arg name="rvizconfig" default="$(find on_orbit)/rviz/mrv_client.rviz" />
+  <arg name="rvizconfig2" default="$(find on_orbit)/rviz/mrv_client_full.rviz" />
   <node name="peg_in_nozzle_rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" />
+  <node name="peg_in_nozzle_rviz_2" pkg="rviz" type="rviz" args="-d $(arg rvizconfig2)" required="true" />
 
   <param name="hw_robot_description" textfile="$(find on_orbit)/urdf/on_orbit.urdf" />
   <node name="hw_robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">

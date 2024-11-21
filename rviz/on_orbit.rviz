@@ -306,17 +306,17 @@ Visualization Manager:
       Frames:
         All Enabled: false
         UR1base:
-          Value: false
+          Value: true
         UR2base:
-          Value: false
+          Value: true
         UR3base:
           Value: false
         UR4base:
           Value: false
         actual_UR1tcp:
-          Value: false
+          Value: true
         actual_UR2tcp:
-          Value: false
+          Value: true
         actual_UR3tcp:
           Value: false
         actual_UR4tcp:
@@ -387,18 +387,6 @@ Visualization Manager:
           Value: false
         link0:
           Value: false
-        link1:
-          Value: true
-        link2:
-          Value: true
-        link3:
-          Value: true
-        link4:
-          Value: true
-        link5:
-          Value: true
-        link6:
-          Value: true
         link7:
           Value: false
         nozzle:
@@ -441,8 +429,6 @@ Visualization Manager:
           Value: false
         rail_2:
           Value: false
-        traj:
-          Value: true
         tube_geom0:
           Value: false
         tube_geom1:
@@ -517,6 +503,9 @@ Visualization Manager:
       Show Arrows: false
       Show Axes: false
       Show Names: false
+      Show Arrows: false
+      Show Axes: false
+      Show Names: false
       Tree:
         UR1base:
           actual_UR1tcp:
@@ -530,86 +519,81 @@ Visualization Manager:
         UR4base:
           actual_UR4tcp:
             {}
-        world:
-          base_link:
-            cam_link:
+        base_link:
+          cam_link:
+            {}
+          link0:
+            {}
+        client:
+          nozzle:
+            capture_box:
               {}
-            link0:
-              link1:
-                link2:
-                  link3:
-                    link4:
-                      link5:
-                        link6:
-                          link7:
-                            ee_body:
-                              ee_com:
-                                {}
-                              ee_peg:
-                                ee_tip:
-                                  {}
-                            wrist:
-                              {}
-          client:
-            nozzle:
-              capture_box:
+            cone_vertex:
+              {}
+            goal:
+              {}
+            hole:
+              {}
+            hole_end:
+              {}
+            nozzle_geom0:
+              {}
+            nozzle_geom1:
+              {}
+            nozzle_geom2:
+              {}
+            nozzle_geom3:
+              {}
+            nozzle_geom4:
+              {}
+            nozzle_geom5:
+              {}
+            nozzle_geom6:
+              {}
+            nozzle_geom7:
+              {}
+            nozzle_rim0:
+              {}
+            nozzle_rim1:
+              {}
+            nozzle_rim2:
+              {}
+            nozzle_rim3:
+              {}
+            nozzle_rim4:
+              {}
+            nozzle_rim5:
+              {}
+            nozzle_rim6:
+              {}
+            nozzle_rim7:
+              {}
+            tube_geom0:
+              {}
+            tube_geom1:
+              {}
+            tube_geom2:
+              {}
+            tube_geom3:
+              {}
+            tube_geom4:
+              {}
+            tube_geom5:
+              {}
+            tube_geom6:
+              {}
+            tube_geom7:
+              {}
+        link7:
+          ee_body:
+            ee_com:
+              {}
+            ee_peg:
+              ee_tip:
                 {}
-              cone_vertex:
-                {}
-              goal:
-                {}
-              hole:
-                {}
-              hole_end:
-                {}
-              nozzle_geom0:
-                {}
-              nozzle_geom1:
-                {}
-              nozzle_geom2:
-                {}
-              nozzle_geom3:
-                {}
-              nozzle_geom4:
-                {}
-              nozzle_geom5:
-                {}
-              nozzle_geom6:
-                {}
-              nozzle_geom7:
-                {}
-              nozzle_rim0:
-                {}
-              nozzle_rim1:
-                {}
-              nozzle_rim2:
-                {}
-              nozzle_rim3:
-                {}
-              nozzle_rim4:
-                {}
-              nozzle_rim5:
-                {}
-              nozzle_rim6:
-                {}
-              nozzle_rim7:
-                {}
-              tube_geom0:
-                {}
-              tube_geom1:
-                {}
-              tube_geom2:
-                {}
-              tube_geom3:
-                {}
-              tube_geom4:
-                {}
-              tube_geom5:
-                {}
-              tube_geom6:
-                {}
-              tube_geom7:
-                {}
+          wrist:
+            {}
+        world:
           rail_2:
             carriage_link_3:
               ur_3_base_link:
@@ -679,8 +663,6 @@ Visualization Manager:
                                       {}
                                     hw_tube_geom7:
                                       {}
-          traj:
-            {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -931,7 +913,7 @@ Visualization Manager:
       Marker Topic: /on_orbit/ee_mrv_arm_path
       Name: Marker
       Namespaces:
-        {}
+        control_node: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -939,7 +921,7 @@ Visualization Manager:
       Marker Topic: /on_orbit/ee_client_arm_path
       Name: Marker
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
   Enabled: true
@@ -986,9 +968,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.010398969054222107
+      Pitch: 0.025398962199687958
       Target Frame: <Fixed Frame>
-      Yaw: 1.4895645380020142
+      Yaw: 4.929576396942139
     Saved: ~
 Window Geometry:
   Displays:
@@ -996,7 +978,7 @@ Window Geometry:
   Height: 1016
   Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000003f20000035afc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d0000035a000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f0000035afc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d0000035a000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004180000003efc0100000002fb0000000800540069006d0065010000000000000418000003bc00fffffffb0000000800540069006d00650100000000000004500000000000000000000000200000035a00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000003f20000035afc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073000000003d0000035a000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f0000035afc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d0000035a000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004180000003efc0100000002fb0000000800540069006d0065010000000000000418000003bc00fffffffb0000000800540069006d00650100000000000004500000000000000000000004180000035a00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -1006,5 +988,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1048
-  X: 2792
-  Y: 27
+  X: 4703
+  Y: 7

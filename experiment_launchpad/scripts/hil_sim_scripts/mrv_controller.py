@@ -21,7 +21,7 @@ class MrvController(object):
                mrv_joint_acc_limits, mrv_joint_torque_limits, dt, cone_slope, clip_joint_commands,
               time_steps_between_measurements, cw_a, cw_mu, cw_orbit_dir, do_noisy_state_estimation, nozzle_opening_rad, 
                peg_rad, velocity_noise_ang_amp, time_limit, debug_with_test_traj, test_traj_id, lock_client, lock_mrv, probe_z_axis_plunge_velocity, use_variable_plunge_speed, 
-               use_scheduled_gains, use_cw=True):
+               use_scheduled_gains, use_cw=True , use_ekf = True):  
     self.mrv_cv_urdf_file = mrv_cv_urdf_file
     self.mrv_urdf_file = mrv_urdf_file
     self.pybullet_mrv_urdf_file = pybullet_mrv_urdf_file
@@ -46,7 +46,11 @@ class MrvController(object):
     self.time_limit = time_limit
     self.check_joint_angle_limit_violation = False # whether to check joint limit violations
     self.lock_client = lock_client
-    self.lock_mrv = lock_mrv 
+    self.lock_mrv = lock_mrv
+
+    self.init_time = time.time()
+
+    self.use_ekf = use_ekf
 
     '''Input URDFs:
     These are all simply passed direclty to MRVCLientSim
@@ -58,7 +62,7 @@ class MrvController(object):
 
     self.mrv_client_sim = MRVClientSim(self.mrv_cv_urdf_file, self.mrv_urdf_file, self.pybullet_mrv_urdf_file, self.pybullet_cv_urdf_file, self.mrv_joint_angle_lower_limits, self.mrv_joint_angle_upper_limits, 
                                self.mrv_joint_vel_limits, self.mrv_joint_acc_limits, self.mrv_joint_torque_limits, self.dt, self.cone_slope, self.time_steps_between_measurements, 
-                               self.cw_a, self.cw_mu, self.cw_orbit_dir, self.lock_client, self.lock_mrv, self.use_cw)
+                               self.cw_a, self.cw_mu, self.cw_orbit_dir, self.lock_client, self.lock_mrv, self.use_cw , use_ekf= self.use_ekf)
 
     pin.forwardKinematics(self.mrv_client_sim.pin_model, self.mrv_client_sim.pin_data, pin.neutral(self.mrv_client_sim.pin_model))
     pin.updateFramePlacement(self.mrv_client_sim.pin_model, self.mrv_client_sim.pin_data, self.mrv_client_sim.nozzle_fid)
@@ -152,6 +156,11 @@ class MrvController(object):
     '''Do not change this manually. Instead, use disable_joint_control()'''
     self.joint_control_enabled = True
 
+    # Start the EKF with several steps to converge
+    # wrench_peg_peg = np.zeros(6)
+    # for _ in range(50):
+    #   self.mrv_client_sim.update_state_estimate(wrench_peg_peg)
+
   def get_state_in_pieces(self):
     mrv_client_sim = self.mrv_client_sim
 
@@ -213,6 +222,7 @@ class MrvController(object):
       impact_nozzle_impulse = np.zeros(3)
       impact_hole_impulse = np.zeros(3)
 
+    # TODO: I will need to improve my interpolation method I think in the MPC code because something im doing is causing alot of upfront cost
     t = 0
     ts = []
     for dt, phase_start, phase_end in zip(dts, phase_starts[:-1], phase_starts[1:]):
@@ -413,7 +423,7 @@ class MrvController(object):
 
     self.mrv_client_sim = MRVClientSim(self.mrv_cv_urdf_file, self.mrv_urdf_file, self.pybullet_mrv_urdf_file, self.pybullet_cv_urdf_file, self.mrv_joint_angle_lower_limits, self.mrv_joint_angle_upper_limits, 
                                self.mrv_joint_vel_limits, self.mrv_joint_acc_limits, self.mrv_joint_torque_limits, self.dt, self.cone_slope, self.time_steps_between_measurements, 
-                               self.cw_a, self.cw_mu, self.cw_orbit_dir, self.do_noisy_state_estimation, self.lock_client, self.lock_mrv, self.use_cw)
+                               self.cw_a, self.cw_mu, self.cw_orbit_dir, self.do_noisy_state_estimation, self.lock_client, self.lock_mrv, self.use_cw , use_ekf= self.use_ekf)
     mrv_client_sim = self.mrv_client_sim
 
     self.pin_model = mrv_client_sim.pin_model
@@ -776,13 +786,15 @@ class MrvController(object):
       #    joint_acc_cmd = self.within_nozzle_admittance.compute_control(ref_traj_point, mrv_client_sim, wrench_peg_peg, self.dt, mrv_config, mrv_config_dot)
       # else:
       #   joint_acc_cmd = self.resolved_accel.compute_control(ref_traj_point, mrv_client_sim, wrench_peg_peg, self.dt, mrv_config, mrv_config_dot)
-      if mrv_client_sim.dist_to_throat_opening() < 0.19:
+      if mrv_client_sim.dist_to_throat_opening() < 0.16:
         if not self.within_nozzle_admittance.admittance_traj_reset:
           print("Resetting admittance trajectory")
           self.within_nozzle_admittance.reset_admittance_traj(mrv_client_sim)
           
         joint_acc_cmd = self.within_nozzle_admittance.compute_control(ref_traj_point, mrv_client_sim, wrench_peg_peg, self.dt, mrv_config, mrv_config_dot)
       else:
+        print("Trajectory idx: ", self.ref_trj_idx)
+        print("Distance to throat opening: ", mrv_client_sim.dist_to_throat_opening())
         joint_acc_cmd = self.resolved_accel.compute_control(ref_traj_point, mrv_client_sim, wrench_peg_peg, self.dt, mrv_config, mrv_config_dot)
     else:
       raise Exception('Invalid controller_type')
@@ -927,12 +939,26 @@ class MrvController(object):
     '''This has the effect of disabling the controller'''
     self.mrv_client_sim.set_pybullet_joint_torque(np.zeros(7))  
     self.joint_control_enabled = False
+  
+  def get_particle_positions(self):
+    particle_positions , highest_weight_particle = self.mrv_client_sim.get_particle_filter_positions()
+    return particle_positions, highest_weight_particle
+  
+  def get_ekf_estimate(self):
+    return [],self.mrv_client_sim.get_ekf_estimate()
 
   def save(self, save_path):
+    self.end_time = time.time()
+    self.total_time = self.end_time - self.init_time
+
     self.mrv_client_sim.save(save_path)
+
+    np.save(save_path + '/run_time.npy', self.total_time)
 
     np.save(save_path + '/load_paths.npy', self.load_paths)
     np.save(save_path + '/load_path_weights.npy', self.load_path_weights)
+
+    np.save(save_path + '/use_ekf.npy', self.use_ekf)
 
     np.save(save_path + '/joint_torque_meas_trj.npy', self.joint_torque_meas_trj)
     np.save(save_path + '/joint_torque_meas_d_trj.npy', self.joint_torque_meas_d_trj)

@@ -2,6 +2,7 @@ import numpy as np
 import pinocchio as pin
 from pinocchio.robot_wrapper import RobotWrapper
 from scipy.spatial.transform import Rotation as R
+import sys
 
 # RP to quat
 def cayley_map(phi):
@@ -34,6 +35,7 @@ def from_pin(x, pin_model, q_only=False):
 
   # Configuration
   for j in range(1, pin_model.njoints):
+    
     if pin_model.joints[j].nv == 1:
       # Revolute
       x_ipopt[pin_model.idx_vs[j]] = x[pin_model.idx_qs[j]]
@@ -105,7 +107,7 @@ def J_from_pin(x, pin_model, q_only=False):
   return J
 
 if __name__ == '__main__':
-  urdf_file = '../urdf/robot.urdf'
+  urdf_file = '../../../urdf/robot.urdf'
   pin_model = RobotWrapper.BuildFromURDF(urdf_file, root_joint=pin.JointModelFreeFlyer()).model
   pin_model.gravity.setZero()
   pin_data = pin.Data(pin_model)

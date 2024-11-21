@@ -8,7 +8,7 @@ def get_trajlib_load_paths(rospath):
   ws = []
   dps = []
   load_paths = []
-
+  # TODO: Implement this in a way that doesnt require rospy to be initialized so that we can use for our venv TVLQR testing
   prefixes = [rospath + rospy.get_param('traj_library_prefix')]
 
   for prefix in prefixes:
@@ -108,6 +108,12 @@ def interp_trajectories_on_init_client_state(load_paths,initial_client_w,ws,delt
 
   #Define a distance metric that is weighted sum of linear displacement and angular velocity
   distances = []
+  dps = dps # Flatten the dps array
+  ws = ws # Flatten the w array
+  print("ws")
+  print(ws)
+  print("dps")
+  print(ws)
   for x in range(0,len(dps)):
     dp = dps[x]
     w = ws[x]
@@ -115,6 +121,8 @@ def interp_trajectories_on_init_client_state(load_paths,initial_client_w,ws,delt
     w_weight = 1.0
     distances.append(dp_weight*np.linalg.norm(dp - delta_pos) + w_weight*np.linalg.norm(w - initial_client_w))
 
+  print("Distances:")
+  print(distances)
   sort_idx = np.argsort(distances)
   dp0 = dps[sort_idx[0]]
   dp1 = dps[sort_idx[1]]
