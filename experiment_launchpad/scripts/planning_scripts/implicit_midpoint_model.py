@@ -134,7 +134,4 @@ def export_implicit_midpoint_model(cpin_model, plane_idx, dyn_input, dt, use_cw,
     # print('v_dyn:', v_dynamics_expr.size())
     # quit()
 
-    print(u.shape)
-    quit()
-
     return ca.vertcat(q_dynamics_expr, v_dynamics_expr)

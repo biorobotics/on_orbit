@@ -575,7 +575,6 @@ class IpoptNozzleAlignPlanner(object):
     np.savetxt('ipopt_cu.txt', ipopt_cu)
     np.savetxt('warm_start.txt', warm_start)
     np.save(folder_name + '/constraint_sizes.npy', constraint_sizes)
-
     print("Creating IPOPTContactSolver")
     solver = IPOPTContactSolver(self.ipopt_nx, self.nu, 
                                 phase_starts, constraint_sizes, 

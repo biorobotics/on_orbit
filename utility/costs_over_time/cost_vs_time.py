@@ -28,6 +28,8 @@ def cumulative_costs(u_array, dt):
         torque_cost, force_cost, total_cost = calculate_cost(u, dt)
         torque_costs.append(torque_cost)
         force_costs.append(force_cost)
+        if force_cost > 0.01 :
+            print(force_cost)
         total_costs.append(total_cost)
     cumulative_torque_costs = np.cumsum(torque_costs)
     cumulative_force_costs = np.cumsum(force_costs)
@@ -132,7 +134,7 @@ def plot_costs(cumulative_real_total, cumulative_planned_total, cumulative_real_
         plt.title('Accumulated Torque and Force Costs Over Time')
     else:
         # Plot total costs
-        plt.plot(time_axis[:len(cumulative_real_total)], cumulative_real_total, label='Average Simulated Accumulated Cost', color='blue')
+        plt.plot(time_axis[:len(cumulative_real_total)], cumulative_real_total, label='Tracking Accumulated Cost', color='blue')
         plt.plot(time_axis[:len(cumulative_planned_total)], cumulative_planned_total, label='Planned Accumulated Cost', linestyle='--', color='orange')
         plt.title('Accumulated Total Cost Over Time')
 
@@ -181,7 +183,7 @@ def create_cost_progression_video(cumulative_real, cumulative_planned, total_tim
     plt.close(fig)
     print(f"Video saved as {output_filename}")
 
-def main(directory, truncate_to_shortest=False, create_video=False, plot_separate_costs=False):
+def main(directory, truncate_to_shortest=False, create_video=False, plot_separate_costs=False , output_filename='cost_progression_no_noise.mp4'):
     (cumulative_real_torque, cumulative_real_force, cumulative_real_total,
      cumulative_planned_torque, cumulative_planned_force, cumulative_planned_total,
      total_time) = gather_costs(directory)
@@ -206,8 +208,8 @@ def main(directory, truncate_to_shortest=False, create_video=False, plot_separat
                cumulative_real_force, cumulative_planned_force, total_time, truncate_to_shortest, plot_separate_costs)
 
     if create_video:
-        create_cost_progression_video(cumulative_real_total, cumulative_planned_total, total_time)
+        create_cost_progression_video(cumulative_real_total, cumulative_planned_total, total_time, output_filename)
 
 # Run the main function with the directory, truncation, and video creation options
-directory = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_1_24/iterp_fixed_mpc'
-main(directory, truncate_to_shortest=False, create_video=False, plot_separate_costs=False)
+directory = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_15_24/pos__0.0_0.0_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.0_0.0_0.020241115-123407/'
+main(directory, truncate_to_shortest=True, create_video=True, plot_separate_costs=False, output_filename='ITAC_tracking.mp4')

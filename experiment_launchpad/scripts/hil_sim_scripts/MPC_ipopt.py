@@ -59,6 +59,7 @@ class IpoptMPC(object):
     self.plunging = False
     self.first_solve = True
     self.run_times = []
+    self.use_torque = True
 
     self.init_time = time.time()
 
@@ -268,6 +269,10 @@ class IpoptMPC(object):
 
     '''Do not change this manually. Instead, use disable_joint_control()'''
     self.joint_control_enabled = True
+
+
+    self.ref_ee_pos_world_real = []
+    self.ref_ee_pos_noisy = []
 
     
   def get_state_in_pieces(self):
@@ -815,7 +820,7 @@ class IpoptMPC(object):
       if self.one_run:
         self.one_run = False
       else:
-        self.save('/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_11_24/charecterizing_time')
+        self.save('/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_18_24/mpc_torque_inputs')
     
     
     else:
@@ -839,6 +844,9 @@ class IpoptMPC(object):
       ref_forces = self.ref_forces_trj[-1]
       ref_x = self.ref_x_trj[-1]
       ref_t = self.ref_t_trj[-1] + self.dt
+
+      ref_u = self.ref_u_trj[-1]
+
 
 
     # Update the lists that store the reference trajectories
@@ -876,6 +884,16 @@ class IpoptMPC(object):
     client_wdot = mrv_client_sim.unforced_eulers_eqns_for_client(use_estimated_state)
     client_w_world = client_rmat_est@client_w_est #TODO: Is this correct? Isn't client_w_est already in world frame?
     #client_w_world = client_w_est
+
+    # Get actual ee_pose in the world frame for plotting
+    client_pos = mrv_client_sim.x[mrv_client_sim.cv_qidx:mrv_client_sim.cv_qidx + 3]
+    ref_pos_d_real = client_rmat@ref_ee_pos + client_pos
+    self.ref_ee_pos_world_real.append(ref_pos_d_real)
+
+    sw_peg_pos, _, _, _, _, _ = mrv_client_sim.get_peg_and_nozzle_info()
+    ref_pos_noisy = client_rmat_est@sw_peg_pos + client_pos_est
+    self.ref_ee_pos_noisy.append(ref_pos_noisy)
+     
 
     ref_pos_d = client_rmat_est@ref_ee_pos + client_pos_est
     ref_rmat_d = client_rmat_est@ref_ee_rmat
@@ -964,10 +982,20 @@ class IpoptMPC(object):
         print("Distance to throat opening: ", mrv_client_sim.dist_to_throat_opening())
         joint_acc_cmd = self.within_nozzle_admittance.compute_control(ref_traj_point, mrv_client_sim, wrench_peg_peg, self.dt, mrv_config, mrv_config_dot)
       else:
-        joint_acc_cmd = self.resolved_accel.compute_control(ref_traj_point, mrv_client_sim, wrench_peg_peg, self.dt, mrv_config, mrv_config_dot)
+        if not self.use_torque:
+          joint_acc_cmd = self.resolved_accel.compute_control(ref_traj_point, mrv_client_sim, wrench_peg_peg, self.dt, mrv_config, mrv_config_dot)
+        else:
+          tau = np.hstack([np.zeros(6), ref_u[:7]])
+          q_pin = mrv_client_sim.x[:self.pin_model.nq]
+          v_pin = mrv_client_sim.x[self.pin_model.nq:]
+          mrv_q = q_pin[self.mrv_qidx:self.mrv_qidx + self.mrv_pin_model.nq]
+          mrv_v = v_pin[self.mrv_vidx:self.mrv_vidx + self.mrv_pin_model.nv]
+          acc = pin.aba(self.mrv_pin_model, self.mrv_pin_data, mrv_q, mrv_v, tau)
+          joint_acc_cmd = acc[6:]
         self.internal_idx += 1
         print("We are at the following time step within the trajectory: ", self.internal_idx)
-        print("Distance to throat opening: ", mrv_client_sim.dist_to_throat_opening()) 
+        print("Distance to throat opening: ", mrv_client_sim.dist_to_throat_opening())
+
     else:
       raise Exception('Invalid controller_type')
     
@@ -1143,6 +1171,9 @@ class IpoptMPC(object):
     np.save(save_path + '/ipopt_vs', self.all_v_from_ipopt)
     np.save(save_path + '/sim_qs', self.all_q_from_sim)
     np.save(save_path + '/sim_vs', self.all_v_from_sim)
+
+    np.save(save_path + '/ref_ee_pos_world_real', self.ref_ee_pos_world_real)
+    np.save(save_path + '/ref_ee_pos_noisy', self.ref_ee_pos_noisy)
 
     np.save(save_path + '/use_ekf.npy', self.use_ekf)
 

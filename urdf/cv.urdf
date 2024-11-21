@@ -35,7 +35,7 @@
   <joint name="nozzle_to_capture_box" type="fixed">
     <parent link="nozzle"/>
     <child link="capture_box"/>
-    <origin rpy="0 0 0" xyz="0 0 -0.07"/>
+    <origin rpy="0 0 0" xyz="0 0 -0.05"/>
   </joint>
   <link name="capture_box">
     <!-- <visual>

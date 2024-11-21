@@ -18,7 +18,7 @@ mrv_controller = None
 success = False
 fail_reason = 'None'
 save_path = ''
-do_save = False
+do_save = True
 
 def on_shutdown():
     global mrv_controller, success, fail_reason, save_path, do_save
@@ -192,6 +192,7 @@ def main():
             apply_wrench_only_when_close = False
 
             start_time = time.time()
+            mrv_controller.mrv_client_sim.prime_ekf(num_iterations=150)
             while True:
                 do_step = True
 

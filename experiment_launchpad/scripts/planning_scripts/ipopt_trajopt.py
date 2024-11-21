@@ -31,9 +31,9 @@ class IpoptTrajopt():
     np.set_printoptions(linewidth=np.inf)
     np.set_printoptions(suppress=True)
 
-    self.dist_centering_waypoint_from_goal = 0.481024428 
+    self.dist_centering_waypoint_from_goal = 0.4865 
     # self.dist_centering_waypoint_from_goal = 0.4785
-    self.dist_capture_box_from_nozzle_opening = 0.0
+    self.dist_capture_box_from_nozzle_opening = 0.02
 
     self.save_path_prefix = save_path_prefix
 

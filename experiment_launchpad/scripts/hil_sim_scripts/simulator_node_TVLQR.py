@@ -51,7 +51,7 @@ def main():
     print(ic_grid)
 
     initial_grid_idx = 0  # Use zero-indexing
-    use_grid = False
+    use_grid = True
 
     dist_centering_waypoint_from_goal = 0.4865  # meters
 
@@ -80,7 +80,7 @@ def main():
     peg_rad = 0.008
     nozzle_opening_rad = 0.142
 
-    traj_library_prefix = '/experiment_logs/10_28_24/MPC_ipopt_test/'
+    traj_library_prefix = '/traj_lib/11_18_24/align_w_nozzle/'
     use_cw = True
 
 
@@ -173,7 +173,7 @@ def main():
             timestr = time.strftime("%Y%m%d-%H%M%S")
 
             # Save folder
-            save_folder = 'experiment_logs/11_15_24'
+            save_folder = 'experiment_logs/11_18_24'
             save_path_str = save_folder + '/' + '_'.join([
                 'pos_', str(delta_pos[0]), str(delta_pos[1]), str(delta_pos[2]), 'rot', str(delta_rot[0]),
                 str(delta_rot[1]), str(delta_rot[2]), 'delta_v', str(delta_v[0]), str(delta_v[1]),

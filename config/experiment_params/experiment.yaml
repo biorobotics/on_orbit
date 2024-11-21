@@ -6,7 +6,7 @@ initial_mrv_w: [0., 0., 0.] # in deg/s
 
 do_save: True
 use_cw: True #use orbital gravitational dynamics
-save_folder: 'experiment_logs/11_02_24/first_plan_visualized/'
+save_folder: 'experiment_logs/11_19_24/ITAC_ekf_converge/'
 
 # This is the library used by Anoop before Andrew took over the code, which has a phase where contact is broken. 
 #traj_library_prefix: '/experiment_logs/01_30_24/ipopt_multicore/'
@@ -57,10 +57,10 @@ use_scheduled_gains: True # See resolved_accel.py
 time_limit: 500
 
 # Set to true to simulate sensor noise in the client state
-do_noisy_state_estimation: False
+do_noisy_state_estimation: True
 
 # Set to true to simulate delay in client pose due to slower vision feedback rate
-do_vision_delay: False
+do_vision_delay: True
 vision_measurement_rate: 10 #Hz
 
 # Number of times to run the experiment on the hardware platform
@@ -70,13 +70,13 @@ num_hardware_trials: 1
 num_software_trials: 1
 
 # Whether to visualize the simulator 
-visualize: True
+visualize: False
 
 # Whether to use ekf (alternative right now is a particle filter)
 use_ekf: True
 
 # Set to true to visualize trajectories before executing them on the hardware-in-the-loop system
-verify_trajectory_visually: True
+verify_trajectory_visually: False
 
 # Constants used to perform gravity compensation for the F/T sensor
 # peg_mass: 0.186515

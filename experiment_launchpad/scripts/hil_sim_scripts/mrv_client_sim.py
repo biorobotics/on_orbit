@@ -1206,6 +1206,95 @@ class MRVClientSim(object):
 
     self.update_kinematics_est()
 
+  def ekf_convergence(self):
+    dt = self.dt
+    wrench_peg_peg = np.zeros(6)
+    base_Rinv = R.from_quat(self.x[self.mrv_qidx + 3:self.mrv_qidx + 7]).inv()
+    f_client_in_base_frame = -base_Rinv.apply(self.pin_data.oMf[self.peg_fid].rotation@wrench_peg_peg[:3])
+    B_p_EC = base_Rinv.apply(self.pin_data.oMf[self.peg_fid].translation - self.x[self.cv_qidx:self.cv_qidx + 3])
+    tau_client_in_base_frame = np.cross(B_p_EC, f_client_in_base_frame)
+
+    cam_rmat = R.from_quat(self.x[self.mrv_qidx + 3:self.mrv_qidx + 7]).as_matrix()
+    cam_pos = self.x[self.mrv_qidx:self.mrv_qidx + 3] + cam_rmat@self.t_cam_base
+    cam_w = self.x[self.pin_model.nq + self.mrv_vidx + 3:self.pin_model.nq + self.mrv_vidx + 6]
+    cam_v = self.x[self.pin_model.nq + self.mrv_vidx:self.pin_model.nq + self.mrv_vidx + 3] + np.cross(cam_w, self.t_cam_base)
+
+    com = pin.centerOfMass(self.mrv_pin_model, self.mrv_pin_data, self.x[self.mrv_qidx:self.mrv_qidx + self.mrv_pin_model.nq], self.x[self.pin_model.nq + self.mrv_vidx:self.pin_model.nq + self.mrv_vidx + self.mrv_pin_model.nv])
+    vcom = self.mrv_pin_data.vcom[0]
+    com_wrt_cam = cam_rmat.transpose()@(com - cam_pos)
+    vcom_wrt_cam = cam_rmat.transpose()@vcom
+
+    if self.ekf.initialized:
+      # Estimation wrt camera frame
+      f_client_in_base_frame = np.zeros(3)
+      tau_client_in_base_frame = np.zeros(3)
+      self.ekf.predict(cam_v - vcom_wrt_cam, cam_w, f_client_in_base_frame, tau_client_in_base_frame, dt)
+
+    client_pos = self.x[self.cv_qidx:self.cv_qidx + 3]
+    client_rmat = R.from_quat(self.x[self.cv_qidx + 3:self.cv_qidx + 7]).as_matrix()
+
+
+    client_pos_wrt_cam = cam_rmat.transpose()@(client_pos - cam_pos)
+    client_rmat_wrt_cam = cam_rmat.transpose()@client_rmat
+    # Generate noisy measurement
+    pos_std = np.array([self.pose_noise_pos_std, self.pose_noise_pos_std, self.pose_noise_pos_std])
+    rot_std = np.array([self.pose_noise_rot_std,self.pose_noise_rot_std,self.pose_noise_rot_std])
+    # Add noise
+    client_pos_meas_wrt_cam = client_pos_wrt_cam + self.rng.normal(np.zeros(3), pos_std)
+    client_rmat_meas_wrt_cam = client_rmat_wrt_cam@R.from_euler('ZYX', self.rng.normal(np.zeros(3), rot_std)).as_matrix()
+
+    client_pos_meas_wrt_com = client_pos_meas_wrt_cam - com_wrt_cam
+
+    if self.ekf.initialized:
+      if self.time_steps_since_measurement >= self.time_steps_between_measurements:
+        self.ekf.correct(client_pos_meas_wrt_com, R.from_matrix(client_rmat_meas_wrt_cam).as_quat())
+        self.time_steps_since_measurement = 0
+    else:
+            self.ekf.initialize(client_pos_meas_wrt_com, R.from_matrix(client_rmat_meas_wrt_cam).as_quat(), np.zeros(3), np.zeros(3))
+    
+    self.time_steps_since_measurement += 1
+    client_pos_est_wrt_com = self.ekf.kf_x[:3]
+    client_pos_est = cam_pos + cam_rmat@(client_pos_est_wrt_com + com_wrt_cam)
+    client_rmat_est_wrt_cam = R.from_quat(self.ekf.kf_x[3:7]).as_matrix()
+    client_rmat_est = cam_rmat@client_rmat_est_wrt_cam
+
+    client_v_est = client_rmat_est_wrt_cam.transpose()@(self.ekf.kf_x[7:10] + vcom_wrt_cam)
+    client_w_est = client_rmat_est_wrt_cam.transpose()@self.ekf.kf_x[10:13]
+    
+    # Updated state
+    self.x_est[self.cv_qidx:self.cv_qidx + 3] = client_pos_est
+    self.x_est[self.cv_qidx + 3:self.cv_qidx + 7] = R.from_matrix(client_rmat_est).as_quat()
+    self.x_est[self.pin_model.nq + self.cv_vidx:self.pin_model.nq + self.cv_vidx + 3] = client_v_est
+    self.x_est[self.pin_model.nq + self.cv_vidx + 3:self.pin_model.nq + self.cv_vidx + 6] = client_w_est
+
+    # Collect data to see if the estimator is consistent
+    _Bp_MC = client_pos_wrt_cam - com_wrt_cam
+    _Bp_MC_est = client_pos_est_wrt_com
+
+    R_BC = client_rmat_wrt_cam
+    R_BC_est = client_rmat_est_wrt_cam
+
+    _Bpdot_MC = cam_rmat.transpose()@(client_rmat@self.x[self.pin_model.nq + self.cv_vidx:self.pin_model.nq + self.cv_vidx + 3] - vcom)
+    _Bpdot_MC_est = self.ekf.kf_x[7:10]
+
+    _Bw_WC = cam_rmat.transpose()@(client_rmat@self.x[self.pin_model.nq + self.cv_vidx + 3:self.pin_model.nq + self.cv_vidx + 6])
+    _Bw_WC_est = self.ekf.kf_x[10:13]
+
+    est_err = np.concatenate((_Bp_MC - _Bp_MC_est, \
+                              pin.log3(R_BC.transpose()@R_BC_est), \
+                              _Bpdot_MC - _Bpdot_MC_est, \
+                              _Bw_WC - _Bw_WC_est))
+    
+    print('Estimation error', est_err)
+
+    self.update_kinematics_est()
+
+  def prime_ekf(self, num_iterations = 100):
+    for _ in range(num_iterations):
+      self.ekf_convergence()
+
+
+
   def get_mrv_tip_pos(self):
     return copy.deepcopy(self.pin_data.oMf[self.peg_fid].translation)
   

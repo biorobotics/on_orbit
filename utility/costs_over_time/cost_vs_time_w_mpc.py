@@ -108,7 +108,7 @@ def plot_costs(cumulative_mpc_total=None, cumulative_planned_total=None, cumulat
                total_time=None, truncate_to_shortest=False, plot_separate_costs=False, dt=0.01):
     """Plot accumulated costs over the same time period for the trajectories."""
     datasets = [
-        ('Non-MPC Simulated', cumulative_real_total, cumulative_real_torque, cumulative_real_force, 'blue', '-'),
+        ('ITAC Simulated', cumulative_real_total, cumulative_real_torque, cumulative_real_force, 'blue', '-'),
         ('MPC Simulated', cumulative_mpc_total, cumulative_mpc_torque, cumulative_mpc_force, 'green' , '-'),
         ('Planned', cumulative_planned_total, cumulative_planned_torque, cumulative_planned_force, 'orange', '--')
         
@@ -210,9 +210,9 @@ def main(mpc_directory=None, planned_directory=None, real_directory=None,
 # Example usage:
 if __name__ == "__main__":
     # Directories containing the data
-    mpc_directory = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_04_24/interp_7_cm'
-    planned_directory = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/10_25_24/cost_comparisons_w_noise/pos__0.0_0.0_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.0_0.0_0.020241025-170519'
-    real_directory = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/10_25_24/cost_comparisons_no_noise_interpolation/pos__0.07_0.0_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.0_0.0_0.020241026-142436'
+    mpc_directory = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_18_24/mpc_torque_inputs'
+    planned_directory = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_19_24/ITAC_ekf_converge/pos__0.0_0.0_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.0_0.0_0.020241119-152340'
+    real_directory = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_19_24/ITAC_ekf_converge/pos__0.0_0.0_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.0_0.0_0.020241119-152340'
 
     # Call the main function with desired options
     main(
@@ -222,3 +222,4 @@ if __name__ == "__main__":
         truncate_to_shortest=True,
         plot_separate_costs=False  # Set to True to plot torque and force costs separately
     )
+

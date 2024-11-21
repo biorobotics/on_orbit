@@ -150,11 +150,16 @@ waypoint2_tf_msg = TransformStamped()
 waypoint2_tf_msg.header.frame_id = 'world'
 waypoint2_tf_msg.child_frame_id = 'Waypoint 2'
 
+waypoint3_tf_msg = TransformStamped()
+waypoint3_tf_msg.header.frame_id = 'world'
+waypoint3_tf_msg.child_frame_id = 'Waypoint 3'
+
 # load_path = rospath + '/experiment_logs/03_09_24/joint_space_interp_testing_hw/pos__0.0_0.0_-0.1_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.017453292519943295_0.0_0.0/control/20240309-172743/'
 # load_path = rospath + '/experiment_logs/04_16_24/cb_center_with_contact/pos__0.0_0.0_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.25_0.0_0.0/control/20240416-133317'
 #load_path = rospath + '/experiment_logs/04_16_24/cb_center_with_contact/pos__0.0_0.0_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.45000000000000007_0.0_0.0/control/20240416-133452'
 #load_path = '/home/biorobotics/Documents/sr_ws/src/on_orbit/experiment_logs/05_06_24/test_lib/pos_0.0_0.0_0.0_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_client_w_0.0_0.0_0.0/control/20240506-200254'
-load_path = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_15_24/pos__0.0_0.0_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.0_0.0_0.020241115-123934'
+# load_path = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_15_24/pos__0.0_0.0_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.0_0.0_0.020241115-123934'
+load_path = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_15_24/pos__0.0_0.0_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.0_0.0_0.020241115-123407'
 
 replay_from_xs = False
 replay_from_init_xs = True
@@ -294,6 +299,19 @@ while not rospy.is_shutdown():
 
   waypoint2_tf_msg.header.stamp = rospy.Time.now()
   tf_br.sendTransform(waypoint2_tf_msg)
+
+  waypoint3_tf_msg.transform.translation.x = pos_waypoint1[0]
+  waypoint3_tf_msg.transform.translation.y = pos_waypoint1[1]
+  waypoint3_tf_msg.transform.translation.z = pos_waypoint1[2] + 0.30
+
+  waypoint3_tf_msg.transform.rotation.x = quat_waypoint1[0]
+  waypoint3_tf_msg.transform.rotation.y = quat_waypoint1[1]
+  waypoint3_tf_msg.transform.rotation.z = quat_waypoint1[2]
+  waypoint3_tf_msg.transform.rotation.w = quat_waypoint1[3]
+
+  waypoint3_tf_msg.header.stamp = rospy.Time.now()
+  tf_br.sendTransform(waypoint3_tf_msg)
+
 
   q = pin.neutral(mrv_cv_pin_model)
   q[mrv_qidx:mrv_qidx + 3] = base_link_pos

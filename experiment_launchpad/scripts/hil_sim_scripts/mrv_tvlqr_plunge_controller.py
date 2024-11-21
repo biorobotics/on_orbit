@@ -148,6 +148,8 @@ class TVLQR_PLUNGE_controller(object):
     # for _ in range(50):
     #   self.mrv_client_sim.update_state_estimate(wrench_peg_peg)
 
+    self.ref_ee_pos_world_real = []
+
   def get_state_in_pieces(self):
     mrv_client_sim = self.mrv_client_sim
 
@@ -421,6 +423,7 @@ class TVLQR_PLUNGE_controller(object):
                                                self.dt, self.dt, self.cw_a, self.cw_mu, self.cw_orbit_dir, initial_client_rmat)
       self.tv_lqr_controller.backward_solve_ricatti()
       self.k_cntrl = 0
+      self.solve_times = []
       
 
     self.mrv_client_sim = MRVClientSim(self.mrv_cv_urdf_file, self.mrv_urdf_file, self.pybullet_mrv_urdf_file, self.pybullet_cv_urdf_file, self.mrv_joint_angle_lower_limits, self.mrv_joint_angle_upper_limits, 
@@ -701,6 +704,11 @@ class TVLQR_PLUNGE_controller(object):
     client_w_world = client_rmat_est@client_w_est #TODO: Is this correct? Isn't client_w_est already in world frame?
     #client_w_world = client_w_est
 
+    # Get actual ee_pose in the world frame for plotting
+    client_pos = mrv_client_sim.x[mrv_client_sim.cv_qidx:mrv_client_sim.cv_qidx + 3]
+    ref_pos_d_real = client_rmat@ref_ee_pos + client_pos
+    self.ref_ee_pos_world_real.append(ref_pos_d_real)
+
     ref_pos_d = client_rmat_est@ref_ee_pos + client_pos_est
     ref_rmat_d = client_rmat_est@ref_ee_rmat
     ref_v_d = client_rmat_est@(ref_ee_v + client_v_est + np.cross(client_w_est, ref_ee_pos))
@@ -769,7 +777,10 @@ class TVLQR_PLUNGE_controller(object):
       joint_acc_cmd = self.within_nozzle_admittance.compute_control(ref_traj_point, mrv_client_sim, wrench_peg_peg, self.dt, mrv_config, mrv_config_dot)
     else:
       print("Distance to throat opening: ", mrv_client_sim.dist_to_throat_opening())
+      time_before = time.time()
       joint_acc_cmd = self.tv_lqr_controller.compute_control(x_k , self.k_cntrl, torques=False)
+      elapsed_time = time.time() - time_before
+      self.solve_times.append(elapsed_time)
   
     
     at = time.process_time()
@@ -927,9 +938,11 @@ class TVLQR_PLUNGE_controller(object):
     self.mrv_client_sim.save(save_path)
 
     np.save(save_path + '/run_time.npy', self.total_time)
-
+    np.save(save_path + '/solve_times.npy', self.solve_times)
     np.save(save_path + '/load_paths.npy', self.load_paths)
     np.save(save_path + '/load_path_weights.npy', self.load_path_weights)
+
+    np.save(save_path + '/ref_ee_pos_world_real', self.ref_ee_pos_world_real)
 
     np.save(save_path + '/use_ekf.npy', self.use_ekf)
 

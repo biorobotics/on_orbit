@@ -12,7 +12,7 @@ def print_npy_file(file_path):
 def main():
     # Specify the path to the .npy file you want to print
     root = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_11_24/charecterizing_time'
-    file_path = root + '/MPC_run_time.npy'
+    file_path = root + '/times.npy'
     
     # Call the function to print the contents of the .npy file
     print_npy_file(file_path)
