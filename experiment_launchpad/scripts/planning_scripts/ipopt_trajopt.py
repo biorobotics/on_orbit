@@ -129,12 +129,12 @@ class IpoptTrajopt():
         save_path = None
 
     x0 = np.copy(mrv_controller.mrv_client_sim.x)
-    print("Initial state:" , x0)
+    print("Initial quat:" , x0[3:7])
+    quit()
 
     ecm_bezier_sim = None 
 
     initial_client_rmat = R.from_quat(mrv_controller.mrv_client_sim.x[mrv_controller.cv_qidx + 3:mrv_controller.cv_qidx + 7]).as_matrix()
-
     control_cost_weight = 0.0001
 
     if use_contact and not nozzle_align:

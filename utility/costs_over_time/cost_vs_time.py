@@ -211,5 +211,5 @@ def main(directory, truncate_to_shortest=False, create_video=False, plot_separat
         create_cost_progression_video(cumulative_real_total, cumulative_planned_total, total_time, output_filename)
 
 # Run the main function with the directory, truncation, and video creation options
-directory = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_15_24/pos__0.0_0.0_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.0_0.0_0.020241115-123407/'
-main(directory, truncate_to_shortest=True, create_video=True, plot_separate_costs=False, output_filename='ITAC_tracking.mp4')
+directory = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_25_24/pos__0.0_0.0_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.0_0.0_0.020241125-183722/'
+main(directory, truncate_to_shortest=False, create_video=False, plot_separate_costs=True, output_filename='ITAC_tracking.mp4')

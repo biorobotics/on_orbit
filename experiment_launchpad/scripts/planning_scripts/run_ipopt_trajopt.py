@@ -4,8 +4,8 @@ from ipopt_trajopt import IpoptTrajopt
 import numpy as np
 import time
 
-date = '11_18_24'
-folder_tag = 'align_w_nozzle'
+date = '11_26_24'
+folder_tag = 'orientation_cost'
 save_path_prefix = 'traj_lib/' + date + '/' + folder_tag
 do_save = True
 nozzle_align = True # Set to True to algin ee tip with nozzle frame

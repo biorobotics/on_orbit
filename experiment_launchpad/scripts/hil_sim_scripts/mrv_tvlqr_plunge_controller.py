@@ -45,6 +45,7 @@ class TVLQR_PLUNGE_controller(object):
     self.check_joint_angle_limit_violation = False # whether to check joint limit violations
     self.lock_client = lock_client
     self.lock_mrv = lock_mrv
+    self.plunging = False
 
     self.init_time = time.time()
 
@@ -769,10 +770,11 @@ class TVLQR_PLUNGE_controller(object):
       x_k = mrv_client_sim.x
       self.k_cntrl += 1
     
-    if mrv_client_sim.dist_to_throat_opening() < 0.175:
+    if mrv_client_sim.dist_to_throat_opening() < 0.175 or self.plunging:
       if not self.within_nozzle_admittance.admittance_traj_reset:
         print("Resetting admittance trajectory")
         self.within_nozzle_admittance.reset_admittance_traj(mrv_client_sim)
+        self.plunging = True
         
       joint_acc_cmd = self.within_nozzle_admittance.compute_control(ref_traj_point, mrv_client_sim, wrench_peg_peg, self.dt, mrv_config, mrv_config_dot)
     else:
@@ -781,6 +783,7 @@ class TVLQR_PLUNGE_controller(object):
       joint_acc_cmd = self.tv_lqr_controller.compute_control(x_k , self.k_cntrl, torques=False)
       elapsed_time = time.time() - time_before
       self.solve_times.append(elapsed_time)
+      
   
     
     at = time.process_time()
@@ -896,16 +899,18 @@ class TVLQR_PLUNGE_controller(object):
         return fail_reason
 
     self.prev_joint_vels = np.copy(v_mrv[6:])
+    mrv_client_sim.update_state_estimate(wrench_peg_peg_est)
 
     if not self.joint_control_enabled: 
       joint_cmd = None
+
 
     if use_contact_sim:
       mrv_client_sim.step(joint_cmd,None)
     else:
       mrv_client_sim.step(joint_cmd,wrench_peg_peg)
 
-    mrv_client_sim.update_state_estimate(wrench_peg_peg_est)
+    
 
     if mrv_client_sim.sim_time > self.time_limit:
       print('Fail')

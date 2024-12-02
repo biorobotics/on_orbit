@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+  #!/usr/bin/env python3
 
 from ipopt_trajopt import IpoptTrajopt
 from trajopt_helpers import TrajectoryHelper

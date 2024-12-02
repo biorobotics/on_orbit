@@ -43,7 +43,7 @@ for jidx in range(mrv_jidx + 1, mrv_jidx + 1 + num_rotary):
 # Initial pose of the MRV and Client
 base_pos = np.array([4.38570453e-06, 5.27465730e-06, -7.71069928e+00])
 # base_pos = np.array([0.3182, -0.28137, -8.6957])
-base_quat = np.array([0., 0., 0., 1.])
+base_quat = np.array([0., 0., 1., 0.])
 
 client_pos = np.zeros(3)
 client_quat = np.array([0., 0., 0., 1.])

@@ -402,19 +402,28 @@ class MrvController(object):
   
     q_sw = pin.neutral(mrv_client_sim.pin_model)
     q_sw[mrv_client_sim.mrv_qidx + 7:mrv_client_sim.mrv_qidx + 7 + mrv_client_sim.num_rotary] = initial_joint_angles
-
+    print("q_sw",q_sw)
     pin.forwardKinematics(mrv_client_sim.pin_model, mrv_client_sim.pin_data, q_sw)
     pin.updateFramePlacement(mrv_client_sim.pin_model, mrv_client_sim.pin_data, mrv_client_sim.peg_fid)
     pin.updateFramePlacement(mrv_client_sim.pin_model, mrv_client_sim.pin_data, mrv_client_sim.nozzle_fid)
     g_client_nozzle = mrv_client_sim.pin_data.oMf[mrv_client_sim.nozzle_fid].inverse()
+    print("g_client_nozzle",g_client_nozzle)
     g_base_peg = mrv_client_sim.pin_data.oMf[mrv_client_sim.peg_fid].inverse()
+    # Print this rotation matrix
+    print("g_base_peg", g_base_peg)
+    #quit()
 
     initial_client_pos = sw_nozzle_rmat@g_client_nozzle.translation + sw_nozzle_pos
     initial_client_quat = R.from_matrix(sw_nozzle_rmat@g_client_nozzle.rotation).as_quat()
+    print("initial_client_pos",initial_client_pos)
+    print("initial_client_quat",initial_client_quat)
     initial_client_v = np.zeros(3)
 
     initial_mrv_pos = sw_peg_rmat@g_base_peg.translation + sw_peg_pos
     initial_mrv_quat = R.from_matrix(sw_peg_rmat@g_base_peg.rotation).as_quat()
+    print("initial_mrv_quat", initial_mrv_quat)
+    print("initial_mrv_pos", initial_mrv_pos)
+    # quit()
 
     initial_mrv_v = R.from_quat(initial_mrv_quat).as_matrix().transpose()@R.from_quat(initial_client_quat).as_matrix()@delta_v
 

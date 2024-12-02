@@ -18,7 +18,7 @@ from hil_sim_scripts.mrv_tvlqr_plunge_controller import TVLQR_PLUNGE_controller
 mrv_controller = None
 success = False
 fail_reason = 'None'
-# save_path = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_15_24/'
+save_folder = 'experiment_logs/11_26_24'
 do_save = True
 
 def on_shutdown():
@@ -51,7 +51,7 @@ def main():
     print(ic_grid)
 
     initial_grid_idx = 0  # Use zero-indexing
-    use_grid = True
+    use_grid = False
 
     dist_centering_waypoint_from_goal = 0.4865  # meters
 
@@ -172,8 +172,6 @@ def main():
 
             timestr = time.strftime("%Y%m%d-%H%M%S")
 
-            # Save folder
-            save_folder = 'experiment_logs/11_18_24'
             save_path_str = save_folder + '/' + '_'.join([
                 'pos_', str(delta_pos[0]), str(delta_pos[1]), str(delta_pos[2]), 'rot', str(delta_rot[0]),
                 str(delta_rot[1]), str(delta_rot[2]), 'delta_v', str(delta_v[0]), str(delta_v[1]),

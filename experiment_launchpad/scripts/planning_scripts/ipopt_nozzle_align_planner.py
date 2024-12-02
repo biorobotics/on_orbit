@@ -47,7 +47,9 @@ class IpoptNozzleAlignPlanner(object):
                mrv_urdf_file, dt, 
                joint_angle_lower_limits, joint_angle_upper_limits, 
                joint_torque_limits, joint_vel_limits, joint_acc_limits, 
-               control_cost_weight, phase_lengths_sec, cw_a, cw_mu, cw_orbit_dir, initial_client_rmat, cone_slope, use_cw, meshdir):
+               control_cost_weight, phase_lengths_sec, cw_a, cw_mu, cw_orbit_dir, 
+               initial_client_rmat,
+               cone_slope, use_cw, meshdir):
     
     self.dt = dt
 
@@ -144,6 +146,8 @@ class IpoptNozzleAlignPlanner(object):
     self.cw_orbit_dir = cw_orbit_dir
     self.initial_client_rmat = initial_client_rmat
     self.use_cw = use_cw
+    print(initial_client_rmat)
+
 
     self.cw_xproj = initial_client_rmat[:, 2]
     if self.cw_orbit_dir == 'x':
@@ -222,7 +226,12 @@ class IpoptNozzleAlignPlanner(object):
     if regen:
       u = cost_input[self.ipopt_nx:]
 
-      cost_expr = 0.5*u.T @ self.R_mat @ u
+      # Cost from orientation error and control effort
+      desired_rot = ca.DM([0,0,0])
+      actual_rot = cost_input[3:6]
+      # actual_rot = ca.DM([0.04, -0.03 ,-3.13])
+      rot_err = ca.norm_2(desired_rot - actual_rot)
+      cost_expr = 0.5*u.T @ self.R_mat @ u + 0.5*rot_err**2
 
       function_name = 'cost_phase_' + str(phase_idx)
       cost_fn = ca.Function(function_name, \

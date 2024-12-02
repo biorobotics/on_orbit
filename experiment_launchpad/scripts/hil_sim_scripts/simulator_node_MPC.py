@@ -52,7 +52,7 @@ def main():
     initial_grid_idx = 0  # Use zero-indexing
     use_grid = False
 
-    dist_centering_waypoint_from_goal = 0.481024428  # meters
+    dist_centering_waypoint_from_goal = 0.482024428  # meters
 
     do_noisy_state_estimation = True
     do_vision_delay = True
