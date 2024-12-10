@@ -161,6 +161,17 @@ waypoint3_tf_msg.child_frame_id = 'Waypoint 3'
 # load_path = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_15_24/pos__0.0_0.0_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.0_0.0_0.020241115-123934'
 load_path = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_15_24/pos__0.0_0.0_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.0_0.0_0.020241115-123407'
 
+
+
+show_force = False
+if show_force:
+# Time stamps
+  force_data = np.load(load_path + '/ft_compensated_trj.npy')[:,0:3]
+  len_force_data = len(force_data)
+  len_sw_nozzle_pos_trj = len(np.load(load_path + '/sw_nozzle_pos_trj.npy')[:,0])
+  force_start_idx = len_sw_nozzle_pos_trj - len_force_data
+
+
 replay_from_xs = False
 replay_from_init_xs = True
 if replay_from_xs:
@@ -322,6 +333,9 @@ while not rospy.is_shutdown():
   pin.forwardKinematics(mrv_cv_pin_model, mrv_cv_pin_data, q)
   pin.updateFramePlacement(mrv_cv_pin_model, mrv_cv_pin_data, mrv_cv_goal_fid)
   pin.updateFramePlacement(mrv_cv_pin_model, mrv_cv_pin_data, mrv_cv_tip_fid)
+  peg_pos = mrv_pin_data.oMf[mrv_tip_fid].translation
+  peg_rmat = mrv_pin_data.oMf[mrv_tip_fid].rotation
+  peg_quat = R.from_matrix(peg_rmat).as_quat()
   # if pin.computeCollisions(mrv_cv_pin_model, mrv_cv_pin_data, mrv_cv_pin_geom, mrv_cv_geom_data, q, True):
   if False:
     print('Collision')
@@ -347,4 +361,45 @@ while not rospy.is_shutdown():
   if trj_idx > len(sw_base_pos_trj) - 1:
     break
 
+  if show_force:
+    if trj_idx > force_start_idx:
+      force_idx = trj_idx - force_start_idx
+      force_vector = force_data[force_idx]
+      force_mag = np.linalg.norm(force_vector)
+      # rospy.loginfo(f'Force mag: {force_mag}')
+      force_threshold = 0
+      #rospy.loginfo('Force threshold exceeded')
+      
+      scale_factor = 0.02  # Adjust the scale factor as needed
+      # Create a force vector marker
+      force_marker = Marker()
+      force_marker.type = Marker.ARROW
+      force_marker.action = Marker.ADD
+
+      # Set the shaft length using scale.x, which should be the magnitude of the force vector
+      arrow_length = scale_factor/4 * np.linalg.norm(force_vector)
+      force_marker.scale.x = arrow_length  # Shaft length
+
+      force_marker.scale.y = arrow_length* 2 # Shaft diameter
+      force_marker.scale.z = 0
+
+      # Set the color for the arrow marker
+      force_marker.color.r = 1.0
+      force_marker.color.g = 0.0
+      force_marker.color.b = 0.0
+      force_marker.color.a = 1.0  # Fully opaque
+
+      # Set the frame and namespace for the marker
+      force_marker.header.frame_id = "world"
+      force_marker.ns = "force_vector"
+      force_marker.header.stamp = rospy.Time.now()
+
+      # Set the start and end points of the arrow (end point relative to start)
+      start_point = Point(peg_pos[0], peg_pos[1], peg_pos[2])
+      end_point = Point(peg_pos[0] + scale_factor*2.5 * -force_vector[0],
+                      peg_pos[1] + scale_factor *2.5* -force_vector[1],
+                      peg_pos[2] + scale_factor *2.5* -force_vector[2])
+
+      force_marker.points = [start_point, end_point]
+      contacts_pub.publish(force_marker)
   rate.sleep()
