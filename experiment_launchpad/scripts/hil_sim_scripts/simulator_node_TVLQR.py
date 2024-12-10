@@ -18,8 +18,8 @@ from hil_sim_scripts.mrv_tvlqr_plunge_controller import TVLQR_PLUNGE_controller
 mrv_controller = None
 success = False
 fail_reason = 'None'
-save_folder = 'experiment_logs/11_26_24'
-do_save = True
+save_folder = 'experiment_logs/12_4_24/tvlqr/special_perturbation_only'
+do_save = False
 
 def on_shutdown():
     global mrv_controller, success, fail_reason, save_path, do_save
@@ -80,7 +80,7 @@ def main():
     peg_rad = 0.008
     nozzle_opening_rad = 0.142
 
-    traj_library_prefix = '/traj_lib/11_18_24/align_w_nozzle/'
+    traj_library_prefix = '/traj_lib/12_4_24/special_perturbation_only/'
     use_cw = True
 
 

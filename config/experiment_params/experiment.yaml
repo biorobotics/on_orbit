@@ -4,9 +4,9 @@ delta_v: [0., 0., 0.0] #m/s, relative velocity between base of MRV and base of c
 initial_client_w: [0.0, 0.0, 0.] # in deg/s
 initial_mrv_w: [0., 0., 0.] # in deg/s
 
-do_save: True
+do_save: False
 use_cw: True #use orbital gravitational dynamics
-save_folder: 'experiment_logs/11_26_24/ITAC_ekf_converge/'
+save_folder: 'experiment_logs/12_2_24/orientation_cost/'
 
 # This is the library used by Anoop before Andrew took over the code, which has a phase where contact is broken. 
 #traj_library_prefix: '/experiment_logs/01_30_24/ipopt_multicore/'
@@ -27,7 +27,8 @@ save_folder: 'experiment_logs/11_26_24/ITAC_ekf_converge/'
 #traj_library_prefix: '/experiment_logs/06_07_24/lib_contact_free_nozzle_align/'
 #traj_library_prefix: '/experiment_logs/06_14_24/WithPlunge/'
 # traj_library_prefix: '/experiment_logs/09_10_24/test_lib/no_contact/'
-traj_library_prefix: '/experiment_logs/10_28_24/MPC_ipopt_test/'
+# traj_library_prefix: '/traj_lib/12_2_24/orientation_cost/'
+traj_library_prefix: '/traj_lib/12_9_24/updated_urdf_capture_box/'
 # traj_library_prefix: '/experiment_logs/10_25_24/torque_comparisons_traj/'
 
 # Whether to clip joint-level acceleration and velocities based on limits specified in limits.yaml
@@ -57,10 +58,9 @@ use_scheduled_gains: True # See resolved_accel.py
 time_limit: 500
 
 # Set to true to simulate sensor noise in the client state
-do_noisy_state_estimation: True
-
+do_noisy_state_estimation: False
 # Set to true to simulate delay in client pose due to slower vision feedback rate
-do_vision_delay: True
+do_vision_delay: False
 vision_measurement_rate: 10 #Hz
 
 # Number of times to run the experiment on the hardware platform

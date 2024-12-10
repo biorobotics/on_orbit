@@ -130,7 +130,7 @@ class IpoptTrajopt():
 
     x0 = np.copy(mrv_controller.mrv_client_sim.x)
     print("Initial quat:" , x0[3:7])
-    quit()
+    # quit()
 
     ecm_bezier_sim = None 
 

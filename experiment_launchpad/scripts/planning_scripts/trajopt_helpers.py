@@ -14,6 +14,11 @@ class TrajectoryHelper:
         self.nozzle_align = nozzle_align
         self.break_on_failure = break_on_failure
 
+        '''
+        Constructor for TrajectoryHelper class, which is used to generate trajectories for the insertion task.
+        
+        '''
+
     def run_planner(self, ic_grid):
         num_grid_pts = len(ic_grid)
         print("Number of grid points:")

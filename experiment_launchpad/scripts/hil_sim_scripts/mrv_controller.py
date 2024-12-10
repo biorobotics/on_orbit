@@ -86,6 +86,8 @@ class MrvController(object):
     self.mrv_pin_data = pin.Data(self.mrv_pin_model)
     self.mrv_wrist_fid = self.mrv_pin_model.getFrameId('wrist')
     self.mrv_peg_fid = self.mrv_pin_model.getFrameId('ee_tip')
+    self.link0_fid = self.mrv_pin_model.getFrameId('link0')
+    self.base_fid = self.mrv_pin_model.getFrameId('base_link')
 
     self.cv_jidx = self.mrv_client_sim.cv_jidx
     self.cv_qidx = self.mrv_client_sim.cv_qidx
@@ -406,12 +408,13 @@ class MrvController(object):
     pin.forwardKinematics(mrv_client_sim.pin_model, mrv_client_sim.pin_data, q_sw)
     pin.updateFramePlacement(mrv_client_sim.pin_model, mrv_client_sim.pin_data, mrv_client_sim.peg_fid)
     pin.updateFramePlacement(mrv_client_sim.pin_model, mrv_client_sim.pin_data, mrv_client_sim.nozzle_fid)
+    pin.updateFramePlacements(mrv_client_sim.pin_model, mrv_client_sim.pin_data)
     g_client_nozzle = mrv_client_sim.pin_data.oMf[mrv_client_sim.nozzle_fid].inverse()
     print("g_client_nozzle",g_client_nozzle)
     g_base_peg = mrv_client_sim.pin_data.oMf[mrv_client_sim.peg_fid].inverse()
     # Print this rotation matrix
     print("g_base_peg", g_base_peg)
-    #quit()
+    # quit()
 
     initial_client_pos = sw_nozzle_rmat@g_client_nozzle.translation + sw_nozzle_pos
     initial_client_quat = R.from_matrix(sw_nozzle_rmat@g_client_nozzle.rotation).as_quat()
@@ -442,6 +445,11 @@ class MrvController(object):
                  initial_mrv_pos, initial_mrv_quat, initial_joint_angles, initial_mrv_v, initial_mrv_w, initial_joint_velocities, rng)
     mrv_client_sim.update_kinematics()
 
+    g_link0_world = mrv_client_sim.pin_data.oMf[self.link0_fid]
+    print("link0 world transform", g_link0_world)
+    g_base_world = mrv_client_sim.pin_data.oMf[self.base_fid]
+    print("base world transform", g_base_world)
+    # quit()
     self.init_mrv_tip_pos = mrv_client_sim.get_mrv_tip_pos()
     self.init_mrv_joint_angles = mrv_client_sim.get_mrv_joint_angles()
 

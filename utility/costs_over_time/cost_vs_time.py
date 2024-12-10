@@ -108,7 +108,7 @@ def plot_costs(cumulative_real_total, cumulative_planned_total, cumulative_real_
                cumulative_real_force, cumulative_planned_force, total_time, truncate_to_shortest=False, plot_separate_costs=False, dt=0.01):
     """Plot accumulated costs over the same time period for both trajectories."""
     if truncate_to_shortest:
-        min_length = min(len(cumulative_real_total), len(cumulative_planned_total))
+        min_length = min(len(cumulative_real_total), len(cumulative_planned_total), 1450)
         cumulative_real_total = cumulative_real_total[:min_length]
         cumulative_planned_total = cumulative_planned_total[:min_length]
         cumulative_real_torque = cumulative_real_torque[:min_length]
@@ -212,4 +212,5 @@ def main(directory, truncate_to_shortest=False, create_video=False, plot_separat
 
 # Run the main function with the directory, truncation, and video creation options
 directory = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_25_24/pos__0.0_0.0_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.0_0.0_0.020241125-183722/'
-main(directory, truncate_to_shortest=False, create_video=False, plot_separate_costs=True, output_filename='ITAC_tracking.mp4')
+directory = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/12_3_24/tvlqr/no_cost/pos__0.0_0.0_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.0_0.0_0.020241203-103056'
+main(directory, truncate_to_shortest=True, create_video=False, plot_separate_costs=False, output_filename='ITAC_tracking.mp4')

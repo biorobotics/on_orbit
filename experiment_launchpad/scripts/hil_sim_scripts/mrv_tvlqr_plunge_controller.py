@@ -763,12 +763,18 @@ class TVLQR_PLUNGE_controller(object):
     #   perf_proc = start_perf_proc(output_file)
 
     bt = time.process_time()
+    
     if self.do_noisy_state_estimation:
       x_k = mrv_client_sim.x_est
-      self.k_cntrl += 1
     else:
       x_k = mrv_client_sim.x
+      
+
+    if self.k_cntrl < len(self.ref_x_trj):
       self.k_cntrl += 1
+      
+
+
     
     if mrv_client_sim.dist_to_throat_opening() < 0.175 or self.plunging:
       if not self.within_nozzle_admittance.admittance_traj_reset:

@@ -18,7 +18,7 @@ mrv_controller = None
 success = False
 fail_reason = 'None'
 save_path = ''
-do_save = True
+do_save = False
 
 def on_shutdown():
     global mrv_controller, success, fail_reason, save_path, do_save
