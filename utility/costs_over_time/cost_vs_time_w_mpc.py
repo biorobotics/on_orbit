@@ -210,16 +210,16 @@ def main(mpc_directory=None, planned_directory=None, real_directory=None,
 # Example usage:
 if __name__ == "__main__":
     # Directories containing the data
-    mpc_directory = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_18_24/mpc_torque_inputs'
+    mpc_directory = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_25_24/pos__0.0_0.0_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.0_0.0_0.020241125-173719'
     planned_directory = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_19_24/ITAC_ekf_converge/pos__0.0_0.0_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.0_0.0_0.020241119-152340'
-    real_directory = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_19_24/ITAC_ekf_converge/pos__0.0_0.0_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.0_0.0_0.020241119-152340'
+    real_directory = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_25_24/mpc_torque_inputs_dyn_uncertainty'
 
     # Call the main function with desired options
     main(
         mpc_directory=mpc_directory,
         planned_directory=planned_directory,
         real_directory=real_directory,
-        truncate_to_shortest=True,
-        plot_separate_costs=False  # Set to True to plot torque and force costs separately
+        truncate_to_shortest=False,
+        plot_separate_costs=True  # Set to True to plot torque and force costs separately
     )
 

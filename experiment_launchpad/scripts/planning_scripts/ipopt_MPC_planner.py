@@ -48,6 +48,67 @@ class MPCNozzleAlignPlanner(object):
                joint_torque_limits, joint_vel_limits, joint_acc_limits, 
                control_cost_weight, phase_lengths_sec, cw_a, cw_mu, cw_orbit_dir,
                 initial_client_rmat, cone_slope, use_cw, meshdir):
+    
+    '''
+    This is the constuctor for the MPC planner using ipopt. It initializes the planner with the necessary parameters
+    and loads the URDF files for the MRV and Client Vehicle. Plan can then be called to return the solution to the optimization problem. This
+    planner takes the end-effector to an intermediary waypoint pose that is aligned with the goal frame. From there, 
+    a seperate plunge controller is used to insert the end-effector into the throat of the nozzle.
+
+
+    Inputs:
+      urdf_file: string 
+      path to the URDF file representing the MRV and Client Vechicle
+
+      mrv_urdf_file: string 
+      path to the URDF file representing the MRV
+
+      dt:int 
+      time step
+
+      joint_angle_lower_limits: array
+      lower joint angle limits of FREND Arm on MRV
+
+      joint_angle_upper_limits: array
+      upper joint angle limits of FREND Arm on MRV
+
+      joint_torque_limits: array
+      joint torque limits of FREND Arm on MRV
+
+      joint_vel_limits: array
+      joint velocity limits of FREND Arm on MRV
+
+      joint_acc_limits: array
+      joint acceleration limits of FREND Arm on MRV
+
+      control_cost_weight: float
+      weight for the control cost matrix
+
+      phase_lengths_sec: array
+      lengths of each phase in secconds for the first run of the planner
+
+      cw_a: int
+      Clohessy-Wiltshire parameter a
+
+      cw_mu: int
+      Clohessy-Wiltshire parameter mu
+
+      cw_orbit_dir: string, 'x' 'y' 'z'
+      Clohessy-Wiltshire parameter orbit direction
+
+      initial_client_rmat: matrix
+      initial rotation matrix of the client vehicle
+
+      cone_slope: int
+      slope of the cone approximating the nozzle TODO: This is not a good estimation of the nozzle and should be improved
+      this will involve editing both the URDF and the relevant constraints / planner code
+
+      use_cw: boolean
+      whether to use the Clohessy-Wiltshire approximation
+
+      meshdir: string
+      directory containing the mesh files for the URDF
+    '''
     self.first_call = True
     self.dt = dt
     self.first_call = True
@@ -290,7 +351,39 @@ class MPCNozzleAlignPlanner(object):
       os.replace(filename[:-2] + '.so', folder_name + '/' + filename[:-2] + '.so')
 
 
-  def plan(self, x0, elapsed_steps, save_path=None, max_iter=250, count_flop_per_iter=False, count_total_flop=False, stop_after_iter=-1, prop_time=0.):
+  def plan(self, x0, elapsed_steps, save_path=None, max_iter=250, count_total_flop=False, stop_after_iter=-1):
+    '''
+    This is the function call for the MPC planner. It generates the constraints and costs for the optimization problem and solves it using IPOPT.
+    It then returns the solution to the optimization problem and the lengths of the remaining phases.
+
+    Inputs:
+      x0: array 
+      current state of the system
+
+      elapsed_steps: int
+      number of steps elapsed
+
+      save_path: string , optional
+      path to save the results
+
+      max_iter: int, optional
+      maximum number of iterations for the MPC solver
+
+      count_total_flop: boolean, optional
+      weather to count the total number of flops
+
+      stop_after_iter: int, optional
+      stop after a certain number of iterations
+    
+    Outputs:
+      xs: Ipopt state solution
+      us: Ipopt control solution
+      phase_lengths: lengths of each phase
+      phase_starts: start of each phase
+      success: boolean indicating if the optimization was successful
+
+
+    '''
     regen=True
 
     ## Adjust Phase Lengths Based on Elapsed Steps ##
@@ -322,14 +415,6 @@ class MPCNozzleAlignPlanner(object):
     remaining_phase_lengths[0] = remaining_steps_in_phase
     remaining_phase_starts = np.concatenate([[0], np.cumsum(remaining_phase_lengths)]).flatten()
     total_remaining_steps = np.sum(remaining_phase_lengths)
-    remaining_phases = len(remaining_phase_lengths)
-
-    print("Remaining phase lengths:", remaining_phase_lengths)
-    print("Remaining phase starts:", remaining_phase_starts)
-    # time.sleep(5)
-
-    if prop_time != 0.:
-      raise Exception("prop_time is not supported in this planner.")
 
     # Determine direction where we should make contact. For now, ignore client z angular velocity
     v0 = x0[self.pin_model.nq:]
@@ -367,8 +452,6 @@ class MPCNozzleAlignPlanner(object):
     xf = np.copy(x0)
     xf[self.mrv_qidx:self.mrv_qidx + self.mrv_nq] = mrv_qf
     print("Initial guess solved")
-    # print("Initial guess:", x0)
-    # print("Final guess:", xf)
 
     
     steps = total_remaining_steps - 1
@@ -390,8 +473,6 @@ class MPCNozzleAlignPlanner(object):
     unext_sym = ca.SX.sym('unext', self.nu)
     dyn_input = ca.vertcat(x_sym, u_sym, xnext_sym, unext_sym)
     cost_input = ca.vertcat(x_sym, u_sym)
-    # constraint_input = x_sym[:self.pin_model.nv]
-    # constraint_input = cost_input
     constraint_input = dyn_input
 
     dynamics_expr = export_implicit_midpoint_model(self.cpin_model, 
@@ -641,13 +722,6 @@ class MPCNozzleAlignPlanner(object):
     vars_per_step = self.ipopt_nx + self.nu
     num_decision_vars = int(vars_per_step * total_remaining_steps)
 
-    # warm_start = np.zeros(num_decision_vars)
-    # for step in range(total_remaining_steps):
-    #     xstart = vars_per_step * step
-    #     ustart = xstart + self.ipopt_nx
-    #     warm_start[xstart:ustart] = init_xs[step]
-    #     warm_start[ustart:ustart + self.nu] = init_us[step]
-
     if not hasattr(self, 'previous_soln') or self.previous_soln is None:
         # First call warm start with initial guess
         warm_start = np.zeros(num_decision_vars)
@@ -715,9 +789,6 @@ class MPCNozzleAlignPlanner(object):
     # Solve the optimization problem
     solved = solver.solve(soln)
     obj_value = solver.get_obj_value()
-    # print('Objective value:', obj_value)
-    # quit()
-
     at = time.perf_counter()
 
     # Handle performance metrics
@@ -762,8 +833,6 @@ class MPCNozzleAlignPlanner(object):
     self.xs = np.copy(xs)
     self.us = np.copy(us)
     self.dts = np.copy(dts)
-    # print(xs.shape, us.shape)
-    # print(xs, us)
     return xs, us, dts, remaining_phase_starts, solved, obj_value
 
   @staticmethod 

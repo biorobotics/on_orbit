@@ -18,7 +18,7 @@ mrv_controller = None
 success = False
 fail_reason = 'None'
 save_path = ''
-do_save = True
+do_save = False
 
 def on_shutdown():
     global mrv_controller, success, fail_reason, save_path, do_save
@@ -52,7 +52,7 @@ def main():
     initial_grid_idx = 0  # Use zero-indexing
     use_grid = False
 
-    dist_centering_waypoint_from_goal = 0.481024428  # meters
+    dist_centering_waypoint_from_goal = 0.482024428  # meters
 
     do_noisy_state_estimation = True
     do_vision_delay = True

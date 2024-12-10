@@ -20,6 +20,9 @@
   <joint name="$(arg prefix)world_to_base" type="floating">
     <parent link="world"/>
     <child link="$(arg prefix)base_link"/>
+    <!-- <origin rpy="0 0 3.14159" xyz="0 0 0"/> -->
   </joint>
+
+  
 
 </robot>
