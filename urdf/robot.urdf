@@ -34,7 +34,8 @@
   <joint name="joint0" type="fixed">
     <parent link="base_link"/>
     <child link="link0"/>
-    <origin rpy="0 0 1.047196667" xyz="0.3182 -0.3182 1.9875"/>
+    <!-- <origin rpy="0 0 1.047196667" xyz="0.3182 -0.3182 1.9875"/> -->
+    <origin rpy="0 0 -2.0969" xyz="-0.3182 0.3182 1.9875"/>
   </joint>
   <link name="link0">
     <visual>

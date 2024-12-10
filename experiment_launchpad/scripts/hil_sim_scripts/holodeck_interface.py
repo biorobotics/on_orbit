@@ -14,6 +14,16 @@ from threading import Lock
 
 class HolodeckInterface:
     def __init__(self, dt = 0.01):
+        '''
+        This is the interface class for the holodeck hardware platform. 
+        It is responsible for sending commands to the UR arms and Vention carriages, and receiving feedback from them.
+        It is not complete with all the possible commands and feedbacks, but it is a good starting point.
+
+        Inputs:
+            dt: float, optional
+            Time step for commands to be sent to the hardware. Default is 0.01 seconds.
+
+        '''
 
         # Time step
         self.dt = dt
@@ -177,6 +187,8 @@ class HolodeckInterface:
         ''' Psuedo Code for now'''
         'Pose in world frame currently is sent as pose_start, desired pose in world frame is pose_end'
         ' When we send a position servo command it needs to be in the based frame of the arm'
+        # TODO: This could be useful for the future to simplify some parts of the code. Right now I 
+        # using a different control in the hil runner script, but the same thing could be done here.
 
     # UR Utility Functions
 

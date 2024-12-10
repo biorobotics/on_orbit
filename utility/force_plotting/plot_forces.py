@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Load the .npy file
-data = np.load('/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/10_07_24/2cm_noise/failure/pos__0.0_0.0_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.0_0.0_0.0_20241007-161904/ft_compensated_trj.npy')
+data = np.load('/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_25_24/pos__0.0_0.0_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.0_0.0_0.020241125-184918/mrv_peg_force_trj.npy')
 
 # Extract the forces (first three columns)
 forces = data[:, 0:3]

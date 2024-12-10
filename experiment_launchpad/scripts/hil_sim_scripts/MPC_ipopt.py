@@ -820,7 +820,7 @@ class IpoptMPC(object):
       if self.one_run:
         self.one_run = False
       else:
-        self.save('/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_18_24/mpc_torque_inputs')
+        self.save('/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_25_24/mpc_torque_inputs_dyn_uncertainty')
     
     
     else:

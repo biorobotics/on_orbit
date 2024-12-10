@@ -405,14 +405,14 @@ bool ContactNLP::intermediate_callback(
    * Stop after finding the first feasible point. Comment the below code to solve to optimility.
    */
 
-  // else if (mode != Ipopt::AlgorithmMode::RestorationPhaseMode) 
-  // {
-  //   double max_vio = ip_cq->unscaled_curr_nlp_constraint_violation(Ipopt::ENormType::NORM_MAX);
-  //   if (max_vio < 1e-4) {
-  //     std::cout << "Found feasible point. Max constraint violation is " << max_vio << ". Stopping" << std::endl;
-  //     return false;
-  //   }
-  // }
+  else if (mode != Ipopt::AlgorithmMode::RestorationPhaseMode) 
+  {
+    double max_vio = ip_cq->unscaled_curr_nlp_constraint_violation(Ipopt::ENormType::NORM_MAX);
+    if (max_vio < 1e-4) {
+      std::cout << "Found feasible point. Max constraint violation is " << max_vio << ". Stopping" << std::endl;
+      return false;
+    }
+  }
   
 
   return true;

@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-load_path_2 = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_11_24/charecterizing_time/'
-load_path = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_18_24/mpc_real_pose/'
+load_path_2 = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_18_24/pos__-0.1_-0.1_0.0_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.0_0.0_0.020241125-103452/'
+load_path = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_logs/11_18_24/pos__-0.1_-0.1_0.0_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_mrv_w_0.0_0.0_0.0_client_w_0.0_0.0_0.020241125-103452/'
 ipopt_ee_pos = np.load(load_path + 'ref_ee_pos_world_real.npy', allow_pickle=True)
 sim_ee_pos = np.load(load_path + 'sw_peg_pos_trj.npy', allow_pickle=True)
 times = np.load(load_path + 'sim_ts.npy', allow_pickle=True)

@@ -57,6 +57,8 @@ class MRVClientSim(object):
     self.joint_vel_limits = np.copy(joint_vel_limits)
     self.joint_acc_limits = np.copy(joint_acc_limits)
 
+    
+
     self.cv_jidx = self.pin_model.getJointId('world_to_client')
     self.cv_qidx = self.pin_model.idx_qs[self.cv_jidx]
     self.cv_vidx = self.pin_model.idx_vs[self.cv_jidx]
@@ -64,6 +66,10 @@ class MRVClientSim(object):
     self.mrv_jidx = self.pin_model.getJointId('world_to_base')
     self.mrv_qidx = self.pin_model.idx_qs[self.mrv_jidx]
     self.mrv_vidx = self.pin_model.idx_vs[self.mrv_jidx]
+
+    self.peg_qidx = self.mrv_qidx + 14
+    self.peg_vidx = self.mrv_vidx + 13
+
 
     self.mrv_nq = self.pin_model.nq - 7
     self.mrv_nv = self.pin_model.nv - 6
@@ -237,7 +243,7 @@ class MRVClientSim(object):
     self.lock_client = lock_client
     self.lock_mrv = lock_mrv
 
-    self.simulate_angular_velocity_disturbance = False
+    self.simulate_angular_velocity_disturbance = True
     self.angular_velocity_disturbance = np.zeros(3)
     self.K_ang_vel_dist = 500.0*np.identity(3) #gains for tracking angular velocity disturbance
 
@@ -428,10 +434,13 @@ class MRVClientSim(object):
   # Resets state to given state, resets pybullet, and resets controllers
   def reset(self, initial_client_pos, initial_nozzle_q, initial_client_v, initial_client_w, 
             initial_mrv_pos, initial_mrv_quat, initial_joint_angles, initial_mrv_vel, initial_mrv_w, initial_joint_velocities, rng):
-    
+    print('Initial mrv quat', initial_mrv_quat)
     self.x = np.concatenate((pin.neutral(self.pin_model), np.zeros(self.pin_model.nv)))
     self.x[self.mrv_qidx:self.mrv_qidx + 3] = initial_mrv_pos
     self.x[self.mrv_qidx + 3:self.mrv_qidx + 7] = initial_mrv_quat
+    print('quat', initial_mrv_quat)
+    print('q_idx', self.mrv_qidx)
+    #quit()
     self.x[self.mrv_qidx + 7:self.mrv_qidx + 7 + self.num_rotary] = initial_joint_angles
 
     self.x[self.cv_qidx:self.cv_qidx + 3] = initial_client_pos
@@ -805,11 +814,12 @@ class MRVClientSim(object):
     if self.simulate_angular_velocity_disturbance:
         tau = self.K_ang_vel_dist@(self.angular_velocity_disturbance - self.get_client_angular_vel())
         self.pb_client.applyExternalTorque(self.pb_cv_id, -1, list(tau), pybullet.WORLD_FRAME)
-
+    
     self.pb_client.stepSimulation()
 
     mrv_pos, mrv_quat = self.pb_client.getBasePositionAndOrientation(self.pb_mrv_id)
     mrv_R = R.from_quat(mrv_quat)
+    
     mrv_v, mrv_w = self.pb_client.getBaseVelocity(self.pb_mrv_id)
     mrv_v = mrv_R.inv().apply(mrv_v)
     mrv_w = mrv_R.inv().apply(mrv_w)
@@ -834,11 +844,27 @@ class MRVClientSim(object):
     self.x[self.pin_model.nq + self.mrv_vidx + 6:self.pin_model.nq + self.mrv_vidx + self.mrv_pin_model.nv] = np.array([state[1] for state in joint_states])
 
     self.update_kinematics()
+    
 
     pin.forwardKinematics(self.pin_model, self.prev_pin_data, prev_x[:self.pin_model.nq], prev_x[self.pin_model.nq:])
     pin.updateFramePlacement(self.pin_model, self.prev_pin_data, self.peg_fid)
 
     if wrench_peg_peg is None:#if we are running pure sim with contact simulation, simulate and store the contact force
+      
+      # TODO: This was some original code that was used to try and simulate dynamic uncertainty. 
+      # It is not accurate or representative of the actual dynamics of the system, so it has been commented out.
+      # if True:
+      #   random_force_cv = self.rng.normal(0, [5, 5, 5], 3)/3
+      #   random_torque_cv = self.rng.normal(0, [0.2, 0.2, 0.2], 3)/3
+      #   self.pb_client.applyExternalForce(self.pb_cv_id, -1, random_force_cv, [0., 0., 0.], pybullet.LINK_FRAME)
+      #   self.pb_client.applyExternalTorque(self.pb_cv_id, -1, random_torque_cv, pybullet.LINK_FRAME)
+      #   # self.pb_client.applyExternalForce(self.pb_mrv_id, self.pb_peg_id, list(force_peg_world), p_tip_world_world, pybullet.WORLD_FRAME)
+      #   # self.pb_client.applyExternalTorque(self.pb_mrv_id, -1, list(tau), pybullet.WORLD_FRAME)
+      #   # self.pb_client.applyExternalForce(self.pb_cv_id, self.pb_nozzle_id, list(np.multiply(-1,force_peg_world)), p_tip_world_world, pybullet.WORLD_FRAME)
+      #   # self.pb_client.applyExternalTorque(self.pb_cv_id, -1, list(tau), pybullet.WORLD_FRAME)
+        
+      #   # self.set_pybullet_joint_torque(np.zeros(self.num_rotary))
+
 
       # For some reason, switching the order of pb_cv_id and pb_mrv_id made getJointInfo not return an error
       contact_points = self.pb_client.getContactPoints(self.pb_mrv_id, self.pb_cv_id)
@@ -1169,8 +1195,7 @@ class MRVClientSim(object):
           self.particle_positions = self.all_positions
           self.highest_weight_particle = self.pos_max_weight
 
-       
-
+    
         # Updated state
         self.x_est[self.cv_qidx:self.cv_qidx + 3] = client_pos_est
         self.x_est[self.cv_qidx + 3:self.cv_qidx + 7] = R.from_matrix(client_rmat_est).as_quat()
@@ -1178,7 +1203,33 @@ class MRVClientSim(object):
         self.x_est[self.pin_model.nq + self.cv_vidx + 3:self.pin_model.nq + self.cv_vidx + 6] = client_w_est
 
 
-          
+        # Accuracy of the robotic arm from NG
+        # • Position Accuracy - ± 15 mm /± 15 mm/± 15 mm (X/Y/Z)
+        # • Angular Accuracy - ± 0.5 ̊ (X,Y,Z)
+        # Add noise based on end effector repeatibility to the estimate
+        self.dynamic_uncertainty = False
+        peg_frame_mrv = self.mrv_pin_model.getFrameId('ee_tip')
+        peg_pos = self.mrv_pin_data.oMf[peg_frame_mrv].translation
+        peg_rmat = self.mrv_pin_data.oMf[peg_frame_mrv].rotation
+        if self.dynamic_uncertainty:
+          # MRV repeatability and accuracy
+          pos_std = np.array([0.008, 0.008, 0.008]) / 3
+          rot_std = np.array([0.5 ,0.5, 0.5]) / 3 * np.pi / 180 #rad
+          # Add noise
+          peg_pos_perturbed = peg_pos + self.rng.normal(np.zeros(3), pos_std)
+          peg_rmat_perturbed = peg_rmat@R.from_euler('ZYX', self.rng.normal(np.zeros(3), rot_std)).as_matrix()
+          # IK
+          delta_SE3 = pin.SE3(peg_rmat_perturbed, peg_pos_perturbed)
+          q = self.x[self.mrv_qidx:self.mrv_qidx + 7 + self.num_rotary]
+          q_plus = self.ik_with_gradient_descent(self.mrv_pin_model, self.mrv_pin_data,q, delta_SE3)
+          self.x[self.mrv_qidx:self.mrv_qidx + 7 + self.num_rotary] = q_plus
+
+          # Client uncertainty
+          client_pos_perturbed = client_pos_est + self.rng.normal(np.zeros(3), pos_std)
+          client_rmat_perturbed = client_rmat + R.from_euler('ZYX', self.rng.normal(np.zeros(3), rot_std)).as_matrix()
+          self.x[self.cv_qidx:self.cv_qidx + 3] = client_pos_perturbed
+          self.x[self.cv_qidx + 3:self.cv_qidx + 7] = R.from_matrix(client_rmat_perturbed).as_quat()
+
 
 
         # Collect data to see if the estimator is consistent
@@ -1205,6 +1256,70 @@ class MRVClientSim(object):
       self.x_est = np.copy(self.x)
 
     self.update_kinematics_est()
+
+  def ik_with_gradient_descent(self, pin_model, pin_data, q_current, desired_pose, iterations=1000, alpha=.001, tol=1e-2):
+    """
+    Perform IK using gradient descent with the Jacobian pseudoinverse.
+
+    Parameters:
+    - pin_model: Pinocchio robot model.
+    - pin_data: Pinocchio data.
+    - q_current: Current joint configuration.
+    - desired_pose: Desired end-effector pose as a SE3 object.
+    - ierations: Number of IK iterations.
+    - alpha: Step size for gradient descent.
+    - tol: Tolerance for stopping the IK.
+
+    Returns:
+    - q_current: Updated joint configuration.
+    
+    """
+    time_start = time.time()
+    peg_fid = self.mrv_pin_model.getFrameId('ee_tip')
+    for i in range(iterations):
+      
+
+      # Get the current end-effector pose
+
+      current_pose = pin_data.oMf[peg_fid]
+      #print('current_pose', current_pose)
+      
+      delta_pos = desired_pose.translation - current_pose.translation
+      delta_rmat = desired_pose.rotation@current_pose.rotation.transpose()
+      delta_rot = R.as_rotvec(R.from_matrix(delta_rmat))
+      
+      delta_x = np.concatenate((delta_pos, delta_rot))
+      
+
+      error_norm = np.linalg.norm(delta_x)
+      #print('error_norm', error_norm)
+      if error_norm < tol:
+          elapsed_time = time.time() - time_start
+          break
+
+      Jstar, _ = self.get_mrv_generalized_jacobian()
+      Jstar_pinv = np.linalg.pinv(Jstar)
+      delta_q_joints = Jstar_pinv @ delta_x
+
+      # Compute delta_q_base (base update)
+      Ag = pin.computeCentroidalMap(self.mrv_pin_model, self.mrv_pin_data, q_current)
+      Ag_base = Ag[:,:6]
+      Ag_joints = Ag[:,6:]
+      dq_base = -np.linalg.pinv(Ag_base)@Ag_joints@delta_q_joints
+
+      # Combine and scale the updates
+      dq = np.concatenate((dq_base, delta_q_joints))
+      dq *= alpha
+
+      # Update the configuration using Pinocchio's integrate
+      q_current = pin.integrate(pin_model, q_current, dq)
+
+      # Update the robot kinematics with the current configuration
+      pin.forwardKinematics(pin_model, pin_data, q_current)
+      pin.updateFramePlacements(pin_model, pin_data)
+
+    return q_current
+
 
   def ekf_convergence(self):
     dt = self.dt

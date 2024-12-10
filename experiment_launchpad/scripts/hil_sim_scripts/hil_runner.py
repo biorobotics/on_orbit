@@ -22,6 +22,22 @@ from visualization_msgs.msg import Marker
 # UR 16 (jstate_right) has peg. Make sure to assign names appropraitely. UR 5 has the nozzle (jstate_left)
 class HILRunner(object):
   def __init__(self, rospath, mrv_hil_home_angles, client_hil_home_angles , dt):
+    '''
+    This class is used to run the HIL emulator on the Holodeck. 
+    It initializes the Holodeck interface, the pinocchio model, and the controllers. And uses 
+    holodeck_interface to command and get data from to the Holodeck platform.
+
+    
+
+    Inputs:
+      rospath: str, path to the ROS workspace
+      mrv_hil_home_angles: list of floats, home angles for the MRV arm # TODO: This is set in experiment.yaml, we should implement
+      a safety feature that prevents the robots from coliding with each other during initialization
+
+      client_hil_home_angles: list of floats, home angles for the client arm #TODO: See above, same comment applies
+
+      dt: float, time step for the emulator
+    '''
     urdf_file = rospath + '/urdf/on_orbit.urdf' 
     
 

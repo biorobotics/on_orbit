@@ -47,7 +47,9 @@ class IpoptNozzleAlignPlanner(object):
                mrv_urdf_file, dt, 
                joint_angle_lower_limits, joint_angle_upper_limits, 
                joint_torque_limits, joint_vel_limits, joint_acc_limits, 
-               control_cost_weight, phase_lengths_sec, cw_a, cw_mu, cw_orbit_dir, initial_client_rmat, cone_slope, use_cw, meshdir):
+               control_cost_weight, phase_lengths_sec, cw_a, cw_mu, cw_orbit_dir, 
+               initial_client_rmat,
+               cone_slope, use_cw, meshdir):
     
     self.dt = dt
 
@@ -144,6 +146,8 @@ class IpoptNozzleAlignPlanner(object):
     self.cw_orbit_dir = cw_orbit_dir
     self.initial_client_rmat = initial_client_rmat
     self.use_cw = use_cw
+    print(initial_client_rmat)
+
 
     self.cw_xproj = initial_client_rmat[:, 2]
     if self.cw_orbit_dir == 'x':
@@ -222,7 +226,14 @@ class IpoptNozzleAlignPlanner(object):
     if regen:
       u = cost_input[self.ipopt_nx:]
 
-      cost_expr = 0.5*u.T @ self.R_mat @ u
+      # Cost from orientation error and control effort
+      desired_rot = ca.DM([0,0,0])
+      actual_rot = cost_input[3:6]
+      rot_err = ca.norm_2(actual_rot - desired_rot)
+      # cost_expr = 0
+      # cost_expr = 0.5*10*rot_err.T@rot_err 
+      # cost_expr = 0.5*u.T @ self.R_mat @ u
+      cost_expr = 0.5*u.T @ self.R_mat @ u + 0.5*10*rot_err.T@rot_err
 
       function_name = 'cost_phase_' + str(phase_idx)
       cost_fn = ca.Function(function_name, \
@@ -345,7 +356,9 @@ class IpoptNozzleAlignPlanner(object):
     # exit()
     steps = phase_starts[-1] - 1
     init_xs = np.array([from_pin(self.interp_x(x0, xf, step/steps), self.pin_model) for step in range(steps + 1)])
+    #init_xs = np.load('/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/traj_lib/12_3_24/both_cost/pos_0.0_0.0_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_client_w_0.0_0.0_0.0/control/20241203-111534/xs_ipopt.npy')
     init_us = np.zeros((steps + 1, self.nu))
+    #init_us = np.load('/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/traj_lib/12_3_24/both_cost/pos_0.0_0.0_-0.05_rot_0.0_0.0_0.0_delta_v_0.0_0.0_0.0_client_w_0.0_0.0_0.0/control/20241203-111534/us.npy')
 
     # Variable bounds
     ipopt_lb = []
@@ -456,7 +469,7 @@ class IpoptNozzleAlignPlanner(object):
 
 
     # Start with loose tolerances to guide the optimization towards the correct solution
-    position_upper_tol = np.array([0.1, 0.1, 0.3])
+    position_upper_tol = np.array([0.1, 0.1, 0.30])
     position_lower_tol = -position_upper_tol
 
     # The angles should be within 2 degrees in the z axis and 5 degrees in the x and y axes
@@ -466,7 +479,7 @@ class IpoptNozzleAlignPlanner(object):
     upper_tol = np.concatenate((position_upper_tol, rotation_upper_tol))
     lower_tol = np.concatenate((position_lower_tol, rotation_lower_tol))
 
-    pos_diff = np.array([0,0,0.3])
+    pos_diff = np.array([0,0,0.30])
     
     
     h3_expr, h3_lb, h3_ub = export_align_frames_constraint(self.cpin_model, x_sym, 'ee_tip', 'nozzle', upper_tol, lower_tol, pos_diff = pos_diff)
@@ -502,7 +515,7 @@ class IpoptNozzleAlignPlanner(object):
     phase_idx += 1
 
     # Start with loose tolerances to guide the optimization towards the correct solution
-    position_upper_tol = np.array([0.01, 0.01, 0.001])
+    position_upper_tol = np.array([0.01, 0.01, 0.002])
     position_lower_tol = -position_upper_tol
 
     # The angles should be within 2 degrees in the z axis and 5 degrees in the x and y axes
@@ -512,7 +525,7 @@ class IpoptNozzleAlignPlanner(object):
     upper_tol = np.concatenate((position_upper_tol, rotation_upper_tol))
     lower_tol = np.concatenate((position_lower_tol, rotation_lower_tol))
 
-    pos_diff = np.array([0,0,0.3])
+    pos_diff = np.array([0,0,0.30])
     
     h1_expr, h1_lb, h1_ub = export_align_frames_constraint(self.cpin_model, x_sym, 'ee_tip', 'nozzle', upper_tol, lower_tol, pos_diff = pos_diff)
 
