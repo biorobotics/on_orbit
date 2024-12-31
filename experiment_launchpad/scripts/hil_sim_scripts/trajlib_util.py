@@ -57,11 +57,10 @@ def interp_trajectories_on_initial_client_w(load_paths,initial_client_w,ws):
   dir_1_0 = w1 - w0
   dist_1_0 = np.linalg.norm(dir_1_0)
   dir_1_0 /= dist_1_0
-  dot_product = (initial_client_w - w0)@dir_1_0
-  if dot_product < 0:
+  alpha = (initial_client_w - w0)@dir_1_0/dist_1_0
+  if alpha < 0:
     weights = [1., 0.]
-  elif dot_product <= 0.5:
-    alpha = dot_product/dist_1_0
+  elif alpha <= 0.5:
     weights = [1. - alpha, alpha]
   else:
     # If we get to this case, it means w0 was reported as closest by argsort, but during weight computation
@@ -86,11 +85,10 @@ def interp_trajectories_on_delta_pos(load_paths,delta_pos,dps):
   if dist_1_0 < 1e-6:
     raise Exception('Duplicate values in library for delta_pos')
   dir_1_0 /= dist_1_0
-  dot_product = (delta_pos - dp0)@dir_1_0
-  if dot_product < 0:
+  alpha = (delta_pos - dp0)@dir_1_0/dist_1_0
+  if alpha < 0:
     weights = [1., 0.]
-  elif dot_product <= 0.5:
-    alpha = dot_product/dist_1_0
+  elif alpha <= 0.5:
     weights = [1. - alpha, alpha]
   else:
     # If we get to this case, it means dp0 was reported as closest by argsort, but during weight computation
@@ -145,16 +143,15 @@ def interp_trajectories_on_init_client_state(load_paths,initial_client_w,ws,delt
     weights = [1., 0.] #The two points are very close, so just pick one
   else:
     dir_1_0 /= dist_1_0
-    dot_product = (vec_d - vec0)@dir_1_0
-  if dot_product < 0:
-    weights = [1., 0.]
-  elif dot_product <= 0.5:
-    alpha = dot_product/dist_1_0
-    weights = [1. - alpha, alpha]
-  else:
-    # If we get to this case, it means dp0 was reported as closest by argsort, but during weight computation
-    # we found that w1 is closer
-    raise Exception('Error computing weights in trajectory interpolation')
+    alpha = (vec_d - vec0)@dir_1_0/dist_1_0
+    if alpha < 0:
+      weights = [1., 0.]
+    elif alpha <= 0.5:
+      weights = [1. - alpha, alpha]
+    else:
+      # If we get to this case, it means dp0 was reported as closest by argsort, but during weight computation
+      # we found that w1 is closer
+      raise Exception('Error computing weights in trajectory interpolation')
   
   print("Interpolation weights:")
   print(weights)
