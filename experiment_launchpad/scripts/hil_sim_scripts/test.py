@@ -12,7 +12,7 @@ from sensor_msgs.msg import JointState
 from tf2_ros import TransformBroadcaster
 from geometry_msgs.msg import TransformStamped, WrenchStamped, PointStamped, Point
 from std_msgs.msg import String, Float32, Float32MultiArray 
-
+import pickle
 
 from on_orbit.on_orbit_bindings import IKMoveEEBehindBarrier
 
@@ -21,36 +21,84 @@ import os
 from visualization_msgs.msg import Marker
 
 import matplotlib.pyplot as plt
+
+a= pickle.load(open('/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_launchpad/scripts/data.pkl', 'rb'))
+print(a.keys()) 
+mrv_del_angs= a['del_angles_mrv']
 xx=[]
-yx=[]
+y=[]
 xy=[]
-yy=[]
 xz=[]
-yz=[]
-t=12000
-a= np.load('mrv_orientation.npy')
-for i in range(0, t):
-    xx.append(a[i][0])
-    yx.append(i)
-    xy.append(a[i][1])
-    xz.append(a[i][2])    
-a_nt = np.load('mrv_orientation_nt.npy')
-xtx=[]
-ytx=[]
-xty=[]
-xtz=[]
-for i in range(0, t):
-    xtx.append(a_nt[i][0])
-    ytx.append(i)
-    xty.append(a_nt[i][1])
-    xtz.append(a_nt[i][2])
-plt.plot(yx,xx, color='blue', label='mrv_orientation_x')
-# plt.plot(ytx,xtx, color='red', label='mrv_orientation_nt_x')
-plt.plot(yx,xy, color='green', label='mrv_orientation_y')
-# plt.plot(ytx,xty, color='orange', label='mrv_orientation_nt_y')
-plt.plot(yx,xz, color='purple', label='mrv_orientation_z')
-# plt.plot(ytx,xtz, color='black', label='mrv_orientation_nt_z')
+for i in range(1, len(mrv_del_angs)):
+    xx.append(mrv_del_angs[i][0])
+    y.append(i)
+    xy.append(mrv_del_angs[i][1])
+    xz.append(mrv_del_angs[i][2])    
+
+client_del_angs= a['del_angles_client']
+xcx=[]
+yc=[]
+xcy=[]
+xcz=[]
+for i in range(1, len(client_del_angs)):
+    xcx.append(client_del_angs[i][0])
+    yc.append(i)
+    xcy.append(client_del_angs[i][1])
+    xcz.append(client_del_angs[i][2])
+
+plt.plot(y,xx, color='blue', label='mrv_del_angles_x')
+plt.plot(y,xy, color='green', label='mrv_del_angles_y')
+plt.plot(y,xz, color='purple', label='mrv_del_angles_z')
+
+plt.plot(yc,xcx, color='red', label='client_del_angles_x')
+plt.plot(yc,xcy, color='orange', label='client_del_angles_y')
+plt.plot(yc,xcz, color='black', label='client_del_angles_z')
 plt.legend()
+plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# xx=[]
+# yx=[]
+# xy=[]
+# yy=[]
+# xz=[]
+# yz=[]
+# t=12000
+# a= np.load('mrv_orientation.npy')
+# for i in range(0, t):
+#     xx.append(a[i][0])
+#     yx.append(i)
+#     xy.append(a[i][1])
+#     xz.append(a[i][2])    
+# a_nt = np.load('mrv_orientation_nt.npy')
+# xtx=[]
+# ytx=[]
+# xty=[]
+# xtz=[]
+# for i in range(0, t):
+#     xtx.append(a_nt[i][0])
+#     ytx.append(i)
+#     xty.append(a_nt[i][1])
+#     xtz.append(a_nt[i][2])
+# plt.plot(yx,xx, color='blue', label='mrv_orientation_x')
+# # plt.plot(ytx,xtx, color='red', label='mrv_orientation_nt_x')
+# plt.plot(yx,xy, color='green', label='mrv_orientation_y')
+# # plt.plot(ytx,xty, color='orange', label='mrv_orientation_nt_y')
+# plt.plot(yx,xz, color='purple', label='mrv_orientation_z')
+# # plt.plot(ytx,xtz, color='black', label='mrv_orientation_nt_z')
+# plt.legend()
 
 
 

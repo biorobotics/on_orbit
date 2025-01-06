@@ -5,7 +5,7 @@ import time
 from std_msgs.msg import Float32MultiArray
 from geometry_msgs.msg import Pose, PoseArray
 
-
+import pickle
 from scipy.spatial.transform import Rotation as R
 from get_grid import get_grid
 from trajlib_util import get_trajlib_load_paths, interp_trajectories_on_initial_client_w, interp_trajectories_on_delta_pos, interp_trajectories_on_init_client_state
@@ -144,8 +144,7 @@ class experiments:
 
     delta_pos = self.poses[:3]
     delta_rot = np.array(rospy.get_param('delta_rot'))*np.pi/180  #why is this taken from the param server and not the grid??
-  
-
+    
     print('Desired position difference (m) in nozzle frame: ', delta_pos)
     print('Desired rotation difference (deg) in nozzle frame: ', delta_rot)
 
@@ -153,7 +152,13 @@ class experiments:
     initial_mrv_w = np.copy(self.poses[6:9])*np.pi/180
 
     initial_client_w = np.copy(self.poses[9:12])*np.pi/180
+    save_data={} 
+    save_data['delta_pos'] = delta_pos
+    save_data['delta_rot'] = delta_rot
 
+    save_data['delta_v'] = delta_v
+    save_data['initial_mrv_w'] = initial_mrv_w
+    save_data['initial_client_w'] = initial_client_w
 
     print('Delta v: ', delta_v)
     print('initial_mrv_w: ', initial_mrv_w)
@@ -223,49 +228,14 @@ class experiments:
       self.on_shutdown()
       print()
       return
-    # self.hil_runner.initialize_arms_to_ee_poses(sw_peg_pos, \
-    #                                             sw_peg_rmat, \
-    #                                             sw_peg_twist, \
-    #                                             sw_nozzle_pos, \
-    #                                             sw_nozzle_rmat, \
-    #                                             sw_nozzle_twist, \
-    #                                             self.verify_trajectory_visually)
-
-
     if rospy.is_shutdown():
       quit()
 
     rate = rospy.Rate(1/self.dt)
 
     gc.disable()
-    # self.holo_control.ur_idle_mode('mrv')
-    # self.holo_control.ur_idle_mode('client')
-    # self.holo_control.ur_velocity_mode('mrv')
-    # self.holo_control.ur_velocity_mode('client')
     noz = Pose()
-    peg = Pose()
-    # b,a = mrv_controller.mrv_client_sim.get_peg_nad_noz_pose()
-    # print("Nozzle pose: ", a)
-    # # print("Peg pose: ", b)
-
-    # noz.position.x = a[0]
-    # noz.position.y = a[1]
-    # noz.position.z = a[2]
-    # peg.position.x = b[0]
-    # peg.position.y = b[1]
-    # peg.position.z = b[2]
-    # self.peg_pos.poses.append(peg)
-    # self.noz_pos.poses.append(noz)
-    # self.noz_pose_pub.publish(self.noz_pos)
-    # self.peg_pose_pub.publish(self.peg_pos)
-    # self.noz_pos.poses = []
-    # self.peg_pos.poses = []
-    # mrv_controller.mrv_client_sim.combine_and_simulate_for_w()
-    # for i in range(10):
-    #   sw_base_pos, sw_base_rmat, sw_client_pos, sw_client_rmat = mrv_controller.mrv_client_sim.forward()
-    #   self.sim_vis_publisher.publish(sw_joint_angles, sw_base_pos, sw_base_rmat, sw_client_pos, sw_client_rmat)
-    #   rate.sleep()
-    # return  
+    peg = Pose() 
     some= 0
     while not rospy.is_shutdown(): 
       # hw_status, wrench_peg_peg = self.hil_runner.emulate(sw_peg_pos, \
@@ -284,7 +254,6 @@ class experiments:
       sw_status = mrv_controller.step(wrench_peg_peg, self.apply_wrench_only_when_close)
       
       b,a = mrv_controller.mrv_client_sim.get_peg_nad_noz_pose()
-      print("Nozzle pose: ", a)
       # print("Peg pose: ", b)
 
       noz.position.x = a[0]
@@ -345,16 +314,36 @@ class experiments:
     mrv_R_initial = R.from_matrix(sw_base_rmat)
     client_R_initial = R.from_matrix(sw_client_rmat)
 
+    mrv_pose_list = []
+    client_pose_list = []
+    del_angles_mrv = []
+    del_angles_client = []
     mrv_controller.mrv_client_sim.combine_and_simulate_for_w()
-    for i in range(30000):
+    for i in range(30):
       print(i/100)
       sw_base_pos, sw_base_rmat, sw_client_pos, sw_client_rmat = mrv_controller.mrv_client_sim.forward()
       self.sim_vis_publisher.publish(sw_joint_angles, sw_base_pos, sw_base_rmat, sw_client_pos, sw_client_rmat, traj_pos, traj_rmat)
       mrv_R = R.from_matrix(sw_base_rmat)
       client_R = R.from_matrix(sw_client_rmat)
+      mrv_pose_list.append(sw_base_pos)
+      client_pose_list.append(sw_client_pos)
+      del_angles_mrv.append(np.array(mrv_R.as_euler('xyz', degrees=True)) - np.array(mrv_R_initial.as_euler('xyz', degrees=True)))
+      del_angles_client.append(np.array(client_R.as_euler('xyz', degrees=True)) - np.array(client_R_initial.as_euler('xyz', degrees=True)))
       print("Difference mrv", np.array(mrv_R.as_euler('xyz', degrees=True)) - np.array(mrv_R_initial.as_euler('xyz', degrees=True)))
       print("Difference _cv", np.array(client_R.as_euler('xyz', degrees=True)) - np.array(client_R_initial.as_euler('xyz', degrees=True)))
-      rate.sleep()
+      # rate.sleep()
+      rospy.sleep(0.002)
+
+    save_data['mrv_pose_list'] = mrv_pose_list
+    save_data['client_pose_list'] = client_pose_list
+    save_data['del_angles_mrv'] = del_angles_mrv
+    save_data['del_angles_client'] = del_angles_client
+    save_data['mrv_R_initial'] = mrv_R_initial.as_euler('xyz', degrees=True)
+    save_data['client_R_initial'] = client_R_initial.as_euler('xyz', degrees=True)
+
+    with open('/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_launchpad/scripts/data.pkl', 'wb') as f:
+      pickle.dump(save_data, f)
+
 
 
 

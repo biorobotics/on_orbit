@@ -7,7 +7,7 @@ from std_msgs.msg import Float32MultiArray
 from scipy.spatial.transform import Rotation as R
 from get_grid import get_grid
 from trajlib_util import get_trajlib_load_paths, interp_trajectories_on_initial_client_w, interp_trajectories_on_delta_pos, interp_trajectories_on_init_client_state
-
+import pickle
 import rospy
 import rospkg
 
@@ -49,6 +49,8 @@ class experiments:
     self.cw_mu = rospy.get_param('cw_mu')
     self.cw_orbit_dir = rospy.get_param('cw_orbit_dir')
     self.use_cw = rospy.get_param('use_cw')
+    self.forward_sim = True
+    self.forward_sim_time = 5*60*100
 
     self.do_noisy_state_estimation = rospy.get_param('do_noisy_state_estimation')
     self.clip_joint_commands = rospy.get_param('clip_joint_commands') #enforce joint limits
@@ -310,19 +312,51 @@ class experiments:
     print("moving peg out of hole")
     self.hil_runner.move_peg_out_of_hole(visualize_before_moving=self.verify_trajectory_visually)
     print("done moving peg out of hole")
-    save_path = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_launchpad/scripts/hil_sim_scripts'
-    # Ensure the directory exists
-    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    # save_path = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_launchpad/scripts/hil_sim_scripts'
+    # # Ensure the directory exists
+    # os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    if self.forward_sim:
+      sw_base_pos, sw_base_rmat, sw_client_pos, sw_client_rmat = mrv_controller.mrv_client_sim.forward()
 
-    # np.save(os.path.join(save_path, 'nozzle_poses.npy'), nozzle_poses)
-    # np.save(os.path.join(save_path, 'nozzle_twists.npy'), nozzle_twists)
-    # np.save(os.path.join(save_path, 'peg_force.npy'), peg_force)
-    # np.save(os.path.join(save_path, 'peg_is_close.npy'), peg_is_close)
-    # shitty stuff
-    self.holo_control.ur_idle_mode('mrv')
-    self.holo_control.ur_idle_mode('client')
-    rospy.sleep(1)
-    mrv_controller.mrv_client_sim.combine_and_simulate_for_w()
+      mrv_R_initial = R.from_matrix(sw_base_rmat)
+      client_R_initial = R.from_matrix(sw_client_rmat)
+      save_data={} 
+      save_data['delta_pos'] = delta_pos
+      save_data['delta_rot'] = delta_rot
+
+      save_data['delta_v'] = delta_v
+      save_data['initial_mrv_w'] = initial_mrv_w
+      save_data['initial_client_w'] = initial_client_w
+
+      mrv_pose_list = []
+      client_pose_list = []
+      del_angles_mrv = []
+      del_angles_client = []
+      mrv_controller.mrv_client_sim.combine_and_simulate_for_w()
+      for i in range(30):
+        print(i/100)
+        sw_base_pos, sw_base_rmat, sw_client_pos, sw_client_rmat = mrv_controller.mrv_client_sim.forward()
+        self.sim_vis_publisher.publish(sw_joint_angles, sw_base_pos, sw_base_rmat, sw_client_pos, sw_client_rmat, traj_pos, traj_rmat)
+        mrv_R = R.from_matrix(sw_base_rmat)
+        client_R = R.from_matrix(sw_client_rmat)
+        mrv_pose_list.append(sw_base_pos)
+        client_pose_list.append(sw_client_pos)
+        del_angles_mrv.append(np.array(mrv_R.as_euler('xyz', degrees=True)) - np.array(mrv_R_initial.as_euler('xyz', degrees=True)))
+        del_angles_client.append(np.array(client_R.as_euler('xyz', degrees=True)) - np.array(client_R_initial.as_euler('xyz', degrees=True)))
+        print("Difference mrv", np.array(mrv_R.as_euler('xyz', degrees=True)) - np.array(mrv_R_initial.as_euler('xyz', degrees=True)))
+        print("Difference _cv", np.array(client_R.as_euler('xyz', degrees=True)) - np.array(client_R_initial.as_euler('xyz', degrees=True)))
+        # rate.sleep()
+        rospy.sleep(0.002)
+
+      save_data['mrv_pose_list'] = mrv_pose_list
+      save_data['client_pose_list'] = client_pose_list
+      save_data['del_angles_mrv'] = del_angles_mrv
+      save_data['del_angles_client'] = del_angles_client
+      save_data['mrv_R_initial'] = mrv_R_initial.as_euler('xyz', degrees=True)
+      save_data['client_R_initial'] = client_R_initial.as_euler('xyz', degrees=True)
+
+      with open('/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_launchpad/scripts/data.pkl', 'wb') as f:
+        pickle.dump(save_data, f)
     
     self.rerun = True
     self.poses = []

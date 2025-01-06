@@ -217,7 +217,6 @@ class MRVClientSim(object):
     self.pb_client.setGravity(0, 0, 0)
     self.pb_client.setTimeStep(dt)
 
-    self.dt = dt
     self.pybullet_mrv_urdf_file = pybullet_mrv_urdf_file
     self.pybullet_cv_urdf_file = pybullet_cv_urdf_file
 
@@ -329,93 +328,7 @@ class MRVClientSim(object):
     what[2,0] = -w[1]
     what[2,1] = w[0]
     return what
-
-  def create_new_pin_model(self):
-    self.temp_client = pbbc.BulletClient(connection_mode=pybullet.DIRECT) # Or pybullet.GUI for graphical version
-    self.temp_client.setAdditionalSearchPath(pybullet_data.getDataPath()) # TODO: what does this actually do? They say it's optional
-    self.temp_client.setGravity(0, 0, 0)
-    self.temp_client.setTimeStep(self.dt)
-    self.temp_pb_mrv_id = self.pb_client.loadURDF(self.pybullet_mrv_urdf_file, np.zeros(3), np.array([0., 0., 0., 1.]), flags=pybullet.URDF_USE_INERTIA_FROM_FILE|pybullet.URDF_USE_IMPLICIT_CYLINDER)
-    self.temp_pb_cv_id = self.pb_client.loadURDF(self.pybullet_cv_urdf_file, 100*np.ones(3), np.array([0., 0., 0., 1.]), flags=pybullet.URDF_USE_INERTIA_FROM_FILE|pybullet.URDF_USE_IMPLICIT_CYLINDER)
-
-    for j in range(self.pb_client.getNumJoints(self.temp_pb_mrv_id)):
-      self.pb_client.changeDynamics(self.temp_pb_mrv_id, j, lateralFriction=0.0, spinningFriction=0.0, restitution=0.0, rollingFriction=0.0)
-    for j in range(self.pb_client.getNumJoints(self.temp_pb_cv_id)):
-      self.pb_client.changeDynamics(self.temp_pb_cv_id, j, lateralFriction=0.0, spinningFriction=0.0, restitution=0.0, rollingFriction=0.0)
-    
-    temp_mrv_pos, temp_mrv_quat = self.pb_client.getBasePositionAndOrientation(self.pb_mrv_id)
-    self.temp_client.resetBasePositionAndOrientation(self.temp_pb_mrv_id, temp_mrv_pos, temp_mrv_quat)
-
-    temp_cv_pos, temp_cv_quat = self.pb_client.getBasePositionAndOrientation(self.pb_cv_id)
-    self.temp_client.resetBasePositionAndOrientation(self.temp_pb_cv_id, temp_cv_pos, temp_cv_quat)
-
-    numjoints = self.pb_client.getNumJoints(self.pb_mrv_id)
-    print("Number of joints in MRV: ", numjoints)
-    print("Number of joints in temp MRV: ", self.temp_client.getNumJoints(self.temp_pb_mrv_id))
-    return
-    for i in range(numjoints):
-      joint_pos, joint_vel, joint_reaction_forces, _ = self.pb_client.getJointState(self.pb_mrv_id, i)
-      self.temp_client.resetJointState(self.temp_pb_mrv_id, i, joint_pos, 0)
-
-
-    mrv_pos, mrv_quat = self.pb_client.getBasePositionAndOrientation(self.pb_mrv_id)
-    mrv_R_initial = R.from_quat(mrv_quat)
-    print("Initial orientation of MRV ", mrv_R_initial.as_euler('xyz', degrees=True))
-    vel, angl_vel = self.pb_client.getBaseVelocity(self.pb_mrv_id)
-    print("Initial velocity of MRV ", vel)
-    print("Initial angular velocity of MRV ", angl_vel)
-    
-    client_pos, client_quat = self.pb_client.getBasePositionAndOrientation(self.pb_cv_id)
-    vel, angl_vel = self.pb_client.getBaseVelocity(self.pb_cv_id)
-    client_R_initial = R.from_quat(client_quat)
-    print("Initial orientation of client (roll, pitch, yaw): ", client_R_initial.as_euler('xyz', degrees=True))
-    print("Initial velocity of client ", vel)
-    print("Initial angular velocity of client ", angl_vel)
-    
-    # Create a fixed constraint between MRV and CV
-    cid = self.temp_client.createConstraint(self.temp_pb_mrv_id, -1, self.temp_pb_cv_id, -1, pybullet.JOINT_FIXED, [0, 0, 0], [0, 0, 0], [0, 0, 0])
-    self.temp_client.changeConstraint(cid, maxForce=100000)
-
-    self.temp_client.stepSimulation()
-    print("Combining the two vehicles")
-    
-    mrv_pos, mrv_quat = self.temp_client.getBasePositionAndOrientation(self.temp_pb_mrv_id)
-    mrv_R_initial = R.from_quat(mrv_quat)
-    print("Final orientation of MRV ", mrv_R_initial.as_euler('xyz', degrees=True))
-    vel, angl_vel = self.temp_client.getBaseVelocity(self.temp_pb_mrv_id)
-    print("Final velocity of MRV ", vel)
-    print("Final angular velocity of MRV ", angl_vel)
-    
-    client_pos, client_quat = self.temp_client.getBasePositionAndOrientation(self.temp_pb_cv_id)
-    vel, angl_vel = self.temp_client.getBaseVelocity(self.temp_pb_cv_id)
-    client_R_initial = R.from_quat(client_quat)
-    print("Final orientation of client (roll, pitch, yaw): ", client_R_initial.as_euler('xyz', degrees=True))
-    print("Final velocity of client ", vel)
-    print("Final angular velocity of client ", angl_vel)
-    
-    vel, angl_vel = self.pb_client.getBaseVelocity(self.pb_cv_id)
-    self.temp_client.resetBaseVelocity(self.temp_pb_cv_id, vel, angl_vel)
-
-    vel, angl_vel = self.pb_client.getBaseVelocity(self.pb_mrv_id)
-    self.temp_client.resetBaseVelocity(self.temp_pb_mrv_id, vel, angl_vel)
-
-    self.temp_client.stepSimulation()
-
-    print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1")
-    mrv_pos, mrv_quat = self.temp_client.getBasePositionAndOrientation(self.temp_pb_mrv_id)
-    mrv_R_initial = R.from_quat(mrv_quat)
-    print("Final orientation of MRV ", mrv_R_initial.as_euler('xyz', degrees=True))
-    vel, angl_vel = self.temp_client.getBaseVelocity(self.temp_pb_mrv_id)
-    print("Final velocity of MRV ", vel)
-    print("Final angular velocity of MRV ", angl_vel)
-    
-    client_pos, client_quat = self.temp_client.getBasePositionAndOrientation(self.temp_pb_cv_id)
-    vel, angl_vel = self.temp_client.getBaseVelocity(self.temp_pb_cv_id)
-    client_R_initial = R.from_quat(client_quat)
-    print("Final orientation of client (roll, pitch, yaw): ", client_R_initial.as_euler('xyz', degrees=True))
-    print("Final velocity of client ", vel)
-    print("Final angular velocity of client ", angl_vel)
-     
+   
   def get_wrist_jacobian(self):
     return copy.deepcopy(pin.getFrameJacobian(self.mrv_pin_model, self.mrv_pin_data, self.mrv_wrist_fid, pin.ReferenceFrame.LOCAL))
 
@@ -1348,102 +1261,72 @@ class MRVClientSim(object):
 
     self.update_kinematics_est()
 
+  def update_x(self):
+
+    sw_client_pos, sw_client_q = self.pb_client.getBasePositionAndOrientation(self.pb_cv_id)
+    sw_client_rmat = R.from_quat(sw_client_q)
+    sw_base_pos, sw_base_q = self.pb_client.getBasePositionAndOrientation(self.pb_mrv_id)
+    sw_base_rmat = R.from_quat(sw_base_q)
+
+    joint_states = self.pb_client.getJointStates(self.pb_mrv_id, self.pb_joint_indices)
+    cv_v, cv_w = self.pb_client.getBaseVelocity(self.pb_cv_id)
+    cv_v = sw_client_rmat.inv().apply(cv_v)
+    cv_w = sw_client_rmat.inv().apply(cv_w)
+    mrv_v, mrv_w = self.pb_client.getBaseVelocity(self.pb_mrv_id)
+    mrv_v = sw_client_rmat.inv().apply(mrv_v)
+    mrv_w = sw_client_rmat.inv().apply(mrv_w)
+
+    self.x[self.cv_qidx:self.cv_qidx + 3] = np.copy(sw_client_pos)
+    self.x[self.cv_qidx + 3:self.cv_qidx + 7] = np.copy(sw_client_q)
+    self.x[self.mrv_qidx:self.mrv_qidx + 3] = np.copy(sw_base_pos)
+    self.x[self.mrv_qidx + 3:self.mrv_qidx + 7] = np.copy(sw_base_q)
+    self.x[self.mrv_qidx + 7:self.mrv_qidx + self.mrv_pin_model.nq] = np.array([state[0] for state in joint_states])
+
+    self.x[self.pin_model.nq + self.cv_vidx:self.pin_model.nq + self.cv_vidx + 3] = np.copy(cv_v)
+    self.x[self.pin_model.nq + self.cv_vidx + 3:self.pin_model.nq + self.cv_vidx + 6] = np.copy(cv_w)
+
+    self.x[self.pin_model.nq + self.mrv_vidx:self.pin_model.nq + self.mrv_vidx + 3] = np.copy(mrv_v)
+    self.x[self.pin_model.nq + self.mrv_vidx + 3:self.pin_model.nq + self.mrv_vidx + 6] = np.copy(mrv_w)
+    self.x[self.pin_model.nq + self.mrv_vidx + 6:self.pin_model.nq + self.mrv_vidx + self.mrv_pin_model.nv] = np.array([state[1] for state in joint_states])
+    return
+
   def forward(self):
+    self.update_x()
+    if self.use_cw:
+      cw_force = self.compute_cw_force(False)
+      client_quat = self.x[self.cv_qidx + 3:self.cv_qidx + 7]
+      
+      #CW forces applied only to client because we calcualte the relative acceleration between the client and the MRV
+      self.pb_client.applyExternalForce(self.pb_cv_id, -1, list(R.from_quat(client_quat).inv().apply(cw_force)), [0., 0., 0.], pybullet.LINK_FRAME)
+    
     self.pb_client.stepSimulation()
-    sw_client_pos, sw_client_rmat = self.pb_client.getBasePositionAndOrientation(self.pb_cv_id)
-    sw_client_rmat = R.from_quat(sw_client_rmat).as_matrix()
-    sw_base_pos, sw_base_rmat = self.pb_client.getBasePositionAndOrientation(self.pb_mrv_id)
-    sw_base_rmat = R.from_quat(sw_base_rmat).as_matrix()
+
+    sw_client_pos, sw_client_q = self.pb_client.getBasePositionAndOrientation(self.pb_cv_id)
+    sw_client_rmat = R.from_quat(sw_client_q).as_matrix()
+    sw_base_pos, sw_base_q = self.pb_client.getBasePositionAndOrientation(self.pb_mrv_id)
+    sw_base_rmat = R.from_quat(sw_base_q).as_matrix()
+
     return sw_base_pos, sw_base_rmat, sw_client_pos, sw_client_rmat
 
-  # def combine(self):
-
   def get_peg_nad_noz_pose(self):
-    # base_pos, base_orn = self.pb_client.getBasePositionAndOrientation(self.pb_mrv_id)
-    
-    # # Get dynamics info for CoM offset
-    # dynamics_info = self.pb_client.getDynamicsInfo(self.pb_mrv_id, -1)  # -1 indicates base link
-    # local_com_offset = dynamics_info[3]  # Local CoM offset
-
-    # # Convert quaternion to rotation matrix
-    # base_rot_matrix = self.pb_client.getMatrixFromQuaternion(base_orn)
-    # base_rot_matrix = np.array(base_rot_matrix).reshape(3, 3)
-
-    # # Transform local CoM offset to world frame
-    # world_com_offset = np.dot(base_rot_matrix, local_com_offset)
-
-    # # Add offset to base position
-    # world_com_pos = np.array(base_pos) + world_com_offset
-
-    # world_com_pos = np.round(world_com_pos, 5)
-    # base_pos = np.round(base_pos, 5)
-    # print("world_com_pos", world_com_pos)
-    # print("     base_pos", local_com_offset)
-    # return world_com_pos, base_pos
     sw_peg_pos, _, _, sw_nozzle_pos, sw_nozzle_rmat, _ = self.get_peg_and_nozzle_info()
     sw_pos_goal = sw_nozzle_pos + sw_nozzle_rmat[:, 2]*self.get_dist_nozzle_opening_from_goal()
     return sw_peg_pos, sw_pos_goal 
 
-  def quaternion_to_rotation_matrix(self,qx, qy, qz, qw):
-      # Compute the rotation matrix from the quaternion
-      R = np.array([
-          [1 - 2 * (qy**2 + qz**2), 2 * (qx*qy - qz*qw),     2 * (qx*qz + qy*qw)],
-          [2 * (qx*qy + qz*qw),     1 - 2 * (qx**2 + qz**2), 2 * (qy*qz - qx*qw)],
-          [2 * (qx*qz - qy*qw),     2 * (qy*qz + qx*qw),     1 - 2 * (qx**2 + qy**2)]
-      ])
-      q0 = qx
-      q1 = qy
-      q2 = qz
-      q3 = qw
-      
-      # First row of the rotation matrix
-      r00 = 2 * (q0 * q0 + q1 * q1) - 1
-      r01 = 2 * (q1 * q2 - q0 * q3)
-      r02 = 2 * (q1 * q3 + q0 * q2)
-      
-      # Second row of the rotation matrix
-      r10 = 2 * (q1 * q2 + q0 * q3)
-      r11 = 2 * (q0 * q0 + q2 * q2) - 1
-      r12 = 2 * (q2 * q3 - q0 * q1)
-      
-      # Third row of the rotation matrix
-      r20 = 2 * (q1 * q3 - q0 * q2)
-      r21 = 2 * (q2 * q3 + q0 * q1)
-      r22 = 2 * (q0 * q0 + q3 * q3) - 1
-      
-      # 3x3 rotation matrix
-      rot_matrix = np.array([[r00, r01, r02],
-                            [r10, r11, r12],
-                            [r20, r21, r22]])
-                              
-      # return rot_matrix
-      return R
-
   def transform_point(self, p_A, t, q):
       # Extract components
-      qx, qy, qz, qw = q
       t_x, t_y, t_z = t
       t = np.array([t_x, t_y, t_z])
       
       # Convert quaternion to rotation matrix
-      R = self.quaternion_to_rotation_matrix(qx, qy, qz, qw)
+      R_ = R.from_quat(q).as_matrix()
       
       # Transform point
-      p_B = np.dot(R, p_A) - t
+      p_B = np.dot(R_.T, (p_A - np.array(t)))
       return p_B
 
   def combine_and_simulate_for_w(self, time_steps=100):
     self.set_pybullet_joint_velocity([0,0,0,0,0,0,0])
-    self.pb_client.stepSimulation()
-    # get me the location and id of the peg in pybullet self.pb_clinet
-
-    # numjoints = self.pb_client.getNumJoints(self.pb_mrv_id)
-    # for i in range(numjoints):
-    #   joint_pos, joint_vel, joint_reaction_forces, _ = self.pb_client.getJointState(self.pb_mrv_id, i)
-    #   self.pb_client.resetJointState(self.pb_mrv_id, i, joint_pos, 0)  
-   
-    self.pb_client.resetBaseVelocity(self.pb_cv_id, [0,0,0],[0,0,0])
-    self.pb_client.resetBaseVelocity(self.pb_mrv_id, [0,0,0],[0,0,0])
     self.pb_client.stepSimulation()
 
 
@@ -1461,69 +1344,15 @@ class MRVClientSim(object):
     print("Initial velocity of client ", initial_cv_vel)
     print("Initial angular velocity of client ", initial_cv_angl_vel)
 
-
-
-    cv_vel, cv_angl_vel = self.pb_client.getBaseVelocity(self.pb_cv_id)
-    mrv_vel, mrv_angl_vel = self.pb_client.getBaseVelocity(self.pb_mrv_id)
-    print("Initial velocity of MRV ", mrv_vel)
-    print("Initial angular velocity of MRV ", mrv_angl_vel)
-    print("Initial velocity of client ", cv_vel)
-    print("Initial angular velocity of client ", cv_angl_vel)
-    print("Combining the two vehicles")
  
     sw_peg_pos, _, _, sw_nozzle_pos, sw_nozzle_rmat, _ = self.get_peg_and_nozzle_info()
     sw_pos_goal = sw_nozzle_pos + sw_nozzle_rmat[:, 2]*self.get_dist_nozzle_opening_from_goal()
 
-    # sw_peg_pos = self.transform_point(sw_pos_goal, mrv_pos, R.from_quat(mrv_quat).as_quat())
-    # sw_pos_goal = self.transform_point(sw_pos_goal, client_pos, R.from_quat(client_quat).as_quat())
-    
-    a = self.transform_point([5,0,0], [10,0,0], [0,0,0,1])
-    R_ = R.from_quat(mrv_quat).as_matrix()
-    R_ = R_.T
-    xd = R_[0,0]*(sw_pos_goal[0]- mrv_pos[0]) + R_[0,1]*(sw_pos_goal[0]- mrv_pos[1]) + R_[0,2]*(sw_pos_goal[0]- mrv_pos[2])
-    yd = R_[1,0]*(sw_pos_goal[1]- mrv_pos[0]) + R_[1,1]*(sw_pos_goal[1]- mrv_pos[1]) + R_[1,2]*(sw_pos_goal[1]- mrv_pos[2])
-    zd = R_[2,0]*(sw_pos_goal[2]- mrv_pos[0]) + R_[2,1]*(sw_pos_goal[2]- mrv_pos[1]) + R_[2,2]*(sw_pos_goal[2]- mrv_pos[2])
+    attach_point_wrt_mrv = self.transform_point(sw_peg_pos, mrv_pos, mrv_quat)
+    attach_point_wrt_cv = self.transform_point(sw_peg_pos, client_pos, client_quat)
 
-    
-
-    print("a", a)
-
-
-    # sw_peg_pos = self.transform_point([0,0,0], mrv_pos, mrv_quat)
-    # sw_pos_goal = self.transform_point([0,0,0], client_pos, client_quat)
-
-    print("xd", xd, sw_peg_pos[0])
-    print("yd", yd, sw_peg_pos[1])
-    print("zd", zd, sw_peg_pos[2])
-
-    Rc_= R.from_quat(client_quat).as_matrix()
-    Rc_ = Rc_.T
-    xcd = Rc_[0,0]*(sw_pos_goal[0]- client_pos[0]) + Rc_[0,1]*(sw_pos_goal[0]- client_pos[1]) + Rc_[0,2]*(sw_pos_goal[0]- client_pos[2])
-    ycd = Rc_[1,0]*(sw_pos_goal[1]- client_pos[0]) + Rc_[1,1]*(sw_pos_goal[1]- client_pos[1]) + Rc_[1,2]*(sw_pos_goal[1]- client_pos[2])
-    zcd = Rc_[2,0]*(sw_pos_goal[2]- client_pos[0]) + Rc_[2,1]*(sw_pos_goal[2]- client_pos[1]) + Rc_[2,2]*(sw_pos_goal[2]- client_pos[2])
-
-    print("xcd", xcd, sw_pos_goal[0])
-    print("ycd", ycd, sw_pos_goal[1])
-    print("zcd", zcd, sw_pos_goal[2])
-
-    # cid = self.pb_client.createConstraint( self.pb_mrv_id, -1,self.pb_cv_id, -1, pybullet.JOINT_FIXED, [0, 0, 0],-1*sw_peg_pos,-1*sw_pos_goal)
-    # cid = self.pb_client.createConstraint(self.pb_cv_id, -1, self.pb_mrv_id, -1, pybullet.JOINT_FIXED, [0, 0, 0],[0,0,0],[0,0,0])
-    cid = self.pb_client.createConstraint(self.pb_cv_id, -1, self.pb_mrv_id, -1, pybullet.JOINT_FIXED, [0, 0, 0],[xcd,ycd,zcd],[xd,yd,zd])
-    # cid = self.pb_client.createConstraint(self.pb_mrv_id, -1, self.pb_cv_id, -1, pybullet.JOINT_FIXED, [0, 0, 0],-1*sw_peg_pos, -1*sw_pos_goal)
+    cid = self.pb_client.createConstraint(self.pb_cv_id, -1, self.pb_mrv_id, -1, pybullet.JOINT_FIXED, [0, 0, 0],attach_point_wrt_cv,attach_point_wrt_mrv)
     self.pb_client.changeConstraint(cid, maxForce=10000000)
-
-    numjoints = self.pb_client.getNumJoints(self.pb_mrv_id)
-    for i in range(numjoints):
-      joint_pos, joint_vel, joint_reaction_forces, _ = self.pb_client.getJointState(self.pb_mrv_id, i)
-      self.pb_client.resetJointState(self.pb_mrv_id, i, joint_pos, 0)  
-    self.pb_client.resetBaseVelocity(self.pb_cv_id, [0,0,0],[0,0,0])
-    self.pb_client.resetBaseVelocity(self.pb_mrv_id, [0,0,0],[0,0,0])
-    self.pb_client.stepSimulation()
-
-
-    # self.pb_client.resetBaseVelocity(self.pb_cv_id, initial_cv_vel, initial_cv_angl_vel)
-    # self.pb_client.resetBaseVelocity(self.pb_mrv_id, initial_mrv_vel, initial_mrv_angl_vel)
-    # self.pb_client.stepSimulation()
 
     mvel, mangl_vel = self.pb_client.getBaseVelocity(self.pb_mrv_id)
     cvel, cangl_vel = self.pb_client.getBaseVelocity(self.pb_cv_id)
@@ -1533,137 +1362,8 @@ class MRVClientSim(object):
     print("Final velocity of client ", cvel)
     print("Final angular velocity of client ", cangl_vel)
     return
-    arr_mrv = []
-    arr_cv = []
-    # Simulate for 10000 time steps
-    for _ in range(6000*2):
-      self.pb_client.stepSimulation()
-      mrv_pos, mrv_quat = self.pb_client.getBasePositionAndOrientation(self.pb_mrv_id)
-      mrv_R = R.from_quat(mrv_quat)
-      client_pos, client_quat = self.pb_client.getBasePositionAndOrientation(self.pb_cv_id)
-      client_R = R.from_quat(client_quat)
-      # print("Change in orientation of MRV ", mrv_R_initial.inv()*mrv_R)
-      print("Difference mrv", np.array(mrv_R.as_euler('xyz', degrees=True)) - np.array(mrv_R_initial.as_euler('xyz', degrees=True)))
-      print("Difference _cv", np.array(client_R.as_euler('xyz', degrees=True)) - np.array(client_R_initial.as_euler('xyz', degrees=True)))
-      print("time step", _/100)
-      arr_mrv.append(np.array(mrv_R.as_euler('xyz', degrees=True)) - np.array(mrv_R_initial.as_euler('xyz', degrees=True)))
-      arr_cv.append(np.array(client_R.as_euler('xyz', degrees=True)) - np.array(client_R_initial.as_euler('xyz', degrees=True)))
-      # time.sleep(self.dt)
-    arr_mrv = np.array(arr_mrv)
-    arr_cv = np.array(arr_cv)
-    print("size of mrv", arr_mrv.shape)
-    import os
-
-    save_path = '/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_launchpad/scripts/hil_sim_scripts'
-    # Ensure the directory exists
-    os.makedirs(os.path.dirname(save_path), exist_ok=True)
-
-    np.save(os.path.join(save_path, 'mrv_orientation111.npy'), arr_mrv)
-    np.save(os.path.join(save_path, 'cv_orientation111.npy'), arr_cv)
-    sa={}
-    sa['mrv'] = arr_mrv
-    sa['cv'] = arr_cv
-    sa['initial_mrv'] = mrv_R_initial.as_euler('xyz', degrees=True)
-    sa['initial_cv'] = client_R_initial.as_euler('xyz', degrees=True)
-    sa['intial_mrv_vel'] = initial_mrv_vel
-    sa['initial_cv_vel'] = initial_cv_vel
-    sa['initial_mrv_angl_vel'] = initial_mrv_angl_vel
-    sa['initial_cv_angl_vel'] = initial_cv_angl_vel
-    pickle.dump(sa, open('orientation.pkl', 'wb'))
-
-  def combine_and_simulate(self, time_steps=100, dt=0.01):
-    """
-    Combines the MRV and client vehicles into a single rigid body in PyBullet,
-    simulates the dynamics for 100 time steps, and returns the orientations.
-    Args:
-        pb_client (object): PyBullet client object.
-        time_steps (int): Number of simulation steps.
-        dt (float): Time step duration.
-    Returns:
-        list: Orientation quaternions of the combined object at each time step.
-    """
-    # Get MRV and client properties
-
-
-
-    mrv_pos, mrv_quat = self.pb_client.getBasePositionAndOrientation(self.pb_mrv_id)
-    client_pos, client_quat = self.pb_client.getBasePositionAndOrientation(self.pb_cv_id)
-
-
-    mrv_mass = self.pb_client.getDynamicsInfo(self.pb_mrv_id, -1)[0]
-    client_mass = self.pb_client.getDynamicsInfo(self.pb_cv_id, -1)[0]
     
-    
-    mrv_inertia = self.pb_client.getDynamicsInfo(self.pb_mrv_id, -1)[2]
-    client_inertia = self.pb_client.getDynamicsInfo(self.pb_cv_id, -1)[2]
-    
-    
-    # Combined mass and inertia
-    combined_mass = mrv_mass + client_mass
-    combined_inertia = tuple(np.add(mrv_inertia, client_inertia))
 
-
-    m_ang_vel = self.pb_client.getBaseVelocity(self.pb_mrv_id)[1]
-    c_ang_vel = self.pb_client.getBaseVelocity(self.pb_cv_id)[1]
-    combined_ang_momentum = np.array(mrv_inertia) @ m_ang_vel + np.array(client_inertia) @ c_ang_vel
-
-    print('mrv_mass', mrv_mass)
-    print('client_mass', client_mass)
-    print("mrv_inertia", mrv_inertia) 
-    print("client_inertia", client_inertia)
-    print('m_ang_vel', m_ang_vel)
-    print('c_ang_vel', c_ang_vel)
-    print('combined_ang_momentum', combined_ang_momentum)
-    return
-
-
-
-    combined_ang_vel = np.linalg.inv(combined_inertia) @ combined_ang_momentum
-
-    combined_q = self.pb_client.getQuaternionFromEuler([0, 0, 0])
-    for i in range(100):
-      # pb_client.stepSimulation()
-      # pb_client.setBasePositionAndOrientation(mrv_id, mrv_pos, mrv_quat)
-      # pb_client.setBasePositionAndOrientation(client_id, client_pos, client_quat)
-      # pb_client.setBaseVelocity(mrv_id, [0, 0, 0], [0, 0, 0])
-      # pb_client.setBaseVelocity(client_id, [0, 0, 0], [0, 0, 0])
-      # pb_client.setBaseVelocity(mrv_id, [0, 0, 0], combined_ang_vel)
-      # pb_client.setBaseVelocity(client_id, [0, 0, 0], combined_ang_vel)
-      # pb_client.setTimeStep(dt)
-      combined_q = combined_q + combined_ang_vel*dt
-      #print all 3 orientations
-      print(self.pb_client.getEulerFromQuaternion(combined_q),i)
-
-    
-    # # Combined position (center of mass)
-    # combined_pos = np.add(
-    #     np.multiply(mrv_pos, mrv_mass),
-    #     np.multiply(client_pos, client_mass)
-    # ) / combined_mass
-    # # Combined orientation (arbitrarily choosing MRV orientation)
-    # combined_quat = mrv_quat
-    # # Create the combined body
-    # combined_id = pb_client.createMultiBody(
-    #     baseMass=combined_mass,
-    #     baseCollisionShapeIndex=-1,
-    #     baseVisualShapeIndex=-1,
-    #     basePosition=combined_pos,
-    #     baseOrientation=combined_quat,
-    #     baseInertialFramePosition=[0, 0, 0],
-    #     baseInertialFrameOrientation=[0, 0, 0, 1]
-    # )
-    # # Disable original bodies
-    # pb_client.removeBody(mrv_id)
-    # pb_client.removeBody(client_id)
-    # # Simulate and collect orientations
-    # orientations = []
-    # for _ in range(time_steps):
-    #     pb_client.stepSimulation()
-    #     _, orientation = pb_client.getBasePositionAndOrientation(combined_id)
-    #     orientations.append(orientation)
-    #     pb_client.setTimeStep(dt)
-    # return orientations
-  
   def ik_with_gradient_descent(self, pin_model, pin_data, q_current, desired_pose, iterations=1000, alpha=.001, tol=1e-2):
     """
     Perform IK using gradient descent with the Jacobian pseudoinverse.
