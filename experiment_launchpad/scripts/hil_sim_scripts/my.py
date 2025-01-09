@@ -48,6 +48,7 @@ class experiments:
     self.cw_a = rospy.get_param('cw_a')
     self.cw_mu = rospy.get_param('cw_mu')
     self.cw_orbit_dir = rospy.get_param('cw_orbit_dir')
+    # self.use_cw = False
     self.use_cw = rospy.get_param('use_cw')
     self.forward_sim = True
     self.forward_sim_time = 5*60*100
@@ -120,15 +121,6 @@ class experiments:
 
     self.hil_runner.calibrate_ft_bias()
 
-    # if self.rerun:
-    #   self.holo_control.ur_idle_mode('client')
-    #   self.holo_control.ur_idle_mode('mrv')  #idle mode for the mrv
-    #   self.holo_control.ur_velocity_mode('mrv') #velocity mode for the mrv to move out of the hole
-    #   self.holo_control.ur_velocity_mode('client')
-    #   self.hil_runner.move_peg_out_of_hole(visualize_before_moving=self.verify_trajectory_visually) #move the peg out of the hole
-    #   self.holo_control.ur_idle_mode('mrv')  #idle mode for the mrv
-    #   self.holo_control.ur_idle_mode('client')
-
     self.holo_control.ur_idle_mode('mrv')
     self.holo_control.ur_idle_mode('client')
     self.hil_runner.reset_to_home_angles(check_for_continue=self.verify_trajectory_visually , seed_used = 0)
@@ -137,7 +129,16 @@ class experiments:
 
     self.hil_runner.calibrate_ft_bias()
 
-    delta_pos = self.poses[:3]
+    # delta_pos = self.poses[:3]
+    delta_pos = [0,0,-0.05] # center of the capture box
+    # delta_pos = [-0.1,0.1,-0.1]
+    # delta_pos = [-0.1,-0.1,-0.1]
+    # delta_pos = [-0.1,0.1,0.0]
+    # delta_pos = [-0.1,-0.1,0.0]
+    # delta_pos = [0.1,0.1,-0.1]
+    # delta_pos = [0.1,-0.1,-0.1]
+    # delta_pos = [0.1,0.1,0.0]
+    # delta_pos = [0.1,-0.1,0.0] 
     delta_rot = np.array(rospy.get_param('delta_rot'))*np.pi/180  #why is this taken from the param server and not the grid??
   
 
@@ -145,9 +146,14 @@ class experiments:
     print('Desired rotation difference (deg) in nozzle frame: ', delta_rot)
 
     delta_v = np.copy(self.poses[3:6])
-    initial_mrv_w = np.copy(self.poses[6:9])*np.pi/180
+    # initial_mrv_w = np.copy(self.poses[6:9])*np.pi/180
+    initial_mrv_w = np.array([0.0,0.0,0.00])*np.pi/180
+    # initial_mrv_w = np.array([0,0.15,0])*np.pi/180
+    # initial_mrv_w = np.array([0,0,0.15])*np.pi/180
 
-    initial_client_w = np.copy(self.poses[9:12])*np.pi/180
+    # initial_client_w = np.copy(self.poses[9:12])*np.pi/180
+    initial_client_w = np.array([0.0,0.0,0.150])*np.pi/180
+
 
 
     print('Delta v: ', delta_v)
@@ -196,8 +202,10 @@ class experiments:
                                         self.dist_centering_waypoint_from_goal) #reset the mrv controller to the required initial conditions
     sw_peg_pos, sw_peg_rmat, sw_peg_twist, sw_nozzle_pos, sw_nozzle_rmat, sw_nozzle_twist = mrv_controller.get_peg_and_nozzle_info()
     sw_base_pos, sw_base_rmat, sw_joint_angles, sw_base_v, sw_base_w, sw_joint_vels, sw_client_pos, sw_client_rmat, sw_client_v, sw_client_w = mrv_controller.get_state_in_pieces()
+    mrv_R_initial = R.from_matrix(sw_base_rmat)
+    print("initial_orienation_mrv **********************", mrv_R_initial.as_euler('xyz', degrees=True))
     self.hil_runner.create_data_for_saving()
-
+    client_R_initial = R.from_matrix(sw_client_rmat)
     nozzle_poses = []
     nozzle_twists = []
     peg_force = []
@@ -263,6 +271,20 @@ class experiments:
     self.holo_control.ur_idle_mode('client')
     self.holo_control.ur_velocity_mode('mrv')
     self.holo_control.ur_velocity_mode('client')
+    save_data={} 
+    save_data['delta_pos'] = delta_pos
+    save_data['delta_rot'] = delta_rot
+
+    save_data['delta_v'] = delta_v
+    save_data['initial_mrv_w'] = initial_mrv_w
+    save_data['initial_client_w'] = initial_client_w
+    save_data['initial_orienation_mrv']=mrv_R_initial.as_euler('xyz', degrees=True)
+    save_data['initial_orienation_client']=client_R_initial.as_euler('xyz', degrees=True)
+
+    mrv_pose_list = []
+    client_pose_list = []
+    mrv_pose_list.append(np.array(mrv_R_initial.as_euler('xyz', degrees=True)))
+    client_pose_list.append(np.array(client_R_initial.as_euler('xyz', degrees=True)))
     while not rospy.is_shutdown(): 
       hw_status, wrench_peg_peg = self.hil_runner.emulate(sw_peg_pos, \
                                                           sw_peg_rmat, \
@@ -281,7 +303,14 @@ class experiments:
       sw_peg_pos, sw_peg_rmat, sw_peg_twist, sw_nozzle_pos, sw_nozzle_rmat, sw_nozzle_twist = mrv_controller.get_peg_and_nozzle_info()
       sw_base_pos, sw_base_rmat, sw_joint_angles, sw_base_v, sw_base_w, sw_joint_vels, sw_client_pos, sw_client_rmat, sw_client_v, sw_client_w = mrv_controller.get_state_in_pieces()
       traj_pos, traj_rmat = mrv_controller.get_traj()
-
+      mrv_R = R.from_matrix(sw_base_rmat)
+      client_R = R.from_matrix(sw_client_rmat)
+      client_R_angles = client_R.as_euler('xyz', degrees=True)
+      print("client_R_angles ", client_R_angles - client_R_initial.as_euler('xyz', degrees=True))
+      print("mrv_R_angles ", mrv_R.as_euler('xyz', degrees=True) - mrv_R_initial.as_euler('xyz', degrees=True))
+      mrv_R_angles = mrv_R.as_euler('xyz', degrees=True)
+      mrv_pose_list.append(np.array(mrv_R.as_euler('xyz', degrees=True)))
+      client_pose_list.append(np.array(client_R.as_euler('xyz', degrees=True)))
       self.sim_vis_publisher.publish(sw_joint_angles, sw_base_pos, sw_base_rmat, sw_client_pos, sw_client_rmat, traj_pos, traj_rmat)      
 
       if hw_status != 'nothing':
@@ -316,46 +345,18 @@ class experiments:
     # # Ensure the directory exists
     # os.makedirs(os.path.dirname(save_path), exist_ok=True)
     if self.forward_sim:
-      sw_base_pos, sw_base_rmat, sw_client_pos, sw_client_rmat = mrv_controller.mrv_client_sim.forward()
-
-      mrv_R_initial = R.from_matrix(sw_base_rmat)
-      client_R_initial = R.from_matrix(sw_client_rmat)
-      save_data={} 
-      save_data['delta_pos'] = delta_pos
-      save_data['delta_rot'] = delta_rot
-
-      save_data['delta_v'] = delta_v
-      save_data['initial_mrv_w'] = initial_mrv_w
-      save_data['initial_client_w'] = initial_client_w
-
-      mrv_pose_list = []
-      client_pose_list = []
-      del_angles_mrv = []
-      del_angles_client = []
-      mrv_controller.mrv_client_sim.combine_and_simulate_for_w()
-      for i in range(30):
-        print(i/100)
-        sw_base_pos, sw_base_rmat, sw_client_pos, sw_client_rmat = mrv_controller.mrv_client_sim.forward()
-        self.sim_vis_publisher.publish(sw_joint_angles, sw_base_pos, sw_base_rmat, sw_client_pos, sw_client_rmat, traj_pos, traj_rmat)
-        mrv_R = R.from_matrix(sw_base_rmat)
-        client_R = R.from_matrix(sw_client_rmat)
-        mrv_pose_list.append(sw_base_pos)
-        client_pose_list.append(sw_client_pos)
-        del_angles_mrv.append(np.array(mrv_R.as_euler('xyz', degrees=True)) - np.array(mrv_R_initial.as_euler('xyz', degrees=True)))
-        del_angles_client.append(np.array(client_R.as_euler('xyz', degrees=True)) - np.array(client_R_initial.as_euler('xyz', degrees=True)))
-        print("Difference mrv", np.array(mrv_R.as_euler('xyz', degrees=True)) - np.array(mrv_R_initial.as_euler('xyz', degrees=True)))
-        print("Difference _cv", np.array(client_R.as_euler('xyz', degrees=True)) - np.array(client_R_initial.as_euler('xyz', degrees=True)))
-        # rate.sleep()
-        rospy.sleep(0.002)
-
+      w = mrv_controller.mrv_client_sim.get_combined_pin_w()
+      print("w ", w)
+      # for i in range(self.forward_sim_time):
+      #   client_R_angles += w*self.dt*180/np.pi
+      #   mrv_R_angles += w*self.dt*180/np.pi
+      #   mrv_pose_list.append(mrv_R_angles)
+      #   client_pose_list.append(client_R_angles)
       save_data['mrv_pose_list'] = mrv_pose_list
       save_data['client_pose_list'] = client_pose_list
-      save_data['del_angles_mrv'] = del_angles_mrv
-      save_data['del_angles_client'] = del_angles_client
-      save_data['mrv_R_initial'] = mrv_R_initial.as_euler('xyz', degrees=True)
-      save_data['client_R_initial'] = client_R_initial.as_euler('xyz', degrees=True)
+      save_data['w']=w
 
-      with open('/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_launchpad/scripts/data.pkl', 'wb') as f:
+      with open('/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_launchpad/scripts/datb/run12cvz15.pkl', 'wb') as f:
         pickle.dump(save_data, f)
     
     self.rerun = True

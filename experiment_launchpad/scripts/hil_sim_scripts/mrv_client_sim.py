@@ -1344,7 +1344,14 @@ class MRVClientSim(object):
     print("Initial velocity of client ", initial_cv_vel)
     print("Initial angular velocity of client ", initial_cv_angl_vel)
 
- 
+
+    print("Initial position of MRV ", mrv_pos)
+
+    self.update_x()
+    # com = pin.centerOfMass(self.mrv_pin_model, self.mrv_pin_data, pin.neutral(self.mrv_pin_model))
+    # com = pin.centerOfMass(self.mrv_pin_model, self.mrv_pin_data, self.x[self.mrv_qidx:self.mrv_qidx + self.mrv_pin_model.nq], self.x[self.pin_model.nq + self.mrv_vidx:self.pin_model.nq + self.mrv_vidx + self.mrv_pin_model.nv])
+    # comcv = pin.centerOfMass(self.pin_model, self.pin_data, self.x[self.cv_qidx:self.cv_qidx + self.pin_model.nq], self.x[self.pin_model.nq + self.cv_vidx:self.pin_model.nq + self.cv_vidx + 3])
+    # comcv = pin.centerOfMass(self.pin_model, self.pin_data, pin.neutral(self.pin_model))
     sw_peg_pos, _, _, sw_nozzle_pos, sw_nozzle_rmat, _ = self.get_peg_and_nozzle_info()
     sw_pos_goal = sw_nozzle_pos + sw_nozzle_rmat[:, 2]*self.get_dist_nozzle_opening_from_goal()
 
@@ -1353,7 +1360,24 @@ class MRVClientSim(object):
 
     cid = self.pb_client.createConstraint(self.pb_cv_id, -1, self.pb_mrv_id, -1, pybullet.JOINT_FIXED, [0, 0, 0],attach_point_wrt_cv,attach_point_wrt_mrv)
     self.pb_client.changeConstraint(cid, maxForce=10000000)
-
+    self.pb_client.stepSimulation()
+    mrv_pos2, mrv_quat2 = self.pb_client.getBasePositionAndOrientation(self.pb_mrv_id)
+    print("final pos", mrv_pos2)
+    print("Initial orientation of MRV ", mrv_R_initial.as_euler('xyz', degrees=True))
+    print("final orientation of MRV ", R.from_quat(mrv_quat2).as_euler('xyz', degrees=True))
+    for _ in range(1000):
+      numjoints = self.pb_client.getNumJoints(self.pb_mrv_id)
+      for i in range(numjoints):
+        joint_pos, joint_vel, joint_reaction_forces, _ = self.pb_client.getJointState(self.pb_mrv_id, i)
+        self.pb_client.resetJointState(self.pb_mrv_id, i, joint_pos, targetVelocity=0)
+      self.pb_client.resetBaseVelocity(self.pb_cv_id, [0,0,0],[0,0,0])
+      self.pb_client.resetBaseVelocity(self.pb_mrv_id, [0,0,0],[0,0,0])
+      self.set_pybullet_joint_velocity([0,0,0,0,0,0,0])
+      self.pb_client.stepSimulation()
+    
+    
+    self.pb_client.resetBaseVelocity(self.pb_cv_id, initial_cv_vel,initial_cv_angl_vel)
+    self.pb_client.resetBaseVelocity(self.pb_mrv_id, initial_mrv_vel,initial_mrv_angl_vel)
     mvel, mangl_vel = self.pb_client.getBaseVelocity(self.pb_mrv_id)
     cvel, cangl_vel = self.pb_client.getBaseVelocity(self.pb_cv_id)
     
@@ -1361,8 +1385,61 @@ class MRVClientSim(object):
     print("Final angular velocity of MRV ", mangl_vel)    
     print("Final velocity of client ", cvel)
     print("Final angular velocity of client ", cangl_vel)
+
+
+
+    print("**************************************************************************")
+    # com = pin.centerOfMass(self.mrv_pin_model, self.mrv_pin_data, self.x[self.mrv_qidx:self.mrv_qidx + self.mrv_pin_model.nq], self.x[self.pin_model.nq + self.mrv_vidx:self.pin_model.nq + self.mrv_vidx + self.mrv_pin_model.nv])
+    # print("mrv 3",self.x[self.mrv_qidx:self.mrv_qidx + self.mrv_pin_model.nq] )
+    # print("mrv 4",self.x[self.pin_model.nq + self.mrv_vidx:self.pin_model.nq + self.mrv_vidx + self.mrv_pin_model.nv])
+    # comcv = pin.centerOfMass(self.pin_model, self.pin_data, self.x[self.cv_qidx:self.cv_qidx + self.pin_model.nq], self.x[self.pin_model.nq + self.cv_vidx:self.pin_model.nq + self.cv_vidx + 3])
+
+    # print("com", com)
+    # print("mrv pose ", mrv_pos)
+    # print("comcv", comcv)
+    # print("client pose ", client_pos)
+
+    #get me q and v vector of self.pinmodel
+
+    # centroidalmomentum = pin.computeCentroidalMomentum(self.pin_model, self.pin_data, self.x[:self.pin_model.nq],self.x[self.pin_model.nq:self.pin_model.nq + self.pin_model.nv])
+    centroidalmomentum = pin.computeCentroidalMomentum(self.pin_model, self.pin_data)
+    print("centroidalmomentum", centroidalmomentum)
+
+    # centroidalmap = pin.computeCentroidalMap(self.pin_model, self.pin_data, self.x[:self.pin_model.nq],self.x[self.pin_model.nq:self.pin_model.nq + self.pin_model.nv])
+    print(type(centroidalmomentum))
+    print("centroidalmomentum", self.pin_data.hg.linear, self.pin_data.hg.angular)
+    #inertia pin 
+    # inter = pin.computeInertia(self.pin_model,self.pin_data)
+    ccom = pin.centerOfMass(self.pin_model, self.pin_data)
+    centroidal_map = pin.computeCentroidalMap(self.pin_model, self.pin_data, self.x[:self.pin_model.nq])
+    inertia_tensor = centroidal_map[:3, :3]
+    print("inertia", self.pin_data.Ig)
+    print("inertia tensor", inertia_tensor)
+    #convert inertia tensor to a matrix
+    inertia_matrix = np.array([[inertia_tensor[0][0], inertia_tensor[0][1], inertia_tensor[0][2]],
+                                [inertia_tensor[1][0], inertia_tensor[1][1], inertia_tensor[1][2]],
+                                [inertia_tensor[2][0], inertia_tensor[2][1], inertia_tensor[2][2]]])
+    w= np.linalg.inv(inertia_matrix) @ centroidalmomentum.angular
+    print("w", w)
+
+
+
+
+    # print("inertia",self.pin_model.inertias[self.mrv_jidx].matrix()[3:, 3:])
+
+
+
+    print("test ",self.pin_data.hg)
     return
-    
+  def get_combined_pin_w(self):
+    centroidalmomentum = pin.computeCentroidalMomentum(self.pin_model, self.pin_data)
+    centroidal_map = pin.computeCentroidalMap(self.pin_model, self.pin_data, self.x[:self.pin_model.nq])
+    inertia_tensor = centroidal_map[:3, :3]
+    inertia_matrix = np.array([[inertia_tensor[0][0], inertia_tensor[0][1], inertia_tensor[0][2]],
+                                [inertia_tensor[1][0], inertia_tensor[1][1], inertia_tensor[1][2]],
+                                [inertia_tensor[2][0], inertia_tensor[2][1], inertia_tensor[2][2]]])
+    w= np.linalg.inv(inertia_matrix) @ centroidalmomentum.angular
+    return w
 
   def ik_with_gradient_descent(self, pin_model, pin_data, q_current, desired_pose, iterations=1000, alpha=.001, tol=1e-2):
     """

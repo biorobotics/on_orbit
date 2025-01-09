@@ -47,7 +47,8 @@ class experiments:
     self.cw_a = rospy.get_param('cw_a')
     self.cw_mu = rospy.get_param('cw_mu')
     self.cw_orbit_dir = rospy.get_param('cw_orbit_dir')
-    self.use_cw = rospy.get_param('use_cw')
+    self.use_cw = False
+    # self.use_cw = rospy.get_param('use_cw')
 
     self.do_noisy_state_estimation = rospy.get_param('do_noisy_state_estimation')
     self.clip_joint_commands = rospy.get_param('clip_joint_commands') #enforce joint limits
@@ -104,6 +105,9 @@ class experiments:
     self.num_trials = rospy.get_param('num_hardware_trials')
     print("Initializations done!!!!!!!!!")
 
+    self.poses=[0,0,0,0,0,0,0,0,0,0,0,0]
+    self.run_experiment()
+
   def poses_callback(self, msg):
     print("Received poses")
     print(msg.data)
@@ -152,13 +156,6 @@ class experiments:
     initial_mrv_w = np.copy(self.poses[6:9])*np.pi/180
 
     initial_client_w = np.copy(self.poses[9:12])*np.pi/180
-    save_data={} 
-    save_data['delta_pos'] = delta_pos
-    save_data['delta_rot'] = delta_rot
-
-    save_data['delta_v'] = delta_v
-    save_data['initial_mrv_w'] = initial_mrv_w
-    save_data['initial_client_w'] = initial_client_w
 
     print('Delta v: ', delta_v)
     print('initial_mrv_w: ', initial_mrv_w)
@@ -309,17 +306,31 @@ class experiments:
 
     print("moving peg out of hole")
     # self.hil_runner.move_peg_out_of_hole(visualize_before_moving=self.verify_trajectory_visually)
-    sw_base_pos, sw_base_rmat, sw_client_pos, sw_client_rmat = mrv_controller.mrv_client_sim.forward()
 
-    mrv_R_initial = R.from_matrix(sw_base_rmat)
-    client_R_initial = R.from_matrix(sw_client_rmat)
 
     mrv_pose_list = []
     client_pose_list = []
     del_angles_mrv = []
     del_angles_client = []
     mrv_controller.mrv_client_sim.combine_and_simulate_for_w()
-    for i in range(30):
+    # return  
+    rospy.sleep(5)
+    sw_base_pos, sw_base_rmat, sw_client_pos, sw_client_rmat = mrv_controller.mrv_client_sim.forward()
+    self.sim_vis_publisher.publish(sw_joint_angles, sw_base_pos, sw_base_rmat, sw_client_pos, sw_client_rmat, traj_pos, traj_rmat)      
+
+    mrv_R_initial = R.from_matrix(sw_base_rmat)
+    client_R_initial = R.from_matrix(sw_client_rmat)
+    save_data={} 
+    save_data['delta_pos'] = delta_pos
+    save_data['delta_rot'] = delta_rot
+
+    save_data['delta_v'] = delta_v
+    save_data['initial_mrv_w'] = initial_mrv_w
+    save_data['initial_client_w'] = initial_client_w
+
+
+    return
+    for i in range(30000):
       print(i/100)
       sw_base_pos, sw_base_rmat, sw_client_pos, sw_client_rmat = mrv_controller.mrv_client_sim.forward()
       self.sim_vis_publisher.publish(sw_joint_angles, sw_base_pos, sw_base_rmat, sw_client_pos, sw_client_rmat, traj_pos, traj_rmat)
@@ -341,8 +352,8 @@ class experiments:
     save_data['mrv_R_initial'] = mrv_R_initial.as_euler('xyz', degrees=True)
     save_data['client_R_initial'] = client_R_initial.as_euler('xyz', degrees=True)
 
-    with open('/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_launchpad/scripts/data.pkl', 'wb') as f:
-      pickle.dump(save_data, f)
+    # with open('/home/medusar/bspin/on_orbit/catkin_ws/src/on_orbit/experiment_launchpad/scripts/dataclean.pkl', 'wb') as f:
+    #   pickle.dump(save_data, f)
 
 
 
