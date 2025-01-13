@@ -291,8 +291,8 @@ class MRVClientSim(object):
     for j in range(self.pb_client.getNumJoints(self.pb_mrv_id)):
       self.pb_client.changeDynamics(self.pb_mrv_id, j, linearDamping=0, angularDamping=0)
 
-    self.pb_client.changeDynamics(self.pb_mrv_id, -1, linearDamping=0, angularDamping=0)
-    self.pb_client.changeDynamics(self.pb_cv_id, -1, linearDamping=0, angularDamping=0)
+    self.pb_client.changeDynamics(self.pb_mrv_id, -1, linearDamping=0, angularDamping=0,lateralFriction=0.0, spinningFriction=0.0, restitution=0.0, rollingFriction=0.0)
+    self.pb_client.changeDynamics(self.pb_cv_id, -1, linearDamping=0, angularDamping=0,lateralFriction=0.0, spinningFriction=0.0, restitution=0.0, rollingFriction=0.0)
 
     # CW stuff
     self.cw_a = cw_a
@@ -814,6 +814,9 @@ class MRVClientSim(object):
       self.pb_client.applyExternalForce(self.pb_cv_id, self.pb_nozzle_id, list(np.multiply(-1,force_peg_world)), p_tip_world_world, pybullet.WORLD_FRAME)
 
     prev_x = np.copy(self.x)
+
+    # print("function ang vel", self.get_client_angular_vel())
+    # print("pybullet ang vel", self.pb_client.getBaseVelocity(self.pb_cv_id)[1])
 
     if self.simulate_angular_velocity_disturbance:
         tau = self.K_ang_vel_dist@(self.angular_velocity_disturbance - self.get_client_angular_vel())
@@ -1431,6 +1434,10 @@ class MRVClientSim(object):
 
     print("test ",self.pin_data.hg)
     return
+  
+  def getmomentum(self):
+    centroidalmomentum = pin.computeCentroidalMomentum(self.pin_model, self.pin_data)
+    return centroidalmomentum
   def get_combined_pin_w(self):
     centroidalmomentum = pin.computeCentroidalMomentum(self.pin_model, self.pin_data)
     centroidal_map = pin.computeCentroidalMap(self.pin_model, self.pin_data, self.x[:self.pin_model.nq])
@@ -1438,8 +1445,31 @@ class MRVClientSim(object):
     inertia_matrix = np.array([[inertia_tensor[0][0], inertia_tensor[0][1], inertia_tensor[0][2]],
                                 [inertia_tensor[1][0], inertia_tensor[1][1], inertia_tensor[1][2]],
                                 [inertia_tensor[2][0], inertia_tensor[2][1], inertia_tensor[2][2]]])
-    w= np.linalg.inv(inertia_matrix) @ centroidalmomentum.angular
+    w = np.linalg.inv(inertia_matrix) @ centroidalmomentum.angular
     return w
+  
+  def forward_rollout(self):
+    cvposes= []
+    mrvposes = [] 
+    centroidalmomentum = pin.computeCentroidalMomentum(self.pin_model, self.pin_data)
+    centroidal_map = pin.computeCentroidalMap(self.pin_model, self.pin_data, self.x[:self.pin_model.nq])
+    inertia_tensor = centroidal_map[:3, :3]
+    inertia_matrix = np.array([[inertia_tensor[0][0], inertia_tensor[0][1], inertia_tensor[0][2]],
+                                [inertia_tensor[1][0], inertia_tensor[1][1], inertia_tensor[1][2]],
+                                [inertia_tensor[2][0], inertia_tensor[2][1], inertia_tensor[2][2]]])
+
+    mrv_pos, mrv_quat = self.pb_client.getBasePositionAndOrientation(self.pb_mrv_id)
+    cv_pos, client_quat = self.pb_client.getBasePositionAndOrientation(self.pb_cv_id)
+    mrv_R_initial = R.from_quat(mrv_quat)
+    w = np.linalg.inv(inertia_matrix) @ centroidalmomentum.angular
+    print("w", w)
+    for i in range(12000):
+      w_dot = np.linalg.inv(inertia_matrix) @ np.cross(-1*w, inertia_matrix @ w)  #equation 4.13
+      print("w_dot", w_dot)
+      w = w + w_dot*self.dt
+      mrv_R = mrv_R_initial * R.from_rotvec(w*self.dt)
+      print("final orientation of MRV ", mrv_R.as_rotvec())
+      print("initial orientation of MRV ", mrv_R_initial.as_rotvec())
 
   def ik_with_gradient_descent(self, pin_model, pin_data, q_current, desired_pose, iterations=1000, alpha=.001, tol=1e-2):
     """
