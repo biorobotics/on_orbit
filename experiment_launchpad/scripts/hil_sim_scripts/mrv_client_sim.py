@@ -818,9 +818,9 @@ class MRVClientSim(object):
     # print("function ang vel", self.get_client_angular_vel())
     # print("pybullet ang vel", self.pb_client.getBaseVelocity(self.pb_cv_id)[1])
 
-    if self.simulate_angular_velocity_disturbance:
-        tau = self.K_ang_vel_dist@(self.angular_velocity_disturbance - self.get_client_angular_vel())
-        self.pb_client.applyExternalTorque(self.pb_cv_id, -1, list(tau), pybullet.WORLD_FRAME)
+    # if self.simulate_angular_velocity_disturbance:
+    #     tau = self.K_ang_vel_dist@(self.angular_velocity_disturbance - self.get_client_angular_vel())
+    #     self.pb_client.applyExternalTorque(self.pb_cv_id, -1, list(tau), pybullet.WORLD_FRAME)
     
     self.pb_client.stepSimulation()
 

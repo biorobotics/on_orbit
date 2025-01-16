@@ -205,11 +205,11 @@ class HILRunner(object):
     qidx_mrv_hil = self.qidx_mrv_hil
 
     # Get force/torque sensor bias
-    num_bias_samples = 100
+    num_bias_samples = 1500
     bias_estimate = np.zeros(6)
     self.ft_bias = np.zeros(6)
     num_data_points_so_far = 0
-    rate = rospy.Rate(100)
+    rate = rospy.Rate(500)
     q = pin.neutral(pin_model)
     for i in range(num_bias_samples):
       mrv_hil_js = holo_control.get_mrv_hil_js()
@@ -468,8 +468,11 @@ class HILRunner(object):
 
     self.peg_pos_error_trj = []
     self.peg_rmat_error_trj = []
+    self.peg_twist_error_trj = []
+
     self.nozzle_pos_error_trj = [] 
     self.nozzle_rmat_error_trj = []
+    self.nozzle_twist_error_trj = []
 
   def get_des_peg_and_nozzle_kinematics(self, sw_peg_pos, sw_peg_rmat, sw_peg_twist, sw_nozzle_pos, sw_nozzle_rmat, sw_nozzle_twist):
     rmat_sw_hw = self.rmat_sw_hw
@@ -890,6 +893,7 @@ class HILRunner(object):
 
     # Bias and gravity compensation for force sensor
     ft_compensated = self.get_ft_compensated(pin_data, ft_fid)
+    print("FT compensated: ", ft_compensated[:3])
     #print(ft_compensated)
     if ft_compensated is None:
       print("Stopping because F/T data is unavailable.")
@@ -946,6 +950,7 @@ class HILRunner(object):
     nozzle_twist_ctrl[3:] = hw_nozzle_twist_d[3:] + rot_kp*pin.log3(hw_nozzle_rmat_d@nozzle_rmat.transpose())
     self.nozzle_pos_error_trj.append(np.copy(nozzle_pos - hw_nozzle_pos_d))
     self.nozzle_rmat_error_trj.append(np.copy(pin.log3(hw_nozzle_rmat_d@nozzle_rmat.transpose())))
+    self.nozzle_twist_error_trj.append(np.copy(Jnozzle@v[vidx_client_arm:vidx_client_arm + 6] - hw_nozzle_twist_d))
 
     nozzle_twist_ctrl = self.clip_twist(nozzle_twist_ctrl)
 
@@ -955,6 +960,7 @@ class HILRunner(object):
     peg_twist_ctrl[:3] = hw_peg_twist_d[:3] - pos_kp*(t_peg_w - hw_peg_pos_d)
     peg_twist_ctrl[3:] = hw_peg_twist_d[3:] + rot_kp*pin.log3(hw_peg_rmat_d@rmat_peg_w.transpose())
     self.peg_pos_error_trj.append(np.copy(t_peg_w - hw_peg_pos_d))
+    self.peg_twist_error_trj.append(np.copy(Jpeg@v[vidx_mrv_arm:vidx_mrv_arm + 6] - hw_peg_twist_d))
     self.peg_rmat_error_trj.append(np.copy(pin.log3(hw_peg_rmat_d@rmat_peg_w.transpose())))
 
     peg_twist_ctrl = self.clip_twist(peg_twist_ctrl)
@@ -1110,16 +1116,21 @@ class HILRunner(object):
     np.save(save_path + '/moving_hw.npy', self.moving_hw)
 
     np.save(save_path + '/ft_compensated_trj.npy', self.ft_compensated_trj)
-    print(self.ft_compensated_trj)
+    # print(self.ft_compensated_trj)
 
     np.save(save_path + '/hw_peg_pos_error_trj.npy', self.peg_pos_error_trj)
     np.save(save_path + '/hw_peg_rmat_error_trj.npy', self.peg_rmat_error_trj)
+    np.save(save_path + '/hw_peg_twist_error_trj.npy', self.peg_twist_error_trj)
 
     np.save(save_path + '/hw_nozzle_pos_error_trj.npy', self.nozzle_pos_error_trj)
     np.save(save_path + '/hw_nozzle_rmat_error_trj.npy', self.nozzle_rmat_error_trj)
+    np.save(save_path + '/hw_nozzle_twist_error_trj.npy', self.nozzle_twist_error_trj)
     
 
     np.save(save_path + '/seed.npy', self.seed_used)
+
+    np.save(save_path + '/rmat_sw_hw.npy', self.rmat_sw_hw)
+    np.save(save_path + '/t_sw_hw.npy', self.t_sw_hw)
 
     # Compute max time interval
     if len(self.hw_ts) > 1:
