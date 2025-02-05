@@ -99,6 +99,8 @@ class MrvController(object):
 
     self.ref_ee_pos_trj_world = []
 
+    self.plunging = False
+
     self.flop_counts = []
     self.times = []
     self.force_err_integral = np.zeros(3)
@@ -162,7 +164,8 @@ class MrvController(object):
     # wrench_peg_peg = np.zeros(6)
     # for _ in range(50):
     #   self.mrv_client_sim.update_state_estimate(wrench_peg_peg)
-
+  def getplunging(self):
+    return self.plunging
   def get_state_in_pieces(self):
     mrv_client_sim = self.mrv_client_sim
 
@@ -804,6 +807,7 @@ class MrvController(object):
       # else:
       #   joint_acc_cmd = self.resolved_accel.compute_control(ref_traj_point, mrv_client_sim, wrench_peg_peg, self.dt, mrv_config, mrv_config_dot)
       if mrv_client_sim.dist_to_throat_opening() < 0.16:
+        self.plunging = True
         if not self.within_nozzle_admittance.admittance_traj_reset:
           print("Resetting admittance trajectory")
           self.within_nozzle_admittance.reset_admittance_traj(mrv_client_sim)

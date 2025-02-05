@@ -8,7 +8,7 @@ from trajlib_util import get_trajlib_load_paths, interp_trajectories_on_initial_
 
 import rospy
 import rospkg
-
+from geometry_msgs.msg import Pose, Point, Quaternion
 from hil_runner import HILRunner
 from holodeck_interface import HolodeckInterface
 from sim_ros_vis_publisher import SimROSVisPublisher
@@ -42,7 +42,10 @@ rate = rospy.Rate(1/dt)
 mrv_hil_home_angles = np.array(rospy.get_param('mrv_hil_home_angles'))
 client_hil_home_angles = np.array(rospy.get_param('client_hil_home_angles'))
 
-
+poseerrorpub = rospy.Publisher('/pose_error', Pose, queue_size=10)
+poseerror = Pose()
+poseerror.position = Point(0,0,0)
+poseerror.orientation = Quaternion(0,0,0,1)
 hil_runner = HILRunner(rospath, mrv_hil_home_angles, client_hil_home_angles, dt=dt)
 sim_vis_publisher = SimROSVisPublisher(rospath)
 
@@ -277,6 +280,14 @@ for grid_idx in range(initial_grid_idx, final_grid_idx):
                                                       sw_nozzle_rmat, \
                                                       sw_nozzle_twist, \
                                                       mrv_controller.dist_nozzle_opening_from_goal)
+      a = hil_runner.geterror()
+      poseerror.position.x = a[0]
+      poseerror.position.y = a[1]
+      poseerror.position.z = a[2]
+      poseerrorpub.publish(poseerror)
+
+      plunging = mrv_controller.getplunging()
+      insidenozzle = not plunging
 
       # Step the SW simulation      
       sw_status = mrv_controller.step(wrench_peg_peg, apply_wrench_only_when_close)

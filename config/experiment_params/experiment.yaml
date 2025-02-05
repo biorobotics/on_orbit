@@ -1,10 +1,10 @@
-delta_pos: [0.00, 0.0, -0.05] #m, position of tip of peg wrt centering waypoint
-delta_rot: [0., 0., 0.] #deg, axis angle vector 
+delta_pos: [0.00, 0.0, -0.1] #m, position of tip of peg wrt centering waypoint
+delta_rot: [0.0, 0.0, 0.0] #deg, axis angle vector 
 delta_v: [0., 0., 0.0] #m/s, relative velocity between base of MRV and base of client 
 initial_client_w: [0.0, 0.0, 0.] # in deg/s
 initial_mrv_w: [0., 0., 0.] # in deg/s
 
-do_save: False
+do_save: True
 use_cw: True #use orbital gravitational dynamics
 save_folder: 'experiment_logs/12_2_24/orientation_cost/'
 

@@ -45,6 +45,8 @@ class HILRunner(object):
     # Initialize the holodeck interface
     self.mrv_arm_name = 'UR3'
     self.client_arm_name = 'UR4'
+    self.garrrr= [0,0,0]
+    self.outside_nozzle = True
     self.mrv_carriage_name = f'vention{self.mrv_arm_name[-1]}'
     self.client_carriage_name = f'vention{self.client_arm_name[-1]}'
     self.mrv_ft_sensor = f'netft_{self.mrv_arm_name[-1]}_data'
@@ -196,6 +198,8 @@ class HILRunner(object):
     self.rmat_sw_hw = None
     self.t_sw_hw = None
 
+  def geterror(self):
+    return self.garrrr
   def calibrate_ft_bias(self):
     pin_model = self.pin_model
     pin_data = self.pin_data
@@ -957,6 +961,17 @@ class HILRunner(object):
     # Compute desired mrv_arm end-effector twist
     pos_kp = 10
     rot_kp = 10
+
+    self.garrrr = np.copy(t_peg_w - hw_peg_pos_d)
+
+    error = np.linalg.norm(t_peg_w - hw_peg_pos_d)
+
+    if (error > 0.05):
+      print("Error is greater than 5cm so recuing tracking gains*********************")
+      pos_kp = 0.5
+      rot_kp = 0.5
+
+    
     peg_twist_ctrl[:3] = hw_peg_twist_d[:3] - pos_kp*(t_peg_w - hw_peg_pos_d)
     peg_twist_ctrl[3:] = hw_peg_twist_d[3:] + rot_kp*pin.log3(hw_peg_rmat_d@rmat_peg_w.transpose())
     self.peg_pos_error_trj.append(np.copy(t_peg_w - hw_peg_pos_d))
