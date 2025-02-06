@@ -966,10 +966,16 @@ class HILRunner(object):
 
     error = np.linalg.norm(t_peg_w - hw_peg_pos_d)
 
-    if (error > 0.05):
-      print("Error is greater than 5cm so recuing tracking gains*********************")
-      pos_kp = 0.5
-      rot_kp = 0.5
+    safe_mrv = True
+    if error > 0.01:
+      safe_mrv = False
+      print("Error is greater than 2cm so stopping*********************")
+      # return 'nothing', wrench_peg_peg
+    
+    if (error > 0.005):
+      print("Error is greater than 1cm so recuing tracking gains*********************")
+      pos_kp = 0.2
+      rot_kp = 0.2
 
     
     peg_twist_ctrl[:3] = hw_peg_twist_d[:3] - pos_kp*(t_peg_w - hw_peg_pos_d)
@@ -1006,12 +1012,20 @@ class HILRunner(object):
     acc_norm_client_arm = np.linalg.norm((v_client_arm_cmd - client_hil_js.velocity[1:7])/dt, ord=np.inf)
     acc_norm_mrv_arm = np.linalg.norm((v_mrv_arm_cmd - mrv_hil_js.velocity[1:7])/dt, ord=np.inf)
     
-    self.mrv_arm_joint_vel_cmds_trj.append(np.copy(v_mrv_arm_cmd))
+    if safe_mrv:
+      self.mrv_arm_joint_vel_cmds_trj.append(np.copy(v_mrv_arm_cmd))
+    else:
+        v_mrv_arm_cmd[:] = 0
+        self.mrv_arm_joint_vel_cmds_trj.append(np.copy(v_mrv_arm_cmd))
     self.client_arm_joint_vel_cmds_trj.append(np.copy(v_client_arm_cmd))
 
     # Send commands to hardware
     if not self.need_to_reinitialize:
-      holo_control.cmd_ur_velocity('mrv', v_mrv_arm_cmd)
+      if safe_mrv:
+        holo_control.cmd_ur_velocity('mrv', v_mrv_arm_cmd)
+      else:
+        v_mrv_arm_cmd[:] = 0
+        holo_control.cmd_ur_velocity('mrv', v_mrv_arm_cmd)
       holo_control.cmd_ur_velocity('client', v_client_arm_cmd)
     else: 
       print("Need to reinitialize arms.")

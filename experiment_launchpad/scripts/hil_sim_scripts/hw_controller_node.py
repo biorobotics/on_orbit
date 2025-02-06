@@ -203,6 +203,9 @@ for grid_idx in range(initial_grid_idx, final_grid_idx):
     sw_peg_pos, sw_peg_rmat, sw_peg_twist, sw_nozzle_pos, sw_nozzle_rmat, sw_nozzle_twist = mrv_controller.get_peg_and_nozzle_info()
     sw_base_pos, sw_base_rmat, sw_joint_angles, sw_base_v, sw_base_w, sw_joint_vels, sw_client_pos, sw_client_rmat, sw_client_v, sw_client_w = mrv_controller.get_state_in_pieces()
 
+    desired_waypoint = mrv_controller.mrv_client_sim.aheadthroutgoal()
+    desired_rot = np.array([[1,0,0],[0,1,0],[0,0,1]]) 
+
     timestr = time.strftime("%Y%m%d-%H%M%S")
 
     save_path_str = rospy.get_param('save_folder') + '/' + '_'.join(['pos_', str(delta_pos[0]), str(delta_pos[1]), str(delta_pos[2]), 'rot', str(delta_rot[0]), str(delta_rot[1]), str(delta_rot[2]), 'delta_v', str(delta_v[0]), str(delta_v[1]), str(delta_v[2]), 'mrv_w', str(initial_mrv_w[0]), str(initial_mrv_w[1]), str(initial_mrv_w[2]), 'client_w', str(initial_client_w[0]), str(initial_client_w[1]), str(initial_client_w[2])])
@@ -253,8 +256,8 @@ for grid_idx in range(initial_grid_idx, final_grid_idx):
       print()
       continue
 
-    hil_runner.initialize_arms_to_ee_poses(sw_peg_pos, \
-                                          sw_peg_rmat, \
+    hil_runner.initialize_arms_to_ee_poses(desired_waypoint, \
+                                          desired_rot, \
                                           sw_peg_twist, \
                                           sw_nozzle_pos, \
                                           sw_nozzle_rmat, \

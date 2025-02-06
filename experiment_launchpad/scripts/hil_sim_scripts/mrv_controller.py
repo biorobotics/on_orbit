@@ -807,6 +807,7 @@ class MrvController(object):
       # else:
       #   joint_acc_cmd = self.resolved_accel.compute_control(ref_traj_point, mrv_client_sim, wrench_peg_peg, self.dt, mrv_config, mrv_config_dot)
       if mrv_client_sim.dist_to_throat_opening() < 0.16:
+        print("is plunging")
         self.plunging = True
         if not self.within_nozzle_admittance.admittance_traj_reset:
           print("Resetting admittance trajectory")

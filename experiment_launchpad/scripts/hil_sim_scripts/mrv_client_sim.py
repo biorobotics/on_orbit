@@ -1660,6 +1660,18 @@ class MRVClientSim(object):
     goal_pos = np.transpose(nozzle_rmat)@self.pin_data.oMf[self.goal_fid].translation
     return np.abs(throat_opening_pos[2] - goal_pos[2])
 
+  def aheadthroutgoal(self):
+    # nozzle to throat end 0.4785m
+    # nozzle to goal is 0.4585m
+    # nozzle to something 0.4295m
+    # nozzle to plunge is goal - 0.16
+    tol = 0.00
+    plunge_dis = 0.4585 - 0.16 - tol
+    desired_dis = np.array([0,0,plunge_dis])
+    nozzle_rmat = self.pin_data.oMf[self.nozzle_fid].rotation
+    desired_pos = np.transpose(nozzle_rmat)@desired_dis
+    return desired_pos
+
   def is_peg_in_throat(self,depth_offset=0):
     ''' Returns True if peg is inside the throat of the nozzle, False otherwise 
 
