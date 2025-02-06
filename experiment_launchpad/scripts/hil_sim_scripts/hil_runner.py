@@ -967,7 +967,7 @@ class HILRunner(object):
     error = np.linalg.norm(t_peg_w - hw_peg_pos_d)
 
     safe_mrv = True
-    if error > 0.01:
+    if error > 0.03:
       safe_mrv = False
       print("Error is greater than 2cm so stopping*********************")
       # return 'nothing', wrench_peg_peg

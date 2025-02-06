@@ -11,7 +11,7 @@ Panels:
         - /TF1/Frames1
         - /RobotModel2
       Splitter Ratio: 0.5
-    Tree Height: 719
+    Tree Height: 363
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -387,6 +387,18 @@ Visualization Manager:
           Value: false
         link0:
           Value: false
+        link1:
+          Value: true
+        link2:
+          Value: true
+        link3:
+          Value: true
+        link4:
+          Value: true
+        link5:
+          Value: true
+        link6:
+          Value: true
         link7:
           Value: false
         nozzle:
@@ -429,6 +441,8 @@ Visualization Manager:
           Value: false
         rail_2:
           Value: false
+        traj:
+          Value: true
         tube_geom0:
           Value: false
         tube_geom1:
@@ -503,9 +517,6 @@ Visualization Manager:
       Show Arrows: false
       Show Axes: false
       Show Names: false
-      Show Arrows: false
-      Show Axes: false
-      Show Names: false
       Tree:
         UR1base:
           actual_UR1tcp:
@@ -519,81 +530,86 @@ Visualization Manager:
         UR4base:
           actual_UR4tcp:
             {}
-        base_link:
-          cam_link:
-            {}
-          link0:
-            {}
-        client:
-          nozzle:
-            capture_box:
-              {}
-            cone_vertex:
-              {}
-            goal:
-              {}
-            hole:
-              {}
-            hole_end:
-              {}
-            nozzle_geom0:
-              {}
-            nozzle_geom1:
-              {}
-            nozzle_geom2:
-              {}
-            nozzle_geom3:
-              {}
-            nozzle_geom4:
-              {}
-            nozzle_geom5:
-              {}
-            nozzle_geom6:
-              {}
-            nozzle_geom7:
-              {}
-            nozzle_rim0:
-              {}
-            nozzle_rim1:
-              {}
-            nozzle_rim2:
-              {}
-            nozzle_rim3:
-              {}
-            nozzle_rim4:
-              {}
-            nozzle_rim5:
-              {}
-            nozzle_rim6:
-              {}
-            nozzle_rim7:
-              {}
-            tube_geom0:
-              {}
-            tube_geom1:
-              {}
-            tube_geom2:
-              {}
-            tube_geom3:
-              {}
-            tube_geom4:
-              {}
-            tube_geom5:
-              {}
-            tube_geom6:
-              {}
-            tube_geom7:
-              {}
-        link7:
-          ee_body:
-            ee_com:
-              {}
-            ee_peg:
-              ee_tip:
-                {}
-          wrist:
-            {}
         world:
+          base_link:
+            cam_link:
+              {}
+            link0:
+              link1:
+                link2:
+                  link3:
+                    link4:
+                      link5:
+                        link6:
+                          link7:
+                            ee_body:
+                              ee_com:
+                                {}
+                              ee_peg:
+                                ee_tip:
+                                  {}
+                            wrist:
+                              {}
+          client:
+            nozzle:
+              capture_box:
+                {}
+              cone_vertex:
+                {}
+              goal:
+                {}
+              hole:
+                {}
+              hole_end:
+                {}
+              nozzle_geom0:
+                {}
+              nozzle_geom1:
+                {}
+              nozzle_geom2:
+                {}
+              nozzle_geom3:
+                {}
+              nozzle_geom4:
+                {}
+              nozzle_geom5:
+                {}
+              nozzle_geom6:
+                {}
+              nozzle_geom7:
+                {}
+              nozzle_rim0:
+                {}
+              nozzle_rim1:
+                {}
+              nozzle_rim2:
+                {}
+              nozzle_rim3:
+                {}
+              nozzle_rim4:
+                {}
+              nozzle_rim5:
+                {}
+              nozzle_rim6:
+                {}
+              nozzle_rim7:
+                {}
+              tube_geom0:
+                {}
+              tube_geom1:
+                {}
+              tube_geom2:
+                {}
+              tube_geom3:
+                {}
+              tube_geom4:
+                {}
+              tube_geom5:
+                {}
+              tube_geom6:
+                {}
+              tube_geom7:
+                {}
           rail_2:
             carriage_link_3:
               ur_3_base_link:
@@ -663,6 +679,8 @@ Visualization Manager:
                                       {}
                                     hw_tube_geom7:
                                       {}
+          traj:
+            {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -952,7 +970,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 4.186274528503418
+      Distance: 0.8770434260368347
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -960,17 +978,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -0.2158762812614441
-        Y: 0.8971397280693054
-        Z: 1.0261839628219604
+        X: 0.48154976963996887
+        Y: 0.9569157361984253
+        Z: 1.005600929260254
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.025398962199687958
+      Pitch: 0.25039902329444885
       Target Frame: <Fixed Frame>
-      Yaw: 4.929576396942139
+      Yaw: 6.034582138061523
     Saved: ~
 Window Geometry:
   Displays:
@@ -988,5 +1006,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1048
-  X: 4703
-  Y: 7
+  X: 861
+  Y: 0
