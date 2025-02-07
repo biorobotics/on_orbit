@@ -112,6 +112,29 @@ def get_grid(grid_type):
 
     x_grid, y_grid, z_grid, vx_grid, vy_grid, vz_grid, mrv_wx_grid, mrv_wy_grid, mrv_wz_grid, client_wx_grid, client_wy_grid, client_wz_grid = np.meshgrid(delta_pos_x, delta_pos_y, delta_pos_z, [0.], [0.], [0.], [0.], [0.], [0.], wx_range, wy_range, [0.], indexing='ij')
   
+  elif grid_type == 19:
+    data = [
+    [0, 0, -0.05, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [-0.05, -0.05, -0.025, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [-0.05, 0.05, -0.025, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0.05, -0.05, -0.025, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0.05, 0.05, -0.025, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [-0.05, -0.05, -0.075, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [-0.05, 0.05, -0.075, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0.05, -0.05, -0.075, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0.05, 0.05, -0.075, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [-0.1, -0.1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [-0.1, 0.1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0.1, -0.1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0.1, 0.1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [-0.1, -0.1, -0.1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [-0.1, 0.1, -0.1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0.1, -0.1, -0.1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0.1, 0.1, -0.1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    ]
+    ic_grid = np.array(data)
+    return ic_grid
+
   else:
     raise ValueError("Invalid grid_type.")
   ic_grid = np.stack((x_grid.flatten(), y_grid.flatten(), z_grid.flatten(), vx_grid.flatten(), vy_grid.flatten(), vz_grid.flatten(), mrv_wx_grid.flatten(), mrv_wy_grid.flatten(), mrv_wz_grid.flatten(), client_wx_grid.flatten(), client_wy_grid.flatten(), client_wz_grid.flatten()), 1)
