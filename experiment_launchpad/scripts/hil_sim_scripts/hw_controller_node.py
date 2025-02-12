@@ -128,14 +128,14 @@ for grid_idx in range(initial_grid_idx, final_grid_idx):
     rng = np.random.default_rng(rng_sequences[trial_idx])
     
     hil_runner.calibrate_ft_bias()
-    if grid_idx > initial_grid_idx or (grid_idx == initial_grid_idx and trial_idx > 0):
-      holo_control.ur_idle_mode('mrv')
-      holo_control.ur_idle_mode('client')
-      holo_control.ur_velocity_mode('mrv')
-      holo_control.ur_velocity_mode('client')
-      hil_runner.move_peg_out_of_hole(visualize_before_moving=verify_trajectory_visually)
-      holo_control.ur_idle_mode('mrv')
-      holo_control.ur_idle_mode('client')
+    # if grid_idx > initial_grid_idx or (grid_idx == initial_grid_idx and trial_idx > 0):
+    #   holo_control.ur_idle_mode('mrv')
+    #   holo_control.ur_idle_mode('client')
+    #   holo_control.ur_velocity_mode('mrv')
+    #   holo_control.ur_velocity_mode('client')
+    #   hil_runner.move_peg_out_of_hole(visualize_before_moving=verify_trajectory_visually)
+    #   holo_control.ur_idle_mode('mrv')
+    #   holo_control.ur_idle_mode('client')
 
     holo_control.ur_idle_mode('mrv')
     holo_control.ur_idle_mode('client')
@@ -314,6 +314,17 @@ for grid_idx in range(initial_grid_idx, final_grid_idx):
       rate.sleep()
 
     on_shutdown()
+    holo_control.ur_idle_mode('mrv')
+    holo_control.ur_idle_mode('client')
+    holo_control.ur_velocity_mode('mrv')
+    holo_control.ur_velocity_mode('client')
+    hil_runner.move_peg_out_of_hole(visualize_before_moving=verify_trajectory_visually)
+    holo_control.ur_idle_mode('mrv')
+    holo_control.ur_idle_mode('client')
+ 
+    print("Done")
+
+    
 
   if rospy.is_shutdown():
     quit()
@@ -326,8 +337,8 @@ for grid_idx in range(initial_grid_idx, final_grid_idx):
   print("last grid idx")
   print(grid_idx)
 
-hil_runner.move_peg_out_of_hole(visualize_before_moving=verify_trajectory_visually)
-print("Done")
+# hil_runner.move_peg_out_of_hole(visualize_before_moving=verify_trajectory_visually)
+# print("Done")
 
 while not rospy.is_shutdown():
   sim_vis_publisher.publish(sw_joint_angles, sw_base_pos, sw_base_rmat, sw_client_pos, sw_client_rmat, traj_pos, traj_rmat)
