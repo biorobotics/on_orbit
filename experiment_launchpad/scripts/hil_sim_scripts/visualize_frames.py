@@ -110,6 +110,7 @@ sw_peg_pos, sw_peg_rmat, sw_peg_twist, sw_nozzle_pos, sw_nozzle_rmat, sw_nozzle_
 sw_base_pos, sw_base_rmat, sw_joint_angles, sw_base_v, sw_base_w, sw_joint_vels, sw_client_pos, sw_client_rmat, sw_client_v, sw_client_w = mrv_controller.get_state_in_pieces()
 traj_pos, traj_rmat = mrv_controller.get_traj()
 
-sim_vis_publisher.publish(sw_joint_angles, sw_base_pos, sw_base_rmat, sw_client_pos, sw_client_rmat, traj_pos, traj_rmat)
-hil_runner.publish_current_hw_joints_for_viz()
-rospy.spin()
+while not rospy.is_shutdown():
+    sim_vis_publisher.publish(sw_joint_angles, sw_base_pos, sw_base_rmat, sw_client_pos, sw_client_rmat, traj_pos, traj_rmat)
+    hil_runner.publish_current_hw_joints_for_viz()
+    rate.sleep()
