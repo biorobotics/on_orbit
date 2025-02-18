@@ -443,7 +443,13 @@ class HILRunner(object):
       self.hw_joints_msg.position[i] = q_vis[i]
       self.hw_joints_msg.header.stamp = rospy.Time.now()
       self.hw_joints_pub.publish(self.hw_joints_msg)
-
+  def publish_current_hw_joints_for_viz(self):
+    mrv_hil_js = self.holo_control.get_mrv_hil_js()
+    client_hil_js = self.holo_control.get_client_hil_js()
+    q=pin.neutral(self.pin_model)
+    q[self.qidx_mrv_hil:self.qidx_mrv_hil + 7] = mrv_hil_js.position
+    q[self.qidx_client_hil:self.qidx_client_hil + 7] = client_hil_js.position
+    self.publish_hw_joints_for_viz(self.pin_model.nv,q)
   def create_data_for_saving(self):
     self.ee_mrv_pos_trj = []
     self.ee_mrv_rmat_trj = []
