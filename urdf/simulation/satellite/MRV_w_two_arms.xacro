@@ -1,0 +1,53 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="MRV_w_two_arms">
+  <xacro:property name="mass_scale" value="1" />
+  <xacro:property name="rval" value="0.7"/>
+  <xacro:property name="gval" value="0.7"/>
+  <xacro:property name="bval" value="0.7"/>
+  <xacro:include filename="$(find on_orbit)/urdf/simulation/satellite/frend_arm.xacro"/>
+ <!-- Base link is referred to as "MRV in NG's docs"-->
+  <link name="base_link">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="2.068 2.372 3.975"/>
+      </geometry>
+      <material name="transparent_gray">
+        <color rgba="${rval} ${gval} ${bval} 0.5"/>
+      </material>
+    </visual>
+    <inertial>
+      <mass value="${4469*mass_scale}"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>        
+      <inertia ixx="${7979.775268*mass_scale}" ixy="0" ixz="0"
+               iyy="${7477.102148*mass_scale}" iyz="0" izz="${3688.045229*mass_scale}"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="2.068 2.372 3.975"/>
+      </geometry>
+    </collision>
+  </link>
+<!--Primary Arm-->
+<xacro:frend_arm prefix="primary_"/>
+    <!-- Joint/Link 0-->
+  <joint name="primary_joint0" type="fixed">
+  <parent link="base_link"/>
+    <child link="primary_link0"/>
+    <!-- <origin rpy="0 0 1.047196667" xyz="0.3182 -0.3182 1.9875"/> -->
+    <origin rpy="0 0 -2.0969" xyz="-0.3182 0.3182 1.9875"/>
+    
+  </joint>
+
+<!--Secondary Arm-->
+<xacro:frend_arm prefix="secondary_"/>
+    <!-- Joint/Link 0-->
+  <joint name="secondary_joint0" type="fixed">
+  <parent link="base_link"/>
+    <child link="secondary_link0"/>
+    <!-- <origin rpy="0 0 1.047196667" xyz="0.3182 -0.3182 1.9875"/> -->
+    <origin rpy="0 0 1.0472" xyz="0.3182 -0.3182 1.9875"/>
+    
+  </joint>
+</robot>
