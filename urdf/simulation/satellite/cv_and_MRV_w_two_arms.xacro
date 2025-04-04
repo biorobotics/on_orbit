@@ -1,0 +1,50 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="cv_and_MRV_w_two_arms">
+  <xacro:include filename="$(find on_orbit)/urdf/simulation/satellite/cv.xacro"/>
+  <xacro:include filename="$(find on_orbit)/urdf/simulation/satellite/MRV_w_two_arms.xacro"/>
+
+  <xacro:macro name="free_prismatic" params="parent child axis">
+    <joint name="${parent}_to_${child}_prismatic_joint" type="prismatic">
+    <parent link="${parent}"/>
+    <child link="${child}"/>
+    <axis xyz="${axis}"/>
+    <limit lower="-100" upper="100" effort="5000" velocity="10"/>
+  </joint>
+  </xacro:macro>
+
+  <xacro:macro name="free_continuous" params="parent child axis">
+    <joint name="${parent}_to_${child}_continuous_joint" type="continuous">
+    <parent link="${parent}"/>
+    <child link="${child}"/>
+    <axis xyz="${axis}"/>
+  </joint>
+  </xacro:macro>
+
+  <link name="world"/>
+
+<joint name="world_to_base" type="floating">
+    <parent link="world"/>
+    <child link="base_link"/>
+    <origin xyz="3 0 0"/>
+</joint>
+  
+  <!-- <link name="base_x"/>
+  <link name="base_y"/>
+  <link name="base_z"/>
+  <link name="base_r"/>
+  <link name="base_p"/>
+
+  <xacro:free_prismatic parent="world" child="base_x" axis="1 0 0"/>
+  <xacro:free_prismatic parent="base_x" child="base_y" axis="0 1 0"/>
+  <xacro:free_prismatic parent="base_y" child="base_z" axis="0 0 1"/>
+  <xacro:free_continuous parent="base_z" child="base_r" axis="1 0 0"/>
+  <xacro:free_continuous parent="base_r" child="base_p" axis="0 1 0"/>
+  <xacro:free_continuous parent="base_p" child="base_link" axis="0 0 1"/> -->
+
+  <joint name="world_to_client" type="floating">
+    <parent link="world"/>
+    <child link="client"/>
+    <origin xyz="0 0 2"/>
+  </joint>
+
+</robot>
