@@ -18,6 +18,12 @@
         <color rgba="${rval} ${gval} ${bval} 0.5"/>
       </material>
     </visual>
+    <collision>
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://on_orbit/urdf/meshes/full_cv.stl" scale="1 1 1"/>
+      </geometry>
+    </collision>
     <inertial>
       <mass value="${1050*mass_scale}"/>
       <origin rpy="0 0 0" xyz="0 0 0"/>     
