@@ -29,6 +29,11 @@
       </geometry>
     </collision>
   </link>
+  <link name="solar_panel_right">
+    <visual>
+    <origin rpy="0 0 0" xyz="2.068/2+2.328+12.405/2 0 3.975/2-2.41"/>
+    </visual>
+  </link>
 <!--Primary Arm-->
 <xacro:frend_arm prefix="primary_"/>
     <!-- Joint/Link 0-->
