@@ -147,5 +147,5 @@ class ResolvedAccel(object):
           self.last_omega_d = omega_d
           self.last_rmat_d = rmat_d
 
-      joint_acc_cmd = self.resolved_accel_base.compute_control(new_ref_traj_point, mrv_client_sim, mrv_config, mrv_config_dot)
+      joint_acc_cmd = self.resolved_accel_base.compute_control(new_ref_traj_point, mrv_client_sim, wrench_peg_peg,mrv_config, mrv_config_dot)
       return joint_acc_cmd
