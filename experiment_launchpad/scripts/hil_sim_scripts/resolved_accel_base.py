@@ -80,7 +80,7 @@ class ResolvedAccelBase(object):
         Jstar_pinv = np.linalg.pinv(Jstar) #ca.pinv
         joint_acc_cmd_min_norm = Jstar_pinv@(  (twist_dot_d - twist_dot_base)  + self.twist_gains@twist_err + self.pose_gains@pos_err - Jstar_dot@Jstar_pinv@(twist_d - twist_base))
       else:
-        Jm, Jm_dot, Jb, Jb_dot = mrv_client_sim.get_mrv_kinematic_jcaobians()
+        Jm, Jm_dot, Jb, Jb_dot = mrv_client_sim.get_mrv_kinematic_jacobians()
         Jm_pinv = np.linalg.pinv(Jm)
         joint_acc_cmd_min_norm = Jm_pinv@(     (twist_dot_d-Jb@twist_dot_base) + self.twist_gains@twist_err + self.pose_gains@pos_err - Jm_dot@theta_dot-Jb_dot@twist_base
 
