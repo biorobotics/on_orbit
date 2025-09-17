@@ -352,6 +352,25 @@ class MRVClientSim(object):
   def get_full_config_deriv(self):
     return copy.deepcopy(self.x[self.pin_model.nq:])
 
+  def get_mrv_kinematic_jacobians(self):
+    ''' Return the kinematic Jacobian matrices mapping manipulator joint and base velocities to the probe tip velocity as well as their time derivatives
+
+    References:
+    D. E. Orin and A. Goswami, “Centroidal momentum matrix of a humanoid robot: Structure and properties,” in 2008 IEEE/RSJ International Conference on Intelligent Robots and Systems, 2008, pp. 653–659
+    '''
+    J = pin.getFrameJacobian(self.pin_model, self.pin_data, self.peg_fid, pin.ReferenceFrame.LOCAL_WORLD_ALIGNED)
+
+    pin.computeJointJacobiansTimeVariation(self.pin_model, self.pin_data, self.get_full_config(), self.get_full_config_deriv())
+    J_dot = pin.getFrameJacobianTimeVariation(self.pin_model, self.pin_data, self.peg_fid, pin.ReferenceFrame.LOCAL_WORLD_ALIGNED)
+    
+    Jm = J[:,6:13] #Jacobian mapping manipulator velocities
+    Jm_dot = J_dot[:,6:13]
+
+    Jb = J[:,:6] #Jacobian for the base velocity
+    Jb_dot = J_dot[:,:6]
+      
+    return Jm, Jm_dot, Jb, Jb_dot
+
   def get_mrv_generalized_jacobian(self): 
     ''' Return the generalized Jacobian for a "local world aligned" frame at the probe tip
     
