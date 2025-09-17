@@ -10,6 +10,7 @@ class ResolvedAccelBase(object):
 
   def __init__(self): 
     self.use_min_norm = False
+    self.account_for_momentum = True #if False, we assume total system momentum is constant and zero and so can use the "simple" generalized Jacobian. This was the controller for the original TFR submission in 2025 (note that Jstar_pinv@twist_d really should have been theta_dot, though)
 
     # Set these to zero to see how open-loop acceleration controls drifts
     scale = 10
@@ -71,17 +72,26 @@ class ResolvedAccelBase(object):
       angle_err =  R.as_rotvec(R.from_matrix(angle_err_mat)) #pin.log3
       pos_err = np.concatenate((tip_pos_err,angle_err),axis=0) #ca.vcat
       
-      Jstar, Jstar_dot = mrv_client_sim.get_mrv_generalized_jacobian()
-      Jstar_pinv = np.linalg.pinv(Jstar) #ca.pinv
+
       
       twist_base, twist_dot_base = mrv_client_sim.get_mrv_base_twist()
-      joint_acc_cmd_min_norm = Jstar_pinv@(  (twist_dot_d - twist_dot_base)  + self.twist_gains@twist_err + self.pose_gains@pos_err - Jstar_dot@Jstar_pinv@(twist_d - twist_base))
+      if not self.account_for_momentum:
+        Jstar, Jstar_dot = mrv_client_sim.get_mrv_generalized_jacobian()
+        Jstar_pinv = np.linalg.pinv(Jstar) #ca.pinv
+        joint_acc_cmd_min_norm = Jstar_pinv@(  (twist_dot_d - twist_dot_base)  + self.twist_gains@twist_err + self.pose_gains@pos_err - Jstar_dot@Jstar_pinv@(twist_d - twist_base))
+      else:
+        Jm, Jm_dot, Jb, Jb_dot = mrv_client_sim.get_mrv_kinematic_jcaobians()
+        Jm_pinv = np.linalg.pinv(Jm)
+        joint_acc_cmd_min_norm = Jm_pinv@(     (twist_dot_d-Jb@twist_dot_base) + self.twist_gains@twist_err + self.pose_gains@pos_err - Jm_dot@theta_dot-Jb_dot@twist_base
 
       if self.use_min_norm: 
         joint_acc_cmd = joint_acc_cmd_min_norm
       else:
         theta_ddot_PD = ref_traj_point.theta_ddot - self.joints_kp*(mrv_config[7:] - ref_traj_point.theta) - self.joints_kd*(mrv_config_dot[6:] - ref_traj_point.theta_dot) 
-        null_proj = (np.identity(7) - Jstar_pinv@Jstar)
+        if not self.account_for_momentum:
+          null_proj = (np.identity(7) - Jstar_pinv@Jstar)
+        else:
+          null_proj = (np.identity(7) - Jm_pinv@Jm)
         joint_acc_cmd = joint_acc_cmd_min_norm + null_proj@theta_ddot_PD
       return joint_acc_cmd
 
