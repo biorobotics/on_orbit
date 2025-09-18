@@ -102,7 +102,7 @@ class ResolvedAccelBase(object):
         b=pin.rnea(mrv_client_sim.mrv_pin_model,mrv_client_sim.mrv_pin_data,mrv_config,mrv_config_dot,np.zeros((mrv_client_sim.mrv_nv)))#actuator torques needed to produce 0 acceleration = bias term
         B=np.vstack([np.zeros((6,7)),np.eye(7)])#actuators only affect the rotary joint torques
         Jpeg_local = pin.getFrameJacobian(mrv_client_sim.mrv_pin_model, mrv_client_sim.mrv_pin_data, mrv_client_sim.mrv_peg_fid, pin.ReferenceFrame.LOCAL)
-        joint_wrenches_from_contact=Jpeg_local[:,6:].T@wrench_peg_peg#wrench was given in peg frame so need Jacobian to the "Local" frame instead of the "Local_World_Aligned" we use elsewhere
+        joint_wrenches_from_contact=Jpeg_local.T@wrench_peg_peg#wrench was given in peg frame so need Jacobian to the "Local" frame instead of the "Local_World_Aligned" we use elsewhere
         
         Mx=M[:,:6]
         Mtheta=M[:,6:13]
