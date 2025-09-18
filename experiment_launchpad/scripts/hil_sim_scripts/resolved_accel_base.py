@@ -98,9 +98,11 @@ class ResolvedAccelBase(object):
         #  [theta_ddot    ]
         #for theta_ddot known in terms of twist_dot_base, we can substitute and solve for u, twist_dot_base
         M=pin.crba(mrv_client_sim.mrv_pin_model,mrv_client_sim.mrv_pin_data,mrv_config,pin.LOCAL_WORLD_ALIGNED)#just the upper triangular part. TODO: figure out which convention I want. Probably Local_World_Aligned, since that is what we use elsewhere
+        M[np.tril_indices_from(M)]=M[np.triu_indices_from(M)]#fill in the lower triangular part
         b=pin.rnea(mrv_client_sim.mrv_pin_model,mrv_client_sim.mrv_pin_data,mrv_config,mrv_config_dot,np.zeros((mrv_client_sim.mrv_nv)))#actuator torques needed to produce 0 acceleration = bias term
         B=np.vstack([np.zeros((6,7)),np.eye(7)])#actuators only affect the rotary joint torques
-        joint_wrenches_from_contact=np.vstack([Jb,Jm]).T@wrench_peg_peg#TODO: not sure what frame this is actually in, world aligned peg frame or just peg frame. If world aligned peg frame we are good, if not need to transform.
+        Jpeg_local = pin.getFrameJacobian(mrv_client_sim.mrv_pin_model, mrv_client_sim.mrv_pin_data, mrv_client_sim.mrv_peg_fid, pin.ReferenceFrame.LOCAL)
+        joint_wrenches_from_contact=Jpeg_local[:,6:].T@wrench_peg_peg#wrench was given in peg frame so need Jacobian to the "Local" frame instead of the "Local_World_Aligned" we use elsewhere
         
         Mx=M[:,:6]
         Mtheta=M[:,6:13]
