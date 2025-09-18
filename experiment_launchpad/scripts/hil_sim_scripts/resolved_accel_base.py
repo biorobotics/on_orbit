@@ -112,7 +112,7 @@ class ResolvedAccelBase(object):
         joint_acc_without_twist_dot_base=Jm_pinv@(twist_dot_d-Jm_dot@theta_dot-Jb_dot@twist_base+self.twist_gains@twist_err+self.pose_gains@pos_err)+(Jm_pinv@Jm-np.identity(7))@theta_ddot_PD
         RHS_wrench=joint_wrenches_from_contact-b-Mtheta@joint_acc_without_twist_dot_base
 
-        base_acc_and_joint_torques=np.solve(LHS_matrix,RHS_wrench)
+        base_acc_and_joint_torques=np.linalg.solve(LHS_matrix,RHS_wrench)
         twist_dot_base=base_acc_and_joint_torques[:6]
 
         joint_acc_cmd = joint_acc_without_twist_dot_base-Jm_pinv@Jb@twist_dot_base
