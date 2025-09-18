@@ -97,7 +97,7 @@ class ResolvedAccelBase(object):
         #M@[twist_dot_base]+b=B@u+joint_wrenches_from_contact
         #  [theta_ddot    ]
         #for theta_ddot known in terms of twist_dot_base, we can substitute and solve for u, twist_dot_base
-        M=pin.crba(mrv_client_sim.mrv_pin_model,mrv_client_sim.mrv_pin_data,mrv_config,pin.LOCAL_WORLD_ALIGNED)#just the upper triangular part. TODO: figure out which convention I want. Probably Local_World_Aligned, since that is what we use elsewhere
+        M=pin.crba(mrv_client_sim.mrv_pin_model,mrv_client_sim.mrv_pin_data,mrv_config,pin.Convention.LOCAL)#just the upper triangular part. TODO: figure out which convention I want. Probably Local_World_Aligned, since that is what we use elsewhere
         M[np.tril_indices_from(M)]=M[np.triu_indices_from(M)]#fill in the lower triangular part
         b=pin.rnea(mrv_client_sim.mrv_pin_model,mrv_client_sim.mrv_pin_data,mrv_config,mrv_config_dot,np.zeros((mrv_client_sim.mrv_nv)))#actuator torques needed to produce 0 acceleration = bias term
         B=np.vstack([np.zeros((6,7)),np.eye(7)])#actuators only affect the rotary joint torques
@@ -116,5 +116,21 @@ class ResolvedAccelBase(object):
         twist_dot_base=base_acc_and_joint_torques[:6]
 
         joint_acc_cmd = joint_acc_without_twist_dot_base-Jm_pinv@Jb@twist_dot_base
+        print(f"new joint accel: {joint_acc_cmd}")
+
+        #compute assuming 0 total momentum
+        Jstar, Jstar_dot = mrv_client_sim.get_mrv_generalized_jacobian()
+        Jstar_pinv = np.linalg.pinv(Jstar) #ca.pinv
+        twist_base, twist_dot_base = mrv_client_sim.get_mrv_base_twist()
+        joint_acc_cmd_min_norm = Jstar_pinv@(  (twist_dot_d - twist_dot_base)  + self.twist_gains@twist_err + self.pose_gains@pos_err - Jstar_dot@theta_dot)
+        theta_ddot_PD = ref_traj_point.theta_ddot - self.joints_kp*(mrv_config[7:] - ref_traj_point.theta) - self.joints_kd*(mrv_config_dot[6:] - ref_traj_point.theta_dot) 
+        null_proj = (np.identity(7) - Jstar_pinv@Jstar)
+        joint_acc_cmd = joint_acc_cmd_min_norm + null_proj@theta_ddot_PD
+        print(f"joint accel just using thetadot: {joint_acc_cmd}")
+
+        joint_acc_cmd_min_norm = Jstar_pinv@(  (twist_dot_d - twist_dot_base)  + self.twist_gains@twist_err + self.pose_gains@pos_err - Jstar_dot@(twist_d - twist_base))
+        joint_acc_cmd = joint_acc_cmd_min_norm + null_proj@theta_ddot_PD
+        print(f"old joint accel: {joint_acc_cmd}")
+
       return joint_acc_cmd
 
