@@ -128,7 +128,7 @@ class ResolvedAccelBase(object):
         joint_acc_cmd = joint_acc_cmd_min_norm + null_proj@theta_ddot_PD
         print(f"joint accel just using thetadot: {joint_acc_cmd}")
 
-        joint_acc_cmd_min_norm = Jstar_pinv@(  (twist_dot_d - twist_dot_base)  + self.twist_gains@twist_err + self.pose_gains@pos_err - Jstar_dot@(twist_d - twist_base))
+        joint_acc_cmd_min_norm = Jstar_pinv@(  (twist_dot_d - twist_dot_base)  + self.twist_gains@twist_err + self.pose_gains@pos_err - Jstar_dot@Jstar_pinv@(twist_d - twist_base))
         joint_acc_cmd = joint_acc_cmd_min_norm + null_proj@theta_ddot_PD
         print(f"old joint accel: {joint_acc_cmd}")
 
