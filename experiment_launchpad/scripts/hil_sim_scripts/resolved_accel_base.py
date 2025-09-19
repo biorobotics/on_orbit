@@ -109,7 +109,7 @@ class ResolvedAccelBase(object):
         LHS_matrix=np.hstack([Mx-Mtheta@Jm_pinv@Jb,-B])
 
         theta_ddot_PD = ref_traj_point.theta_ddot - self.joints_kp*(mrv_config[7:] - ref_traj_point.theta) - self.joints_kd*(mrv_config_dot[6:] - ref_traj_point.theta_dot) 
-        joint_acc_without_twist_dot_base=Jm_pinv@(twist_dot_d-Jm_dot@theta_dot-Jb_dot@twist_base+self.twist_gains@twist_err+self.pose_gains@pos_err)+(Jm_pinv@Jm-np.identity(7))@theta_ddot_PD
+        joint_acc_without_twist_dot_base=Jm_pinv@(twist_dot_d-Jm_dot@theta_dot-Jb_dot@twist_base+self.twist_gains@twist_err+self.pose_gains@pos_err)+(np.identity(7)-Jm_pinv@Jm)@theta_ddot_PD
         RHS_wrench=joint_wrenches_from_contact-b-Mtheta@joint_acc_without_twist_dot_base
 
         base_acc_and_joint_torques=np.linalg.solve(LHS_matrix,RHS_wrench)
@@ -121,8 +121,8 @@ class ResolvedAccelBase(object):
         #compute assuming 0 total momentum
         Jstar, Jstar_dot = mrv_client_sim.get_mrv_generalized_jacobian()
         Jstar_pinv = np.linalg.pinv(Jstar) #ca.pinv
-        
-        RHS_joint_accel=Jm_pinv@(twist_dot_d-Jstar_dot@theta_dot+self.twist_gains@twist_err+self.pose_gains@pos_err)+(Jm_pinv@Jm-np.identity(7))@theta_ddot_PD
+
+        RHS_joint_accel=Jm_pinv@(twist_dot_d-Jstar_dot@theta_dot+self.twist_gains@twist_err+self.pose_gains@pos_err)+(np.identity(7)-Jm_pinv@Jm)@theta_ddot_PD
         Ag = pin.computeCentroidalMap(mrv_client_sim.pin_model, mrv_client_sim.pin_data, mrv_client_sim.get_full_config())
         Ab = Ag[:,:6]
         Ab_inv = np.linalg.inv(Ab)
