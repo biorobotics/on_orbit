@@ -113,14 +113,23 @@ class ResolvedAccelBase(object):
         RHS_wrench=joint_wrenches_from_contact-b-Mtheta@joint_acc_without_twist_dot_base
 
         base_acc_and_joint_torques=np.linalg.solve(LHS_matrix,RHS_wrench)
-        twist_dot_base=base_acc_and_joint_torques[:6]
+        twist_dot_base_full=base_acc_and_joint_torques[:6]
 
-        joint_acc_cmd = joint_acc_without_twist_dot_base-Jm_pinv@Jb@twist_dot_base
+        joint_acc_cmd = joint_acc_without_twist_dot_base-Jm_pinv@Jb@twist_dot_base_full
         print(f"new joint accel: {joint_acc_cmd}")
 
         #compute assuming 0 total momentum
         Jstar, Jstar_dot = mrv_client_sim.get_mrv_generalized_jacobian()
         Jstar_pinv = np.linalg.pinv(Jstar) #ca.pinv
+        
+        RHS_joint_accel=Jm_pinv@(twist_dot_d-Jstar_dot@theta_dot+self.twist_gains@twist_err+self.pose_gains@pos_err)+(Jm_pinv@Jm-np.identity(7))@theta_ddot_PD
+        Ag = pin.computeCentroidalMap(mrv_client_sim.pin_model, mrv_client_sim.pin_data, mrv_client_sim.get_full_config())
+        Ab = Ag[:,:6]
+        Ab_inv = np.linalg.inv(Ab)
+        Am = Ag[:,6:13]
+        joint_acc_cmd_new_0_momentum=np.linalg.solve(np.eye(7)-Jm_pinv@Jb@Ab_inv@Am),RHS_joint_accel
+        print(f"new joint accel assuming 0 momentum: {joint_acc_cmd_new_0_momentum}")
+
         twist_base, twist_dot_base = mrv_client_sim.get_mrv_base_twist()
         joint_acc_cmd_min_norm = Jstar_pinv@(  (twist_dot_d - twist_dot_base)  + self.twist_gains@twist_err + self.pose_gains@pos_err - Jstar_dot@theta_dot)
         theta_ddot_PD = ref_traj_point.theta_ddot - self.joints_kp*(mrv_config[7:] - ref_traj_point.theta) - self.joints_kd*(mrv_config_dot[6:] - ref_traj_point.theta_dot) 
@@ -131,6 +140,8 @@ class ResolvedAccelBase(object):
         joint_acc_cmd_min_norm = Jstar_pinv@(  (twist_dot_d - twist_dot_base)  + self.twist_gains@twist_err + self.pose_gains@pos_err - Jstar_dot@Jstar_pinv@(twist_d - twist_base))
         joint_acc_cmd = joint_acc_cmd_min_norm + null_proj@theta_ddot_PD
         print(f"old joint accel: {joint_acc_cmd}")
+        print(f"twist_dot_base from unforced Euler: {twist_dot_base}")
+        print(f"twist_dot_base from full dynamics: {twist_dot_base_full}")
 
       return joint_acc_cmd
 
