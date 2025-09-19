@@ -139,9 +139,9 @@ class ResolvedAccelBase(object):
         Ab_inv = np.linalg.inv(Ab)
         Am = Ag[:,6:13]
         joint_acc_cmd_new_0_momentum=np.linalg.solve(np.eye(7)-Jm_pinv@Jb@Ab_inv@Am),RHS_joint_accel
-        print(f"proposed joint accel: {joint_acc_cmd_proposed}")
         print(f"proposed explicit joint acc: {joint_acc_cmd_explicit}")
-        print(f"new joint accel assuming 0 momentum: {joint_acc_cmd_new_0_momentum}")
+        print(f"proposed joint accel: {joint_acc_cmd_proposed}")
+        print(f"proposed joint accel assuming 0 momentum: {joint_acc_cmd_new_0_momentum}")
 
         twist_base, twist_dot_base = mrv_client_sim.get_mrv_base_twist()
         joint_acc_cmd_min_norm = Jstar_pinv@(  (twist_dot_d - twist_dot_base)  + self.twist_gains@twist_err + self.pose_gains@pos_err - Jstar_dot@theta_dot)
