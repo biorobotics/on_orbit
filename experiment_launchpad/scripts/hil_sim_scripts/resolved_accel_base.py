@@ -81,10 +81,7 @@ class ResolvedAccelBase(object):
           joint_acc_cmd = joint_acc_cmd_min_norm
         else:
           theta_ddot_PD = ref_traj_point.theta_ddot - self.joints_kp*(mrv_config[7:] - ref_traj_point.theta) - self.joints_kd*(mrv_config_dot[6:] - ref_traj_point.theta_dot) 
-          if not self.account_for_momentum:
-            null_proj = (np.identity(7) - Jstar_pinv@Jstar)
-          else:
-            null_proj = (np.identity(7) - Jm_pinv@Jm)
+          null_proj = (np.identity(7) - Jstar_pinv@Jstar)
           joint_acc_cmd = joint_acc_cmd_min_norm + null_proj@theta_ddot_PD
       else:
         Jm, Jm_dot, Jb, Jb_dot = mrv_client_sim.get_mrv_kinematic_jacobians()
@@ -108,9 +105,10 @@ class ResolvedAccelBase(object):
         Mx=M[:,:6]
         Mtheta=M[:,6:13]
         LHS_matrix=np.hstack([Mx-Mtheta@Jm_pinv@Jb,-B])
-
-        theta_ddot_PD = ref_traj_point.theta_ddot - self.joints_kp*(mrv_config[7:] - ref_traj_point.theta) - self.joints_kd*(mrv_config_dot[6:] - ref_traj_point.theta_dot) 
-        joint_acc_without_twist_dot_base=Jm_pinv@(twist_dot_d-Jm_dot@theta_dot-Jb_dot@twist_base+self.twist_gains@twist_err+self.pose_gains@pos_err)+(np.identity(7)-Jm_pinv@Jm)@theta_ddot_PD
+        joint_acc_without_twist_dot_base=Jm_pinv@(twist_dot_d-Jm_dot@theta_dot-Jb_dot@twist_base+self.twist_gains@twist_err+self.pose_gains@pos_err)
+        if not self.use_min_norm:
+          theta_ddot_PD = ref_traj_point.theta_ddot - self.joints_kp*(mrv_config[7:] - ref_traj_point.theta) - self.joints_kd*(mrv_config_dot[6:] - ref_traj_point.theta_dot) 
+          joint_acc_without_twist_dot_base+=(np.identity(7)-Jm_pinv@Jm)@theta_ddot_PD
         RHS_wrench=joint_wrenches_from_contact-b-Mtheta@joint_acc_without_twist_dot_base
 
         base_acc_and_joint_torques=np.linalg.solve(LHS_matrix,RHS_wrench)
@@ -127,14 +125,18 @@ class ResolvedAccelBase(object):
         Jg=(Jm-Jb@Mxx@Mxtheta)#very similar to generalized Jacobian used elsewhere; uses joint space inertia matrix instead of centroidal momentum matrix
 
         Jg_pinv=np.linalg.pinv(Jg)
-        joint_acc_cmd_explicit = Jg_pinv@(twist_dot_d-Jm_dot@theta_dot-Jb@Mxx_inv@(joint_wrenches_from_contact[:6]-b[:6])+self.twist_gains@twist_err+self.pose_gains@pos_err)+(np.identity(7)-Jg_pinv@Jg)@theta_ddot_PD
+        joint_acc_cmd_explicit = Jg_pinv@(twist_dot_d-Jm_dot@theta_dot-Jb@Mxx_inv@(joint_wrenches_from_contact[:6]-b[:6])+self.twist_gains@twist_err+self.pose_gains@pos_err)
+        if not self.use_min_norm:
+          joint_acc_cmd_explicit+=(np.identity(7)-Jg_pinv@Jg)@theta_ddot_PD
 
         #compute assuming 0 total momentum
         Jstar, Jstar_dot = mrv_client_sim.get_mrv_generalized_jacobian()
         Jstar_pinv = np.linalg.pinv(Jstar) #ca.pinv
         print(f"Jstar:\n{Jstar}")
         print(f"Jg:\n{Jg}")
-        RHS_joint_accel=Jm_pinv@(twist_dot_d-Jstar_dot@theta_dot+self.twist_gains@twist_err+self.pose_gains@pos_err)+(np.identity(7)-Jm_pinv@Jm)@theta_ddot_PD
+        RHS_joint_accel=Jm_pinv@(twist_dot_d-Jstar_dot@theta_dot+self.twist_gains@twist_err+self.pose_gains@pos_err)
+        if not self.use_min_norm:
+          RHS_joint_accel+=(np.identity(7)-Jm_pinv@Jm)@theta_ddot_PD
         Ag = pin.computeCentroidalMap(mrv_client_sim.pin_model, mrv_client_sim.pin_data, mrv_client_sim.get_full_config())
         Ab = Ag[:,:6]
         Ab_inv = np.linalg.inv(Ab)
@@ -145,14 +147,14 @@ class ResolvedAccelBase(object):
         print(f"proposed joint accel assuming 0 momentum: {joint_acc_cmd_new_0_momentum}")
 
         twist_base, twist_dot_base = mrv_client_sim.get_mrv_base_twist()
-        joint_acc_cmd_min_norm = Jstar_pinv@(  (twist_dot_d - twist_dot_base)  + self.twist_gains@twist_err + self.pose_gains@pos_err - Jstar_dot@theta_dot)
-        theta_ddot_PD = ref_traj_point.theta_ddot - self.joints_kp*(mrv_config[7:] - ref_traj_point.theta) - self.joints_kd*(mrv_config_dot[6:] - ref_traj_point.theta_dot) 
-        null_proj = (np.identity(7) - Jstar_pinv@Jstar)
-        joint_acc_cmd = joint_acc_cmd_min_norm + null_proj@theta_ddot_PD
+        joint_acc_cmd = Jstar_pinv@(  (twist_dot_d - twist_dot_base)  + self.twist_gains@twist_err + self.pose_gains@pos_err - Jstar_dot@theta_dot)
+        if not self.use_min_norm:
+          joint_acc_cmd+=(np.identity(7) - Jstar_pinv@Jstar)@theta_ddot_PD
         print(f"joint accel just using thetadot: {joint_acc_cmd}")
 
-        joint_acc_cmd_min_norm = Jstar_pinv@(  (twist_dot_d - twist_dot_base)  + self.twist_gains@twist_err + self.pose_gains@pos_err - Jstar_dot@Jstar_pinv@(twist_d - twist_base))
-        joint_acc_cmd = joint_acc_cmd_min_norm + null_proj@theta_ddot_PD
+        joint_acc_cmd = Jstar_pinv@(  (twist_dot_d - twist_dot_base)  + self.twist_gains@twist_err + self.pose_gains@pos_err - Jstar_dot@Jstar_pinv@(twist_d - twist_base))
+        if not self.use_min_norm:
+          joint_acc_cmd+=(np.identity(7) - Jstar_pinv@Jstar)@theta_ddot_PD
         print(f"old joint accel: {joint_acc_cmd}")
         print(f"twist_dot_base from unforced Euler: {twist_dot_base}")
         print(f"twist_dot_base from full dynamics: {twist_dot_base_full}")
