@@ -125,7 +125,7 @@ class ResolvedAccelBase(object):
         Jg=(Jm-Jb@Mxx@Mxtheta)#very similar to generalized Jacobian used elsewhere; uses joint space inertia matrix instead of centroidal momentum matrix
 
         Jg_pinv=np.linalg.pinv(Jg)
-        joint_acc_cmd_explicit = Jg_pinv@(twist_dot_d-Jm_dot@theta_dot-Jb@Mxx_inv@(joint_wrenches_from_contact[:6]-b[:6])+self.twist_gains@twist_err+self.pose_gains@pos_err)
+        joint_acc_cmd_explicit = Jg_pinv@(twist_dot_d-Jm_dot@theta_dot-Jb_dot@twist_base-Jb@Mxx_inv@(joint_wrenches_from_contact[:6]-b[:6])+self.twist_gains@twist_err+self.pose_gains@pos_err)
         if not self.use_min_norm:
           joint_acc_cmd_explicit+=(np.identity(7)-Jg_pinv@Jg)@theta_ddot_PD
 
