@@ -329,6 +329,18 @@ class MRVClientSim(object):
     what[2,1] = w[0]
     return what
    
+
+  def get_peg_pose_wrt_client(self):
+    pin.updateFramePlacements(self.pin_model, self.pin_data)
+    peg_pos = self.pin_data.oMf[self.peg_fid].translation
+    peg_rmat = self.pin_data.oMf[self.peg_fid].rotation
+    client_pos = self.pin_data.oMf[self.client_fid].translation
+    client_rmat = self.pin_data.oMf[self.client_fid].rotation
+
+    peg_pos_wrt_client = client_rmat.transpose()@(peg_pos - client_pos)
+    peg_rmat_wrt_client = client_rmat.transpose()@peg_rmat
+
+    return peg_pos_wrt_client
   def get_wrist_jacobian(self):
     return copy.deepcopy(pin.getFrameJacobian(self.mrv_pin_model, self.mrv_pin_data, self.mrv_wrist_fid, pin.ReferenceFrame.LOCAL))
 

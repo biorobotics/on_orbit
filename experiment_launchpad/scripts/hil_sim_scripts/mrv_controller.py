@@ -16,6 +16,13 @@ from joint_space_tracking import JointSpaceTracking
 from planar_admittance import PlanarAdmittance
 from within_nozzle_admittance import WithinNozzleAdmittance
 
+#collision checking
+import pickle
+import trimesh
+from collision import boundary_volume_hierarchy
+import timeit
+
+
 class MrvController(object):
   def __init__(self, mrv_cv_urdf_file, mrv_urdf_file, pybullet_mrv_urdf_file, pybullet_cv_urdf_file, mrv_joint_angle_lower_limits, mrv_joint_angle_upper_limits, mrv_joint_vel_limits, 
                mrv_joint_acc_limits, mrv_joint_torque_limits, dt, cone_slope, clip_joint_commands,
@@ -76,7 +83,7 @@ class MrvController(object):
     self.sw_pos_kp = 1
     self.sw_pos_kd = 2*np.sqrt(self.sw_pos_kp)
     self.sw_rot_kp = 1
-    self.sw_rot_kd = 2*np.sqrt(self.sw_rot_kp)
+    self.sw_rot_kd = 2*np.sqrt(self.sw_rot_kp)    
 
     self.pin_model = self.mrv_client_sim.pin_model
     self.pin_data = pin.Data(self.pin_model)
@@ -164,6 +171,17 @@ class MrvController(object):
     # wrench_peg_peg = np.zeros(6)
     # for _ in range(50):
     #   self.mrv_client_sim.update_state_estimate(wrench_peg_peg)
+  def initialize_collision_world(self,rospath):
+    print("rospath",rospath)
+    meshes_path=rospath + "/urdf/meshes"
+    self.client_mesh = trimesh.load_mesh(meshes_path+"/full_cv.stl")
+    print("Loaded mesh")
+    with open(meshes_path+"/arrayrsstree_fullcvSTL_np1dot23.pkl","rb") as fh:
+        self.array_rsstree=pickle.load(fh)
+    print("Loaded RSS Tree from pickle file")
+    print("The first call to a distance compute function is slow because it is compiled JIT. Calling is_distance_lte_array now")
+    start=timeit.default_timer()
+    close=boundary_volume_hierarchy.is_distance_lte_array(np.array([-1,1,-2.0]),self.array_rsstree,self.client_mesh.triangles,.01)
   def getplunging(self):
     return self.plunging
   def get_state_in_pieces(self):
@@ -594,6 +612,13 @@ class MrvController(object):
 
     mrv_client_sim = self.mrv_client_sim
 
+    peg_pose_wrt_client = mrv_client_sim.get_peg_pose_wrt_client()
+
+    close=boundary_volume_hierarchy.is_distance_lte_array(np.array(peg_pose_wrt_client),self.array_rsstree,self.client_mesh.triangles,.01)
+    if not close[0]:
+      print("Peg is too far from nozzle, failing")
+      wrench_peg_peg = np.zeros(6) 
+
     if self.apply_sinusoidal_velocity_to_client:
         if mrv_client_sim.sim_time < self.sinusoidal_velocity_time:
           print("Overriding client velocity with a sinusoidal profile.")
@@ -631,10 +656,10 @@ class MrvController(object):
     sw_rel_pos = sw_rmat_goal.transpose()@(sw_peg_pos - sw_pos_goal)
 
     # Don't apply a measured force to the simulation unless peg is close to nozzle
-    if apply_wrench_only_when_close and not use_contact_sim and not self.plunging:
+    # if apply_wrench_only_when_close and not use_contact_sim and not self.plunging:
     # if apply_wrench_only_when_close and not use_contact_sim and self.is_peg_close_to_nozzle(sw_rel_pos):
-      print("peg is not close to nozzle, not applying measured wrench")
-      wrench_peg_peg = np.zeros(6)
+      # print("peg is not close to nozzle, not applying measured wrench")
+      # wrench_peg_peg = np.zeros(6)
     print("wrench_peg_peg", wrench_peg_peg)
     if not use_contact_sim:
       self.mrv_client_sim.pb_peg_wrench = wrench_peg_peg

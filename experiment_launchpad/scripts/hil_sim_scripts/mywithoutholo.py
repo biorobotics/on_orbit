@@ -191,7 +191,8 @@ class experiments:
                                         self.use_variable_plunge_speed, 
                                         self.use_scheduled_gains, 
                                         use_cw=self.use_cw)
-
+    print("!!!!!!!!!!!!!!!!!!!!!!!!",self.rospath)
+    mrv_controller.initialize_collision_world(self.rospath)
     load_paths_for_interpolation,weights = interp_trajectories_on_init_client_state(self.load_paths,initial_client_w,self.ws,delta_pos,self.dps)
     mrv_controller.reset_wrt_capture_box(load_paths_for_interpolation, 
                                         weights, delta_pos, 

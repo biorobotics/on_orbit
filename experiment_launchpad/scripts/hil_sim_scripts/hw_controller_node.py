@@ -183,6 +183,7 @@ for grid_idx in range(initial_grid_idx, final_grid_idx):
     probe_z_axis_plunge_velocity = rospy.get_param('probe_z_axis_plunge_velocity')
     use_variable_plunge_speed = rospy.get_param('use_variable_plunge_speed')
     use_scheduled_gains = rospy.get_param('use_scheduled_gains')
+
     
     mrv_controller = MrvController(rospath + '/urdf/robot_cv_detached.urdf', 
                                         rospath + '/urdf/robot.urdf', 
@@ -194,8 +195,10 @@ for grid_idx in range(initial_grid_idx, final_grid_idx):
                                         debug_with_test_traj, test_traj_id, lock_client, lock_mrv, probe_z_axis_plunge_velocity, use_variable_plunge_speed, 
                                         use_scheduled_gains, use_cw=use_cw)
 
-    # 
-    
+
+
+    print("!!!!!!!!!!!!!!!!!!!!!!!!",rospath)
+    mrv_controller.initialize_collision_world(rospath)
     load_paths_for_interpolation,weights = interp_trajectories_on_init_client_state(load_paths,initial_client_w,ws,delta_pos,dps)
 
     mrv_controller.reset_wrt_capture_box(load_paths_for_interpolation, weights, delta_pos, delta_rot, delta_v, initial_client_w, initial_mrv_w, rng, dist_centering_waypoint_from_goal)
