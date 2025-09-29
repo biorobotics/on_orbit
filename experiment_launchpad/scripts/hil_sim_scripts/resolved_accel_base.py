@@ -95,7 +95,7 @@ class ResolvedAccelBase(object):
         #  [theta_ddot    ]
         #for theta_ddot known in terms of twist_dot_base, we can substitute and solve for u, twist_dot_base
         M=pin.crba(mrv_client_sim.mrv_pin_model,mrv_client_sim.mrv_pin_data,mrv_config,pin.Convention.LOCAL)#just the upper triangular part. TODO: figure out which convention I want. Probably Local_World_Aligned, since that is what we use elsewhere
-        print(f"M:\n{M}")
+        # print(f"M:\n{M}")
         # M[np.tril_indices_from(M)]=M[np.triu_indices_from(M)]#fill in the lower triangular part
         b=pin.rnea(mrv_client_sim.mrv_pin_model,mrv_client_sim.mrv_pin_data,mrv_config,mrv_config_dot,np.zeros((mrv_client_sim.mrv_nv)))#actuator torques needed to produce 0 acceleration = bias term
         B=np.vstack([np.zeros((6,7)),np.eye(7)])#actuators only affect the rotary joint torques
@@ -119,7 +119,7 @@ class ResolvedAccelBase(object):
         #can also use block structure of the matrices to explicitly solve for the base accel in terms of the Coriolis, the external wrench, and the joint accelerations
         #this suggest a control law that looks very similar to the generalized jacobian based control law, but with extra terms accounting for coriolis and external wrench
         Mxx=M[:6,:6]
-        print(f"Mxx:\n{Mxx}")
+        # print(f"Mxx:\n{Mxx}")
         Mxtheta=M[:6,6:]
         Mxx_inv=np.linalg.inv(Mxx)
         Jg=(Jm-Jb@Mxx@Mxtheta)#very similar to generalized Jacobian used elsewhere; uses joint space inertia matrix instead of centroidal momentum matrix
@@ -132,8 +132,8 @@ class ResolvedAccelBase(object):
         #compute assuming 0 total momentum
         Jstar, Jstar_dot = mrv_client_sim.get_mrv_generalized_jacobian()
         Jstar_pinv = np.linalg.pinv(Jstar) #ca.pinv
-        print(f"Jstar:\n{Jstar}")
-        print(f"Jg:\n{Jg}")
+        # print(f"Jstar:\n{Jstar}")
+        # print(f"Jg:\n{Jg}")
         RHS_joint_accel=Jm_pinv@(twist_dot_d-Jstar_dot@theta_dot+self.twist_gains@twist_err+self.pose_gains@pos_err)
         if not self.use_min_norm:
           RHS_joint_accel+=(np.identity(7)-Jm_pinv@Jm)@theta_ddot_PD
@@ -142,22 +142,22 @@ class ResolvedAccelBase(object):
         Ab_inv = np.linalg.inv(Ab)
         Am = Ag[:,6:13]
         joint_acc_cmd_new_0_momentum=np.linalg.solve(np.eye(7)-Jm_pinv@Jb@Ab_inv@Am,RHS_joint_accel)
-        print(f"proposed explicit joint acc: {joint_acc_cmd_explicit}")
-        print(f"proposed joint accel: {joint_acc_cmd_proposed}")
-        print(f"proposed joint accel assuming 0 momentum: {joint_acc_cmd_new_0_momentum}")
+        # print(f"proposed explicit joint acc: {joint_acc_cmd_explicit}")
+        # print(f"proposed joint accel: {joint_acc_cmd_proposed}")
+        # print(f"proposed joint accel assuming 0 momentum: {joint_acc_cmd_new_0_momentum}")
 
         twist_base, twist_dot_base = mrv_client_sim.get_mrv_base_twist()
         joint_acc_cmd = Jstar_pinv@(  (twist_dot_d - twist_dot_base)  + self.twist_gains@twist_err + self.pose_gains@pos_err - Jstar_dot@theta_dot)
         if not self.use_min_norm:
           joint_acc_cmd+=(np.identity(7) - Jstar_pinv@Jstar)@theta_ddot_PD
-        print(f"joint accel just using thetadot: {joint_acc_cmd}")
+        # print(f"joint accel just using thetadot: {joint_acc_cmd}")
 
         joint_acc_cmd = Jstar_pinv@(  (twist_dot_d - twist_dot_base)  + self.twist_gains@twist_err + self.pose_gains@pos_err - Jstar_dot@Jstar_pinv@(twist_d - twist_base))
         if not self.use_min_norm:
           joint_acc_cmd+=(np.identity(7) - Jstar_pinv@Jstar)@theta_ddot_PD
-        print(f"old joint accel: {joint_acc_cmd}")
-        print(f"twist_dot_base from unforced Euler: {twist_dot_base}")
-        print(f"twist_dot_base from full dynamics: {twist_dot_base_full}")
+        # print(f"old joint accel: {joint_acc_cmd}")
+        # print(f"twist_dot_base from unforced Euler: {twist_dot_base}")
+        # print(f"twist_dot_base from full dynamics: {twist_dot_base_full}")
 
         # exit()
 

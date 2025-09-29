@@ -6,7 +6,7 @@ initial_mrv_w: [0., 0., 0.] # in deg/s
 
 do_save: True
 use_cw: True #use orbital gravitational dynamics
-save_folder: 'experiment_logs/12_2_24/orientation_cost/'
+save_folder: 'experiment_logs/9_24_2025/'
 
 # This is the library used by Anoop before Andrew took over the code, which has a phase where contact is broken. 
 #traj_library_prefix: '/experiment_logs/01_30_24/ipopt_multicore/'
@@ -46,7 +46,7 @@ test_traj_id: 0 # see file TestTrajectories
 lock_client: False
 lock_mrv: False
 
-apply_wrench_only_when_close: False
+apply_wrench_only_when_close: True
 
 client_velocity_noise_ang_amp: 0.0 #deg/s
 

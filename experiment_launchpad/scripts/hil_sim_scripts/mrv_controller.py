@@ -631,9 +631,11 @@ class MrvController(object):
     sw_rel_pos = sw_rmat_goal.transpose()@(sw_peg_pos - sw_pos_goal)
 
     # Don't apply a measured force to the simulation unless peg is close to nozzle
-    if apply_wrench_only_when_close and not use_contact_sim and self.is_peg_close_to_nozzle(sw_rel_pos):
+    if apply_wrench_only_when_close and not use_contact_sim and not self.plunging:
+    # if apply_wrench_only_when_close and not use_contact_sim and self.is_peg_close_to_nozzle(sw_rel_pos):
+      print("peg is not close to nozzle, not applying measured wrench")
       wrench_peg_peg = np.zeros(6)
-
+    print("wrench_peg_peg", wrench_peg_peg)
     if not use_contact_sim:
       self.mrv_client_sim.pb_peg_wrench = wrench_peg_peg
     else:
@@ -807,7 +809,7 @@ class MrvController(object):
       # else:
       #   joint_acc_cmd = self.resolved_accel.compute_control(ref_traj_point, mrv_client_sim, wrench_peg_peg, self.dt, mrv_config, mrv_config_dot)
       if mrv_client_sim.dist_to_throat_opening() < 0.16:
-        print("is plunging")
+        # print("is plunging")
         self.plunging = True
         if not self.within_nozzle_admittance.admittance_traj_reset:
           print("Resetting admittance trajectory")

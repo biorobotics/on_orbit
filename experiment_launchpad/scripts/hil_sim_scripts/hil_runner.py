@@ -475,6 +475,7 @@ class HILRunner(object):
     self.moving_hw = []
 
     self.ft_compensated_trj = []
+    self.wrench_peg_peg_trj = []
 
     self.peg_pos_error_trj = []
     self.peg_rmat_error_trj = []
@@ -903,7 +904,7 @@ class HILRunner(object):
 
     # Bias and gravity compensation for force sensor
     ft_compensated = self.get_ft_compensated(pin_data, ft_fid)
-    print("FT compensated: ", ft_compensated[:3])
+    # print("FT compensated: ", ft_compensated)
     #print(ft_compensated)
     if ft_compensated is None:
       print("Stopping because F/T data is unavailable.")
@@ -916,18 +917,19 @@ class HILRunner(object):
     # Calculate F/T in frame of peg
     wrench_peg_peg = np.zeros(6)
     # Don't apply a force to the simulation unless the measured force is significant
-    if np.abs(ft_compensated[0]) > 1.5 or np.abs(ft_compensated[1]) > 1.0 or np.abs(ft_compensated[2]) > 2.5:
+    # if np.abs(ft_compensated[0]) > 1.5 or np.abs(ft_compensated[1]) > 1.0 or np.abs(ft_compensated[2]) > 2.5:
       # rospy.loginfo("Force applied to peg.")
       # rospy.loginfo(ft_compensated)
       # holo_control.ur_idle_mode('mrv')
       # holo_control.ur_idle_mode('client')
       # quit()
-      f_peg_w = rmat_peg_w@rmat_ft_peg@ft_compensated[:3]
-      wrench_peg_peg[:3] = rmat_peg_w.transpose()@f_peg_w
+    f_peg_w = rmat_peg_w@rmat_ft_peg@ft_compensated[:3]
+    wrench_peg_peg[:3] = rmat_peg_w.transpose()@f_peg_w
 
-      #self.t_ft_peg is position of f/t sensor frame wrt peg frame, expressed in hardware peg frame
-      tau_ft_w = rmat_peg_w@rmat_ft_peg@ft_compensated[3:]
-      wrench_peg_peg[3:] = rmat_peg_w.transpose()@tau_ft_w + np.cross(-1*self.t_ft_peg, wrench_peg_peg[:3])
+    #self.t_ft_peg is position of f/t sensor frame wrt peg frame, expressed in hardware peg frame
+    tau_ft_w = rmat_peg_w@rmat_ft_peg@ft_compensated[3:]
+    wrench_peg_peg[3:] = rmat_peg_w.transpose()@tau_ft_w + np.cross(-1*self.t_ft_peg, wrench_peg_peg[:3])
+    self.wrench_peg_peg_trj.append(wrench_peg_peg)
 
     if self.is_ft_excessive(ft_compensated):
       print('Stopping because of excessive force')
@@ -1092,8 +1094,8 @@ class HILRunner(object):
       # 
       # We should consider removing this, because it creates discontinuities in the z-axis force
         
-      if abs(ft_compensated[2]) < 2.5:
-        ft_compensated[2] = 0
+      # if abs(ft_compensated[2]) < 2.5:
+      #   ft_compensated[2] = 0
 
     return ft_compensated
   
@@ -1151,6 +1153,7 @@ class HILRunner(object):
     np.save(save_path + '/moving_hw.npy', self.moving_hw)
 
     np.save(save_path + '/ft_compensated_trj.npy', self.ft_compensated_trj)
+    np.save(save_path + '/wrench_peg_peg_trj.npy', self.wrench_peg_peg_trj)
     # print(self.ft_compensated_trj)
 
     np.save(save_path + '/hw_peg_pos_error_trj.npy', self.peg_pos_error_trj)
