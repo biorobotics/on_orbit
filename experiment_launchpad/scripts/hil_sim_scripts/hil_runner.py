@@ -1057,22 +1057,22 @@ class HILRunner(object):
     # SI-125-3 Nano 25 F/T sensor 
     # Sensing range in Fx,Fy <125N, Fz <500N, Tx,Ty,Tz is 3Nm. Overload values are much higher but we want to be safe and make sure sensing is accurate.
 
-    if ft_np_array[0] > 125:
+    if ft_np_array[0] > 75:
       print("Fx force exceeded.")
       return True, 0
-    elif ft_np_array[1] > 125:
+    elif ft_np_array[1] > 75:
       print("Fy force exceeded.")
       return True, 1
-    elif ft_np_array[2] > 500:
+    elif ft_np_array[2] > 400:
       print("Fz force exceeded.")
       return True, 2
-    elif ft_np_array[3] > 20: 
+    elif ft_np_array[3] > 15: 
       print("Tx torque exceeded.")
       return True, 3
-    elif ft_np_array[4] > 20: 
+    elif ft_np_array[4] > 15: 
       print("Ty torque exceeded.")
       return True, 4
-    elif ft_np_array[5] > 20:
+    elif ft_np_array[5] > 15:
       print("Tz torque exceeded.")
       return True, 5
     else:

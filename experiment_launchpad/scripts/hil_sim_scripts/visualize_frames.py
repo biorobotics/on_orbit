@@ -94,6 +94,7 @@ mrv_controller = MrvController(rospath + '/urdf/robot_cv_detached.urdf',
                                         debug_with_test_traj, test_traj_id, lock_client, lock_mrv, probe_z_axis_plunge_velocity, use_variable_plunge_speed, 
                                         use_scheduled_gains, use_cw=use_cw)
 
+mrv_controller.initialize_collision_world(rospath)
 load_paths, ws, dps = get_trajlib_load_paths(rospath)
 delta_pos = np.array(rospy.get_param('delta_pos'))
 delta_rot = np.array(rospy.get_param('delta_rot'))*np.pi/180

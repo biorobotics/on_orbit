@@ -28,7 +28,7 @@ class MrvController(object):
                mrv_joint_acc_limits, mrv_joint_torque_limits, dt, cone_slope, clip_joint_commands,
               time_steps_between_measurements, cw_a, cw_mu, cw_orbit_dir, do_noisy_state_estimation, nozzle_opening_rad, 
                peg_rad, velocity_noise_ang_amp, time_limit, debug_with_test_traj, test_traj_id, lock_client, lock_mrv, probe_z_axis_plunge_velocity, use_variable_plunge_speed, 
-               use_scheduled_gains, use_cw=True , use_ekf = True):  
+               use_scheduled_gains, use_cw=True , use_ekf = True, collision_thresh = 0.01):  
     self.mrv_cv_urdf_file = mrv_cv_urdf_file
     self.mrv_urdf_file = mrv_urdf_file
     self.pybullet_mrv_urdf_file = pybullet_mrv_urdf_file
@@ -167,6 +167,8 @@ class MrvController(object):
     '''Do not change this manually. Instead, use disable_joint_control()'''
     self.joint_control_enabled = True
 
+    self.collision_thresh = collision_thresh*collision_thresh
+
     # Start the EKF with several steps to converge
     # wrench_peg_peg = np.zeros(6)
     # for _ in range(50):
@@ -179,9 +181,9 @@ class MrvController(object):
     with open(meshes_path+"/arrayrsstree_fullcvSTL_np1dot23.pkl","rb") as fh:
         self.array_rsstree=pickle.load(fh)
     print("Loaded RSS Tree from pickle file")
-    print("The first call to a distance compute function is slow because it is compiled JIT. Calling is_distance_lte_array now")
+    print("The first call to a distance compute function is slow because it is compiled JIT. Calling is_distance_lte_array now",self.collision_thresh)
     start=timeit.default_timer()
-    close=boundary_volume_hierarchy.is_distance_lte_array(np.array([-1,1,-2.0]),self.array_rsstree,self.client_mesh.triangles,.01)
+    close=boundary_volume_hierarchy.is_distance_lte_array(np.array([-1,1,-2.0]),self.array_rsstree,self.client_mesh.triangles,self.collision_thresh)
   def getplunging(self):
     return self.plunging
   def get_state_in_pieces(self):
@@ -614,7 +616,7 @@ class MrvController(object):
 
     peg_pose_wrt_client = mrv_client_sim.get_peg_pose_wrt_client()
 
-    close=boundary_volume_hierarchy.is_distance_lte_array(np.array(peg_pose_wrt_client),self.array_rsstree,self.client_mesh.triangles,.01)
+    close=boundary_volume_hierarchy.is_distance_lte_array(np.array(peg_pose_wrt_client),self.array_rsstree,self.client_mesh.triangles,self.collision_thresh)
     if not close[0]:
       print("Peg is too far from nozzle, failing")
       wrench_peg_peg = np.zeros(6) 

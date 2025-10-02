@@ -193,7 +193,7 @@ for grid_idx in range(initial_grid_idx, final_grid_idx):
                                         mrv_joint_torque_limits, dt, cone_slope, clip_joint_commands, 10, cw_a, cw_mu, cw_orbit_dir, 
                                         do_noisy_state_estimation, nozzle_opening_rad, peg_rad, client_velocity_noise_ang_amp, time_limit, 
                                         debug_with_test_traj, test_traj_id, lock_client, lock_mrv, probe_z_axis_plunge_velocity, use_variable_plunge_speed, 
-                                        use_scheduled_gains, use_cw=use_cw)
+                                        use_scheduled_gains, use_cw=use_cw, collision_thresh = 0.01)
 
 
 
