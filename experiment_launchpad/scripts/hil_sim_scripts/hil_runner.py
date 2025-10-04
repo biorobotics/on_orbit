@@ -324,7 +324,7 @@ class HILRunner(object):
     holo_control.ur_idle_mode('client') 
 
     # Visualize
-    stop_vis = False
+    stop_vis = True
     while not stop_vis:
       rate = rospy.Rate(5/dt)
       q_vis = pin.neutral(pin_model)
@@ -606,7 +606,7 @@ class HILRunner(object):
 
 
     # Visualize
-    stop_vis = False
+    stop_vis = True
     while not stop_vis:
         q_vis = pin.neutral(pin_model)
 

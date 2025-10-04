@@ -26,6 +26,7 @@ ic_grid= get_grid(grid_type)
 
 initial_grid_idx = rospy.get_param('initial_grid_idx')
 use_grid = rospy.get_param('use_grid')
+use_rot = rospy.get_param('use_rot')
 
 dist_centering_waypoint_from_goal = rospy.get_param('dist_centering_waypoint_from_goal')
 verify_trajectory_visually = rospy.get_param('verify_trajectory_visually')
@@ -145,16 +146,22 @@ for grid_idx in range(initial_grid_idx, final_grid_idx):
     
 
     hil_runner.calibrate_ft_bias() 
-
-    if use_grid:
-      delta_pos = ic_grid[grid_idx, :3]
+    if use_rot:
+      delta_rot = ic_grid[grid_idx, :3]*np.pi/180
+      delta_pos = np.array(rospy.get_param('delta_pos'))
+    elif use_grid:
+      delta_pos = ic_grid[grid_idx, 3:6]
+      delta_rot = np.array(rospy.get_param('delta_rot'))*np.pi/180
     else:
       delta_pos = np.array(rospy.get_param('delta_pos'))
+      delta_rot = np.array(rospy.get_param('delta_rot'))*np.pi/180
 
-    delta_rot = np.array(rospy.get_param('delta_rot'))*np.pi/180
+    
 
     print('Desired position difference (m) in nozzle frame: ', delta_pos)
     print('Desired rotation difference (deg) in nozzle frame: ', delta_rot)
+
+    
 
     if use_grid:
       delta_v = np.copy(ic_grid[grid_idx, 3:6])
