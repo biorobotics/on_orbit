@@ -1,12 +1,12 @@
-delta_pos: [0.1, -0.1, -0.1] #m, position of tip of peg wrt centering waypoint
+delta_pos: [0, 0, -0.05] #m, position of tip of peg wrt centering waypoint
 delta_rot: [0.0, 0.0, 0.0] #deg, axis angle vector 
-delta_v: [0., 0., 0.0] #m/s, relative velocity between base of MRV and base of client 
+delta_v: [0.0, 0., 0.0] #m/s, relative velocity between base of MRV and base of client 
 initial_client_w: [0.0, 0.0, 0.] # in deg/s
-initial_mrv_w: [0., 0., 0.] # in deg/s
+initial_mrv_w: [0.0, 0.0, 0.0] # in deg/s
 
 do_save: True
 use_cw: True #use orbital gravitational dynamics
-save_folder: 'experiment_logs/10_4_2025/'
+save_folder: 'experiment_logs/10_9_25/'
 
 # This is the library used by Anoop before Andrew took over the code, which has a phase where contact is broken. 
 #traj_library_prefix: '/experiment_logs/01_30_24/ipopt_multicore/'
@@ -34,8 +34,8 @@ traj_library_prefix: '/traj_lib/12_9_24/updated_urdf_capture_box/'
 # Whether to clip joint-level acceleration and velocities based on limits specified in limits.yaml
 clip_joint_commands: True
 
-use_grid: True
-use_rot: True
+use_grid: False
+use_rot: False
 grid_type: 20
 initial_grid_idx: 0 #use zero-indexing
 visualize_before_moving: False

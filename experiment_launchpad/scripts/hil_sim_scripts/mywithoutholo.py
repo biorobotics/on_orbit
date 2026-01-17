@@ -151,9 +151,11 @@ class experiments:
     
     print('Desired position difference (m) in nozzle frame: ', delta_pos)
     print('Desired rotation difference (deg) in nozzle frame: ', delta_rot)
-
-    delta_v = np.copy(self.poses[3:6])
-    initial_mrv_w = np.copy(self.poses[6:9])*np.pi/180
+    delta_v = np.array(rospy.get_param('delta_v'))
+    initial_mrv_w = np.array(rospy.get_param('initial_mrv_w'))*np.pi/180
+    print(np.array([5.5,0,0])*np.pi/180)
+    # delta_v = np.copy(self.poses[3:6])
+    # initial_mrv_w = np.copy(self.poses[6:9])*np.pi/180
 
     initial_client_w = np.copy(self.poses[9:12])*np.pi/180
 
@@ -161,6 +163,7 @@ class experiments:
     print('initial_mrv_w: ', initial_mrv_w)
     print('initial_client_w: ', initial_client_w)
     print('initial_client_w (deg/s): ', initial_client_w*180/np.pi)
+    # rospy.spin()
 
     mrv_controller = MrvController(self.rospath + '/urdf/robot_cv_detached.urdf', 
                                         self.rospath + '/urdf/robot.urdf', 

@@ -364,6 +364,11 @@ class MRVClientSim(object):
   def get_full_config_deriv(self):
     return copy.deepcopy(self.x[self.pin_model.nq:])
 
+  def get_mrv_jacobian(self):
+    J = pin.getFrameJacobian(self.pin_model, self.pin_data, self.peg_fid, pin.ReferenceFrame.LOCAL_WORLD_ALIGNED)
+    return np.copy(J[:,6:13]) #Jacobian mapping manipulator velocities
+
+
   def get_mrv_kinematic_jacobians(self):
     ''' Return the kinematic Jacobian matrices mapping manipulator joint and base velocities to the probe tip velocity as well as their time derivatives
 

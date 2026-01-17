@@ -105,6 +105,7 @@ class MrvController(object):
     self.mrv_vidx = self.mrv_client_sim.mrv_vidx
 
     self.ref_ee_pos_trj_world = []
+    self.mrv_Js_trj = []
 
     self.plunging = False
 
@@ -614,11 +615,13 @@ class MrvController(object):
 
     mrv_client_sim = self.mrv_client_sim
 
+    self.mrv_Js_trj.append(mrv_client_sim.get_mrv_jacobian())
+
     peg_pose_wrt_client = mrv_client_sim.get_peg_pose_wrt_client()
 
     close=boundary_volume_hierarchy.is_distance_lte_array(np.array(peg_pose_wrt_client),self.array_rsstree,self.client_mesh.triangles,self.collision_thresh)
     if not close[0]:
-      print("Peg is too far from nozzle, failing")
+      # print("Peg is too far from nozzle, failing")
       wrench_peg_peg = np.zeros(6) 
 
     if self.apply_sinusoidal_velocity_to_client:
@@ -662,7 +665,7 @@ class MrvController(object):
     # if apply_wrench_only_when_close and not use_contact_sim and self.is_peg_close_to_nozzle(sw_rel_pos):
       # print("peg is not close to nozzle, not applying measured wrench")
       # wrench_peg_peg = np.zeros(6)
-    print("wrench_peg_peg", wrench_peg_peg)
+    # print("wrench_peg_peg", wrench_peg_peg)
     if not use_contact_sim:
       self.mrv_client_sim.pb_peg_wrench = wrench_peg_peg
     else:
@@ -1031,3 +1034,4 @@ class MrvController(object):
 
     np.save(save_path + '/flop_counts.npy', self.flop_counts)
     np.save(save_path + '/times.npy', self.times)
+    np.save(save_path + '/Js_trj.npy', self.mrv_Js_trj)

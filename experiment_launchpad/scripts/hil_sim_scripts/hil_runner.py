@@ -324,7 +324,7 @@ class HILRunner(object):
     holo_control.ur_idle_mode('client') 
 
     # Visualize
-    stop_vis = True
+    stop_vis = False
     while not stop_vis:
       rate = rospy.Rate(5/dt)
       q_vis = pin.neutral(pin_model)
@@ -409,6 +409,7 @@ class HILRunner(object):
 
       if self.is_ft_excessive(ft_compensated):
         print('Stopping because of excessive force on F/T sensor.')
+        holo_control.ur_estop()
         holo_control.ur_idle_mode('mrv')
         holo_control.ur_idle_mode('client')
         quit()
@@ -427,6 +428,7 @@ class HILRunner(object):
       holo_control.cmd_ur_velocity('mrv', v_mrv_arm_cmd)
       if self.is_ft_excessive(self.sensor_array):
         print('Stopping because of excessive force on F/T sensor.')
+        holo_control.ur_estop()
         self.holo_control.ur_idle_mode('mrv')
         self.holo_control.ur_idle_mode('client')
         quit() 
@@ -606,7 +608,7 @@ class HILRunner(object):
 
 
     # Visualize
-    stop_vis = True
+    stop_vis = False
     while not stop_vis:
         q_vis = pin.neutral(pin_model)
 
@@ -904,8 +906,8 @@ class HILRunner(object):
 
     # Bias and gravity compensation for force sensor
     ft_compensated = self.get_ft_compensated(pin_data, ft_fid)
-    # print("FT compensated: ", ft_compensated)
-    #print(ft_compensated)
+    print("FT compensated: ", ft_compensated)
+    # print(ft_compensated)
     if ft_compensated is None:
       print("Stopping because F/T data is unavailable.")
       quit()
@@ -933,6 +935,7 @@ class HILRunner(object):
 
     if self.is_ft_excessive(ft_compensated):
       print('Stopping because of excessive force')
+      holo_control.ur_estop()
       holo_control.ur_idle_mode('mrv')
       holo_control.ur_idle_mode('client')
       fail_reason = 'Excessive force'
@@ -1057,22 +1060,22 @@ class HILRunner(object):
     # SI-125-3 Nano 25 F/T sensor 
     # Sensing range in Fx,Fy <125N, Fz <500N, Tx,Ty,Tz is 3Nm. Overload values are much higher but we want to be safe and make sure sensing is accurate.
 
-    if ft_np_array[0] > 75:
+    if np.abs(ft_np_array[0]) > 100:
       print("Fx force exceeded.")
       return True, 0
-    elif ft_np_array[1] > 75:
+    elif np.abs(ft_np_array[1]) > 100:
       print("Fy force exceeded.")
       return True, 1
-    elif ft_np_array[2] > 400:
+    elif np.abs(ft_np_array[2]) > 300:
       print("Fz force exceeded.")
       return True, 2
-    elif ft_np_array[3] > 15: 
+    elif np.abs(ft_np_array[3]) > 15: 
       print("Tx torque exceeded.")
       return True, 3
-    elif ft_np_array[4] > 15: 
+    elif np.abs(ft_np_array[4]) > 15: 
       print("Ty torque exceeded.")
       return True, 4
-    elif ft_np_array[5] > 15:
+    elif np.abs(ft_np_array[5]) > 15:
       print("Tz torque exceeded.")
       return True, 5
     else:

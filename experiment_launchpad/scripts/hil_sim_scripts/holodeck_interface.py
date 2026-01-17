@@ -1,7 +1,7 @@
 import rospy
 import numpy as np
 import pinocchio as pin
-from std_msgs.msg import Float32MultiArray, Float32, String
+from std_msgs.msg import Float32MultiArray, Float32, String, Bool
 from geometry_msgs.msg import TransformStamped, WrenchStamped, Pose
 from ur_state_machine.srv import JointMove, PositionServo, PositionMove, PositionMoveRequest, JointVelocityServo, JointVelocityServoResponse
 from ur_state_machine.msg import JointMoveParams, PositionServoParams, Move, JointVelocityServoParams, URJointCommand
@@ -82,6 +82,26 @@ class HolodeckInterface:
 
         self.mrv_idle = rospy.ServiceProxy(f'/{self.mrv_arm_name}/stop', Trigger)
         self.client_idle = rospy.ServiceProxy(f'/{self.client_arm_name}/stop', Trigger)
+
+        self.mrv_estop_trigger = rospy.Publisher(f'/{self.mrv_arm_name}/estop_trigger', Bool, queue_size=1)
+        self.client_estop_trigger = rospy.Publisher(f'/{self.client_arm_name}/estop_trigger', Bool, queue_size=1)
+
+
+    def ur_estop(self):
+      # Put the specified arm into velocity servo mode
+        stop = Bool()
+        stop.data = True
+
+        try:
+            self.mrv_estop_trigger.publish(stop)
+            self.client_estop_trigger.publish(stop)
+            rospy.sleep(0.1)  # Give some time for the estop to take effect
+            rospy.logerr_once("Published estop trigger to both arms.")
+
+
+        except rospy.ROSException as e:
+            print(f"Failed to publish estop trigger: {e}")
+            quit()
 
 
     
@@ -218,6 +238,7 @@ class HolodeckInterface:
     
     def ur_idle_mode(self, name):
         # Put the specified arm into idle mode
+        print(f"Putting {name} arm into idle mode.")
         try:
             if name == 'mrv':
                 rospy.wait_for_service(f'/{self.mrv_arm_name}/stop')
@@ -231,6 +252,9 @@ class HolodeckInterface:
                 print(f"{resp.message}")
                 print(f"Failed to put {name} arm into idle mode.")
                 quit()
+            if resp.success:
+                print(f"{name} arm is now in idle mode.")
+                print(f"{resp.message}")
         except rospy.ServiceException as e:
             print(f"Service call failed: {e}")
             quit()

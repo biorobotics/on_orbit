@@ -140,10 +140,10 @@ for grid_idx in range(initial_grid_idx, final_grid_idx):
 
     holo_control.ur_idle_mode('mrv')
     holo_control.ur_idle_mode('client')
+
     hil_runner.reset_to_home_angles(check_for_continue=verify_trajectory_visually , seed_used = trial_idx)
     holo_control.ur_idle_mode('mrv')
     holo_control.ur_idle_mode('client')
-    
 
     hil_runner.calibrate_ft_bias() 
     if use_rot:
@@ -266,13 +266,21 @@ for grid_idx in range(initial_grid_idx, final_grid_idx):
       print()
       continue
 
-    hil_runner.initialize_arms_to_ee_poses(desired_waypoint, \
-                                          desired_rot, \
+    hil_runner.initialize_arms_to_ee_poses(sw_peg_pos, \
+                                          sw_peg_rmat, \
                                           sw_peg_twist, \
                                           sw_nozzle_pos, \
                                           sw_nozzle_rmat, \
                                           sw_nozzle_twist, \
                                           verify_trajectory_visually)
+    
+    # hil_runner.initialize_arms_to_ee_poses(desired_waypoint, \
+    #                                       desired_rot, \
+    #                                       sw_peg_twist, \
+    #                                       sw_nozzle_pos, \
+    #                                       sw_nozzle_rmat, \
+    #                                       sw_nozzle_twist, \
+    #                                       verify_trajectory_visually)
   
     if rospy.is_shutdown():
       quit()
